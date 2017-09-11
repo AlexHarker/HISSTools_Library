@@ -79,9 +79,10 @@ template<class SETUP, class SPLIT, class T>void crash_test(int min_log2, int max
     split.realp = (T *) malloc(sizeof(T) * 1 << max_log2);
     split.imagp = (T *) malloc(sizeof(T) * 1 << max_log2);
     
+    hisstools_create_setup(&setup, max_log2);
+
     Timer timer;
     timer.start();
-    hisstools_create_setup(&setup, max_log2);
 
     for (int i = min_log2; i < max_log2; i++)
         hisstools_fft(setup, &split, i);
@@ -114,7 +115,8 @@ template<class SETUP, class SPLIT, class T> void single_test(int size, void (*Fn
     
     Timer timer;
     timer.start();
-    Fn(setup, &split, size);
+    for (int i = 0; i < 10000; i++)
+        Fn(setup, &split, size);
     timer.stop("FFT Single Tests");
 
     free(split.realp);
