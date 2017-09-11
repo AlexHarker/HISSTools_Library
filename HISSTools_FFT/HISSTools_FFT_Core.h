@@ -183,9 +183,13 @@ struct AVX512Float : public SIMDVector<float, __v16sf, 16>
 
 // ******************** A Vector of Given Size (Made of Vectors / Scalars) ******************** //
 
-template <int size, class T> struct SizedVector
+template <int final_size, class T> struct SizedVector
 {
-    static const int array_size = size / T::size;
+    static const int size = final_size;
+    typedef typename T::scalar_type scalar_type;
+    typedef Split<scalar_type> split_type;
+    typedef Setup<scalar_type> setup_type;
+    static const int array_size = final_size / T::size;
     
     SizedVector() {}
     SizedVector(const SizedVector *ptr) { *this = *ptr; }
