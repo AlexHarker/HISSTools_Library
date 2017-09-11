@@ -998,9 +998,10 @@ void fft_passes_simd(Split<T> *input, Setup<T> *setup, uintptr_t fft_log2)
 template<>
 void fft_passes_simd(Split<double> *input, Setup<double> *setup, uintptr_t fft_log2)
 {
-    if (SIMD_Support == kAVX512)
-        fft_passes<SSEDouble, AVX256Double, AVX512Double>(input, setup, fft_log2);
-    else if (SIMD_Support == kAVX256)
+    //if (SIMD_Support == kAVX512)
+    //    fft_passes<SSEDouble, AVX256Double, AVX512Double>(input, setup, fft_log2);
+    //else
+    if (SIMD_Support == kAVX256)
         fft_passes<SSEDouble, AVX256Double, AVX256Double>(input, setup, fft_log2);
     else
         fft_passes<SSEDouble, SSEDouble, SSEDouble>(input, setup, fft_log2);
