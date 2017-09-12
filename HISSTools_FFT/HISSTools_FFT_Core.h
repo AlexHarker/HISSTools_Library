@@ -1103,7 +1103,7 @@ namespace hisstools_fft_impl{
     void fft_passes_simd(Split<float> *input, Setup<float> *setup, uintptr_t fft_log2)
     {
         if (SIMD_Support >= kAVX256)
-            fft_passes<SSEFloat, SSEFloat, AVX256Float,SizedVector<16, AVX256Float> >(input, setup, fft_log2);
+            fft_passes<SSEFloat, SSEFloat, AVX256Float, AVX256Float>(input, setup, fft_log2);
         else
             fft_passes<SSEFloat, SSEFloat, SSEFloat, SSEFloat>(input, setup, fft_log2);
     }
