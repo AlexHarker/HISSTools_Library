@@ -1,8 +1,11 @@
 
+#ifndef __APPLE__
+#include <intrin.h>
+#endif
+
 #include <cmath>
 #include <algorithm>
 #include <functional>
-#include <intrin.h>
 #include <emmintrin.h>
 #include <immintrin.h>
 
@@ -26,8 +29,10 @@ struct FloatSetup : public Setup<float> {};
 #define SIMD_COMPILER_SUPPORT_LEVEL SIMD_COMPILER_SUPPORT_AVX512
 #elif defined(__AVX__)
 #define SIMD_COMPILER_SUPPORT_LEVEL SIMD_COMPILER_SUPPORT_AVX256
-#else
+#elif defined(__SSE__)
 #define SIMD_COMPILER_SUPPORT_LEVEL SIMD_COMPILER_SUPPORT_SSE128
+#else
+#define SIMD_COMPILER_SUPPORT_LEVEL SIMD_COMPILER_SUPPORT_SCALAR
 #endif
 
 namespace hisstools_fft_impl{
