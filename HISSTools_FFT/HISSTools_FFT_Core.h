@@ -28,38 +28,56 @@ struct FloatSetup : public Setup<float> {};
 
 namespace hisstools_fft_impl{
 
-    enum SIMDType { kNone, kSSE, kAVX256, kAVX512 };
+    // Aligned Allocation
     
-    extern SIMDType SIMD_Support;
-
+#ifdef __APPLE__
+    
+    template <class T> T *allocate_aligned(size_t size)
+    {
+        return static_cast<T *>(malloc(size * sizeof(T)));
+    }
+    
+    template <class T> void deallocate_aligned(T *ptr)
+    {
+        free(ptr);
+    }
+    
     void cpuid(int32_t out[4], int32_t x)
     {
         __cpuid_count(x, 0, out[0], out[1], out[2], out[3]);
     }
     
-    uint64_t xgetbv(unsigned int index)
+#else
+
+#include <malloc.h>
+
+    template <class T> T *allocate_aligned(size_t size)
     {
-        uint32_t eax, edx;
-        __asm__ __volatile__("xgetbv" : "=a"(eax), "=d"(edx) : "c"(index));
-        return ((uint64_t) edx << 32) | eax;
+        return static_cast<T *>(_aligned_malloc(size * sizeof(T)), 16);
     }
     
-    // Constants
-    
-#define FFTLOG2_TRIG_OFFSET ((uintptr_t) 3)
-#define PASS_TRIG_OFFSET ((uintptr_t) (FFTLOG2_TRIG_OFFSET - 1))
+    template <class T> void deallocate_aligned(T *ptr)
+    {
+        _aligned_free(ptr);
+    }
 
-    // SIMD Stuff
+    void cpuid(int32_t out[4], int32_t x)
+    {
+        _cpuid(out, x);
+    }
     
-#ifdef __APPLE__
-#define ALIGNED_MALLOC malloc
-#define ALIGNED_FREE free
-#else
-#include <malloc.h>
-#define ALIGNED_MALLOC(x)  _aligned_malloc(x, 16)
-#define ALIGNED_FREE(x)  _aligned_free(x)
 #endif
+
+    // Offset for Table
     
+    static const uintptr_t trig_table_offset = 3;
+    
+    // CPU Detection
+    
+    enum SIMDType { kNone, kSSE, kAVX256, kAVX512 };
+    
+    extern SIMDType SIMD_Support;
+
     SIMDType detect_SIMD()
     {
         int cpu_info[4] = {-1, 0, 0, 0};
@@ -78,7 +96,10 @@ namespace hisstools_fft_impl{
             
             if (os_uses_xsave_xrstore && cpu_AVX_suport)
             {
-                uint64_t xcr_feature_mask = xgetbv(0);
+                uint32_t eax, edx;
+                unsigned int index = 0;
+                __asm__ __volatile__("xgetbv" : "=a"(eax), "=d"(edx) : "c"(index));
+                uint64_t xcr_feature_mask = ((uint64_t) edx << 32) | eax;
                 
                 if ((xcr_feature_mask & 0x6) == 0x6)
                 {
@@ -281,7 +302,7 @@ namespace hisstools_fft_impl{
         if (SIMD_Support == kNone)
             SIMD_Support = detect_SIMD();
         
-        Setup<T> *setup = (Setup<T> *) ALIGNED_MALLOC(sizeof(Setup<T>));
+        Setup<T> *setup = allocate_aligned<Setup<T> >(1);
         
         // Set Max FFT Size
         
@@ -289,17 +310,17 @@ namespace hisstools_fft_impl{
         
         // Create Tables
         
-        for (uintptr_t i = FFTLOG2_TRIG_OFFSET; i <= max_fft_log2; i++)
+        for (uintptr_t i = trig_table_offset; i <= max_fft_log2; i++)
         {
             uintptr_t length = (uintptr_t) 1 << (i - 1);
             
-            setup->tables[i - FFTLOG2_TRIG_OFFSET].realp = (T *) ALIGNED_MALLOC(sizeof(T) * 2 * length);
-            setup->tables[i - FFTLOG2_TRIG_OFFSET].imagp = setup->tables[i - FFTLOG2_TRIG_OFFSET].realp + length;
+            setup->tables[i - trig_table_offset].realp = allocate_aligned<T>(2 * length);
+            setup->tables[i - trig_table_offset].imagp = setup->tables[i - trig_table_offset].realp + length;
             
             // Fill the Table
             
-            T *table_real = setup->tables[i - FFTLOG2_TRIG_OFFSET].realp;
-            T *table_imag = setup->tables[i - FFTLOG2_TRIG_OFFSET].imagp;
+            T *table_real = setup->tables[i - trig_table_offset].realp;
+            T *table_imag = setup->tables[i - trig_table_offset].imagp;
             
             for (uintptr_t j = 0; j < length; j++)
             {
@@ -320,10 +341,10 @@ namespace hisstools_fft_impl{
     {
         if (setup)
         {
-            for (uintptr_t i = FFTLOG2_TRIG_OFFSET; i <= setup->max_fft_log2; i++)
-                ALIGNED_FREE(setup->tables[i - FFTLOG2_TRIG_OFFSET].realp);
+            for (uintptr_t i = trig_table_offset; i <= setup->max_fft_log2; i++)
+                deallocate_aligned(setup->tables[i - trig_table_offset].realp);
             
-            ALIGNED_FREE(setup);
+            deallocate_aligned(setup);
         }
     }
     
@@ -611,8 +632,8 @@ namespace hisstools_fft_impl{
         
         for (uintptr_t i = 0, j = 0; i < (length >> 1); loop += size)
         {
-            T *tr_ptr = reinterpret_cast<T *>(setup->tables[pass - PASS_TRIG_OFFSET].realp);
-            T *ti_ptr = reinterpret_cast<T *>(setup->tables[pass - PASS_TRIG_OFFSET].imagp);
+            T *tr_ptr = reinterpret_cast<T *>(setup->tables[pass - (trig_table_offset - 1)].realp);
+            T *ti_ptr = reinterpret_cast<T *>(setup->tables[pass - (trig_table_offset - 1)].imagp);
             
             for (; i < loop; i += (T::size << 1))
             {
@@ -681,8 +702,8 @@ namespace hisstools_fft_impl{
         
         for (uintptr_t i = 0; i < length; loop += size)
         {
-            T *tr_ptr = reinterpret_cast<T *>(setup->tables[pass - PASS_TRIG_OFFSET].realp);
-            T *ti_ptr = reinterpret_cast<T *>(setup->tables[pass - PASS_TRIG_OFFSET].imagp);
+            T *tr_ptr = reinterpret_cast<T *>(setup->tables[pass - (trig_table_offset - 1)].realp);
+            T *ti_ptr = reinterpret_cast<T *>(setup->tables[pass - (trig_table_offset - 1)].imagp);
             
             for (; i < loop; i += (T::size << 1))
             {
@@ -727,8 +748,8 @@ namespace hisstools_fft_impl{
         T *i1_ptr = input->imagp;
         T *r2_ptr = r1_ptr + lengthM1;
         T *i2_ptr = i1_ptr + lengthM1;
-        T *tr_ptr = setup->tables[fft_log2 - FFTLOG2_TRIG_OFFSET].realp;
-        T *ti_ptr = setup->tables[fft_log2 - FFTLOG2_TRIG_OFFSET].imagp;
+        T *tr_ptr = setup->tables[fft_log2 - trig_table_offset].realp;
+        T *ti_ptr = setup->tables[fft_log2 - trig_table_offset].imagp;
         
         // Do DC and Nyquist (note that the complex values can be considered periodic)
         
@@ -1023,29 +1044,13 @@ namespace hisstools_fft_impl{
             pass_trig_table<W>(input, setup, length, i);
     }
     
-    // SIMD Specialisations
+    // SIMD Options
     
     template <class T>
     void fft_passes_simd(Split<T> *input, Setup<T> *setup, uintptr_t fft_log2)
-    {}
-    
-#if (SIMD_COMPILER_SUPPORT_LEVEL == SIMD_COMPILER_SUPPORT_SCALAR)
-
-    // SIMD Double Specialisation
-    
-    template<> void fft_passes_simd(Split<double> *input, Setup<double> *setup, uintptr_t fft_log2)
     {
         fft_passes<Scalar<T>, Scalar<T>, Scalar<T>, Scalar<T> >(input, setup, fft_log2);
     }
-    
-    // SIMD Float Specialisation
-    
-    template<> void fft_passes_simd(Split<float> *input, Setup<float> *setup, uintptr_t fft_log2)
-    {
-        fft_passes<Scalar<T>, Scalar<T>, Scalar<T>, Scalar<T> >(input, setup, fft_log2);
-    }
-    
-#endif
     
 #if (SIMD_COMPILER_SUPPORT_LEVEL == SIMD_COMPILER_SUPPORT_SSE)
     
@@ -1120,7 +1125,6 @@ namespace hisstools_fft_impl{
     }
     
 #endif
-
 
     // ******************** Main Calls ******************** //
     
