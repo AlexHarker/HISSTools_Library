@@ -2,9 +2,9 @@
 #include <cmath>
 #include <algorithm>
 #include <functional>
+#include <intrin.h>
 #include <emmintrin.h>
 #include <immintrin.h>
-#include <cpuid.h>
 
 // Setup Structures
 
@@ -22,9 +22,6 @@ struct FloatSetup : public Setup<float> {};
 #define SIMD_COMPILER_SUPPORT_AVX256 2
 #define SIMD_COMPILER_SUPPORT_AVX512 3
 
-// FIX - needs autodetection
-
-#ifdef __APPLE__
 #if defined(__AVX512F__)
 #define SIMD_COMPILER_SUPPORT_LEVEL SIMD_COMPILER_SUPPORT_AVX512
 #elif defined(__AVX__)
@@ -32,14 +29,15 @@ struct FloatSetup : public Setup<float> {};
 #else
 #define SIMD_COMPILER_SUPPORT_LEVEL SIMD_COMPILER_SUPPORT_SSE128
 #endif
-#endif
 
 namespace hisstools_fft_impl{
 
-    // Aligned Allocation
+    // Aligned Allocation and Platform CPU Detection
     
 #ifdef __APPLE__
     
+#include <cpuid.h>
+
     template <class T> T *allocate_aligned(size_t size)
     {
         return static_cast<T *>(malloc(size * sizeof(T)));
@@ -55,13 +53,19 @@ namespace hisstools_fft_impl{
         __cpuid_count(x, 0, out[0], out[1], out[2], out[3]);
     }
     
-#else
+	uint64_t xgetbv(unsigned int index)
+	{
+		uint32_t eax, edx;
+		__asm__ __volatile__("xgetbv" : "=a"(eax), "=d"(edx) : "c"(index));
+		return ((uint64_t)edx << 32) | eax;
+	}
 
+#else
 #include <malloc.h>
 
     template <class T> T *allocate_aligned(size_t size)
     {
-        return static_cast<T *>(_aligned_malloc(size * sizeof(T)), 16);
+        return static_cast<T *>(_aligned_malloc(size * sizeof(T), 16));
     }
     
     template <class T> void deallocate_aligned(T *ptr)
@@ -71,8 +75,13 @@ namespace hisstools_fft_impl{
 
     void cpuid(int32_t out[4], int32_t x)
     {
-        _cpuid(out, x);
+        __cpuid(out, x);
     }
+
+	uint64_t xgetbv(unsigned int x) 
+	{
+		return _xgetbv(x);
+	}
     
 #endif
 
@@ -104,10 +113,7 @@ namespace hisstools_fft_impl{
             
             if (os_uses_xsave_xrstore && cpu_AVX_suport)
             {
-                uint32_t eax, edx;
-                unsigned int index = 0;
-                __asm__ __volatile__("xgetbv" : "=a"(eax), "=d"(edx) : "c"(index));
-                uint64_t xcr_feature_mask = ((uint64_t) edx << 32) | eax;
+                uint64_t xcr_feature_mask = xgetbv(0);
                 
                 if ((xcr_feature_mask & 0x6) == 0x6)
                 {
@@ -191,19 +197,19 @@ namespace hisstools_fft_impl{
     
 #if (SIMD_COMPILER_SUPPORT_LEVEL >= SIMD_COMPILER_SUPPORT_AVX256)
 
-    struct AVX256Double : public SIMDVector<double, __v4df, 4>
+    struct AVX256Double : public SIMDVector<double, __m256d, 4>
     {
         AVX256Double() {}
-        AVX256Double(__v4df a) : SIMDVector(a) {}
+        AVX256Double(__m256d a) : SIMDVector(a) {}
         friend AVX256Double operator + (const AVX256Double &a, const AVX256Double &b) { return _mm256_add_pd(a.mVal, b.mVal); }
         friend AVX256Double operator - (const AVX256Double &a, const AVX256Double &b) { return _mm256_sub_pd(a.mVal, b.mVal); }
         friend AVX256Double operator * (const AVX256Double &a, const AVX256Double &b) { return _mm256_mul_pd(a.mVal, b.mVal); }
     };
     
-    struct AVX256Float : public SIMDVector<float, __v8sf, 8>
+    struct AVX256Float : public SIMDVector<float, __m256, 8>
     {
         AVX256Float() {}
-        AVX256Float(__v8sf a) : SIMDVector(a) {}
+        AVX256Float(__m256 a) : SIMDVector(a) {}
         friend AVX256Float operator + (const AVX256Float &a, const AVX256Float &b) { return _mm256_add_ps(a.mVal, b.mVal); }
         friend AVX256Float operator - (const AVX256Float &a, const AVX256Float &b) { return _mm256_sub_ps(a.mVal, b.mVal); }
         friend AVX256Float operator * (const AVX256Float &a, const AVX256Float &b) { return _mm256_mul_ps(a.mVal, b.mVal); }
@@ -213,19 +219,19 @@ namespace hisstools_fft_impl{
     
 #if (SIMD_COMPILER_SUPPORT_LEVEL >= SIMD_COMPILER_SUPPORT_AVX512)
 
-    struct AVX512Double : public SIMDVector<double, __v8df, 8>
+    struct AVX512Double : public SIMDVector<double, __m512d, 8>
     {
         AVX512Double() {}
-        AVX512Double(__v8df a) : SIMDVector(a) {}
+        AVX512Double(__m512d a) : SIMDVector(a) {}
         friend AVX512Double operator + (const AVX512Double &a, const AVX512Double &b) { return _mm512_add_pd(a.mVal, b.mVal); }
         friend AVX512Double operator - (const AVX512Double &a, const AVX512Double &b) { return _mm512_sub_pd(a.mVal, b.mVal); }
         friend AVX512Double operator * (const AVX512Double &a, const AVX512Double &b) { return _mm512_mul_pd(a.mVal, b.mVal); }
     };
     
-    struct AVX512Float : public SIMDVector<float, __v16sf, 16>
+    struct AVX512Float : public SIMDVector<float, __m512, 16>
     {
         AVX512Float() {}
-        AVX512Float(__v16sf a) : SIMDVector(a) {}
+        AVX512Float(__m512 a) : SIMDVector(a) {}
         friend AVX512Float operator + (const AVX512Float &a, const AVX512Float &b) { return _mm512_add_ps(a.mVal, b.mVal); }
         friend AVX512Float operator - (const AVX512Float &a, const AVX512Float &b) { return _mm512_sub_ps(a.mVal, b.mVal); }
         friend AVX512Float operator * (const AVX512Float &a, const AVX512Float &b) { return _mm512_mul_ps(a.mVal, b.mVal); }
