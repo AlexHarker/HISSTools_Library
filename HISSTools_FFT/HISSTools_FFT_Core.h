@@ -24,7 +24,15 @@ struct FloatSetup : public Setup<float> {};
 
 // FIX - needs autodetection
 
+#ifdef __APPLE__
+#if defined(__AVX512F__)
+#define SIMD_COMPILER_SUPPORT_LEVEL SIMD_COMPILER_SUPPORT_AVX512
+#elif defined(__AVX__)
 #define SIMD_COMPILER_SUPPORT_LEVEL SIMD_COMPILER_SUPPORT_AVX256
+#else
+#define SIMD_COMPILER_SUPPORT_LEVEL SIMD_COMPILER_SUPPORT_SSE128
+#endif
+#endif
 
 namespace hisstools_fft_impl{
 
@@ -1070,7 +1078,7 @@ namespace hisstools_fft_impl{
 
 #endif
     
-#if (SIMD_COMPILER_SUPPORT_LEVEL >= SIMD_COMPILER_SUPPORT_AVX256)
+#if (SIMD_COMPILER_SUPPORT_LEVEL == SIMD_COMPILER_SUPPORT_AVX256)
 
     // SIMD Double Specialisation
     
@@ -1096,7 +1104,7 @@ namespace hisstools_fft_impl{
 
 #endif
     
-#if (SIMD_COMPILER_SUPPORT_LEVEL >= SIMD_COMPILER_SUPPORT_AVX512)
+#if (SIMD_COMPILER_SUPPORT_LEVEL == SIMD_COMPILER_SUPPORT_AVX512)
     
     // SIMD Double Specialisation
     
