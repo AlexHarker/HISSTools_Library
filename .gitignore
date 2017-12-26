@@ -1,0 +1,39 @@
+## Build generated
+build/
+DerivedData/
+
+## Outmoded source tracking
+CVS/
+
+## Various settings
+*.pbxuser
+!default.pbxuser
+*.mode1
+!default.mode1
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata/
+_MaxSDK_/
+
+## Latex
+
+*.aux
+*.synctex.gz
+*.toc
+*.log
+*.out
+
+## Binaries
+externals/
+
+## Other
+*.moved-aside
+*.xccheckout
+*.xcscmblueprint
+
+Icon?
+.DS_Stor*
