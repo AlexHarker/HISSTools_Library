@@ -168,7 +168,7 @@ namespace hisstools_fft_impl{
         U mVal;
     };
     
-#if (SIMD_COMPILER_SUPPORT_LEVEL >= SIMD_COMPILER_SUPPORT_SSE)
+#if (SIMD_COMPILER_SUPPORT_LEVEL >= SIMD_COMPILER_SUPPORT_SSE128)
     
     struct SSEDouble : public SIMDVector<double, __m128d, 2>
     {
@@ -412,7 +412,7 @@ namespace hisstools_fft_impl{
         ptr4->mData[3] = D.mData[3];
     }
 
-#if (SIMD_COMPILER_SUPPORT_LEVEL >= SIMD_COMPILER_SUPPORT_SSE)
+#if (SIMD_COMPILER_SUPPORT_LEVEL >= SIMD_COMPILER_SUPPORT_SSE128)
 
     // Template Specialisation for an SSE Float Packed (1 SIMD Element)
     
@@ -1071,7 +1071,7 @@ namespace hisstools_fft_impl{
         fft_passes<Scalar<T>, Scalar<T>, Scalar<T>, Scalar<T> >(input, setup, fft_log2);
     }
     
-#if (SIMD_COMPILER_SUPPORT_LEVEL == SIMD_COMPILER_SUPPORT_SSE)
+#if (SIMD_COMPILER_SUPPORT_LEVEL == SIMD_COMPILER_SUPPORT_SSE128)
     
     // SIMD Double Specialisation
     
