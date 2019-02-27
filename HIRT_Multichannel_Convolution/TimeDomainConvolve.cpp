@@ -80,7 +80,7 @@ t_convolve_error HISSTools::TimeDomainConvolve::set(const float *input, uintptr_
 		mImpulseLength = 0;
 	
 	length -= mOffset;
-	if (mLength && mLength < length)
+	if (mLength && mLength <= length)
 		mImpulseLength = mLength;
 	
 	if (length > 2044)
@@ -157,31 +157,28 @@ void convolve(const float *in, vFloat *impulse, float *output, uintptr_t N, uint
 
 void convolve(const float *in, float *impulse, float *output, uintptr_t N, uintptr_t L)
 {
-	float output_accum;
-	const float *input;
-		
 	L = pad_length(L);
 	
 	for (uintptr_t i = 0; i < N; i++)
 	{
-		output_accum = 0.f;
-		input = in - L + 1 + i;
+		float outputAccum = 0.f;
+		const float *input = in - L + 1 + i;
 		
 		for (uintptr_t j = 0; j < L; j += 8)
 		{
 			// Load vals
 			
-			output_accum += impulse[j+0] * *input++;
-			output_accum += impulse[j+1] * *input++;
-			output_accum += impulse[j+2] * *input++;
-			output_accum += impulse[j+3] * *input++;
-			output_accum += impulse[j+4] * *input++;
-			output_accum += impulse[j+5] * *input++;
-			output_accum += impulse[j+6] * *input++;
-			output_accum += impulse[j+7] * *input++;
+			outputAccum += impulse[j+0] * *input++;
+			outputAccum += impulse[j+1] * *input++;
+			outputAccum += impulse[j+2] * *input++;
+			outputAccum += impulse[j+3] * *input++;
+			outputAccum += impulse[j+4] * *input++;
+			outputAccum += impulse[j+5] * *input++;
+			outputAccum += impulse[j+6] * *input++;
+			outputAccum += impulse[j+7] * *input++;
 		}
 		
-		*output++ = output_accum;
+		*output++ = outputAccum;
 	}
 }
 
@@ -251,7 +248,7 @@ void HISSTools::TimeDomainConvolve::processSIMD(const float *in, float *out, uin
 	#ifdef __APPLE__
 		vDSP_conv(mInputBuffer + 4096 + mInputPosition - (mImpulseLength + currentLoop) + 1, (vDSP_Stride) 1, mImpulseBuffer, (vDSP_Stride) 1, out, (vDSP_Stride) 1, (vDSP_Length) currentLoop, mImpulseLength);
 	#else
-		convolve(mInputBuffer + 4096 + (input_position - currentLoop), (vFloat *) mImpulseBuffer, out, currentLoop, mImpulseLength);
+		convolve(mInputBuffer + 4096 + (mInputPosition - currentLoop), (vFloat *) mImpulseBuffer, out, currentLoop, mImpulseLength);
 	#endif
         
         // Updates
