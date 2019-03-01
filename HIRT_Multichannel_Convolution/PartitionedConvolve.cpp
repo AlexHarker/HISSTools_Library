@@ -18,12 +18,6 @@
 #include <string.h>
 #include <functional>
 
-#ifndef __APPLE__
-#include <Windows.h>
-#endif
-
-// FIX - sort the seeding
-
 // Pointer Utility
 
 void offsetSplitPointer(FFT_SPLIT_COMPLEX_F &complex1, const FFT_SPLIT_COMPLEX_F &complex2, uintptr_t offset)
@@ -32,7 +26,13 @@ void offsetSplitPointer(FFT_SPLIT_COMPLEX_F &complex1, const FFT_SPLIT_COMPLEX_F
     complex1.imagp = complex2.imagp + offset;
 }
 
+// FIX - sort the seeding
+
 /*
+ #ifndef __APPLE__
+ #include <Windows.h>
+ #endif
+
  // Random seeding for rand
  
  static __inline unsigned int get_rand_seed ()
@@ -55,7 +55,6 @@ void offsetSplitPointer(FFT_SPLIT_COMPLEX_F &complex1, const FFT_SPLIT_COMPLEX_F
  
  return seed;
  }
- 
  
  void init_partition_convolve()
  {
@@ -243,8 +242,9 @@ ConvolveError HISSTools::PartitionedConvolve::set(const float *input, uintptr_t 
         
         // Do fft straight into position
         
-        hisstools_unzip(bufferTemp1, &bufferTemp2, mFFTSizeLog2);
-        hisstools_rfft(mFFTSetup, &bufferTemp2, mFFTSizeLog2);
+        //hisstools_unzip(bufferTemp1, &bufferTemp2, mFFTSizeLog2);
+        //hisstools_rfft(mFFTSetup, &bufferTemp2, mFFTSizeLog2);
+        hisstools_rfft(mFFTSetup, bufferTemp1, &bufferTemp2, FFTSize, mFFTSizeLog2);
         offsetSplitPointer(bufferTemp2, bufferTemp2, FFTSizeHalved);
     }
     
@@ -385,24 +385,16 @@ bool HISSTools::PartitionedConvolve::process(const float *in, float *out, uintpt
             }
         }
         
-        // FFT processing - this is where we deal with the fft, the first partition and inverse fft
+        // FFT processing
         
         if (FFTNow)
         {
-            // Do the fft into the input buffer
+            // Do the fft into the input buffer, add first partition (needed now), do ifft, scale and store (overlap-save)
 
             offsetSplitPointer(audioInTemp, mInputBuffer, (mInputPosition * FFTSizeHalved));
-            hisstools_unzip(mFFTBuffers[(RWCounter == FFTSize) ? 1 : 0], &audioInTemp, mFFTSizeLog2);
-            hisstools_rfft(mFFTSetup, &audioInTemp, mFFTSizeLog2);
-            
-            // Process first partition (needed now) and accumulate the output
-            
+            hisstools_rfft(mFFTSetup, mFFTBuffers[(RWCounter == FFTSize) ? 1 : 0], &audioInTemp, FFTSize, mFFTSizeLog2);
             processPartition(audioInTemp, mImpulseBuffer, mAccumBuffer, FFTSizeHalved);
-            
-            // Do ifft on the accumulation buffer, scale and store (overlap-save)
-            
-            hisstools_rifft(mFFTSetup, &mAccumBuffer, mFFTSizeLog2);
-            hisstools_zip(&mAccumBuffer, mFFTBuffers[2], mFFTSizeLog2);
+            hisstools_rifft(mFFTSetup, &mAccumBuffer, mFFTBuffers[2], mFFTSizeLog2);
             scaleStore<FloatVector>(mFFTBuffers[3], mFFTBuffers[2], FFTSize, (RWCounter != FFTSize));
             
             // Clear accumulation buffer
@@ -432,14 +424,14 @@ bool HISSTools::PartitionedConvolve::process(const float *in, float *out, uintpt
 
 void HISSTools::PartitionedConvolve::processPartition(FFT_SPLIT_COMPLEX_F in1, FFT_SPLIT_COMPLEX_F in2, FFT_SPLIT_COMPLEX_F out, uintptr_t numBins)
 {
-    uintptr_t numVecs = numBins >> 2;
+    uintptr_t numVecs = numBins / FloatVector::size;
     
-    FloatVector *inReal1 = (FloatVector *) in1.realp;
-    FloatVector *inImag1 = (FloatVector *) in1.imagp;
-    FloatVector *inReal2 = (FloatVector *) in2.realp;
-    FloatVector *inImag2 = (FloatVector *) in2.imagp;
-    FloatVector *outReal = (FloatVector *) out.realp;
-    FloatVector *outImag = (FloatVector *) out.imagp;
+    FloatVector *iReal1 = reinterpret_cast<FloatVector *>(in1.realp);
+    FloatVector *iImag1 = reinterpret_cast<FloatVector *>(in1.imagp);
+    FloatVector *iReal2 = reinterpret_cast<FloatVector *>(in2.realp);
+    FloatVector *iImag2 = reinterpret_cast<FloatVector *>(in2.imagp);
+    FloatVector *oReal = reinterpret_cast<FloatVector *>(out.realp);
+    FloatVector *oImag = reinterpret_cast<FloatVector *>(out.imagp);
     
     float nyquist1 = in1.imagp[0];
     float nyquist2 = in2.imagp[0];
@@ -455,14 +447,14 @@ void HISSTools::PartitionedConvolve::processPartition(FFT_SPLIT_COMPLEX_F in1, F
     
     for (uintptr_t i = 0; i + 3 < numVecs; i += 4)
     {
-        outReal[i+0] = outReal[i+0] + ((inReal1[i+0] * inReal2[i+0]) - (inImag1[i+0] * inImag2[i+0]));
-        outImag[i+0] = outImag[i+0] + ((inReal1[i+0] * inImag2[i+0]) + (inImag1[i+0] * inReal2[i+0]));
-        outReal[i+1] = outReal[i+1] + ((inReal1[i+1] * inReal2[i+1]) - (inImag1[i+1] * inImag2[i+1]));
-        outImag[i+1] = outImag[i+1] + ((inReal1[i+1] * inImag2[i+1]) + (inImag1[i+1] * inReal2[i+1]));
-        outReal[i+2] = outReal[i+2] + ((inReal1[i+2] * inReal2[i+2]) - (inImag1[i+2] * inImag2[i+2]));
-        outImag[i+2] = outImag[i+2] + ((inReal1[i+2] * inImag2[i+2]) + (inImag1[i+2] * inReal2[i+2]));
-        outReal[i+3] = outReal[i+3] + ((inReal1[i+3] * inReal2[i+3]) - (inImag1[i+3] * inImag2[i+3]));
-        outImag[i+3] = outImag[i+3] + ((inReal1[i+3] * inImag2[i+3]) + (inImag1[i+3] * inReal2[i+3]));
+        *oReal++ += (iReal1[i + 0] * iReal2[i + 0]) - (iImag1[i + 0] * iImag2[i + 0]);
+        *oImag++ += (iReal1[i + 0] * iImag2[i + 0]) + (iImag1[i + 0] * iReal2[i + 0]);
+        *oReal++ += (iReal1[i + 1] * iReal2[i + 1]) - (iImag1[i + 1] * iImag2[i + 1]);
+        *oImag++ += (iReal1[i + 1] * iImag2[i + 1]) + (iImag1[i + 1] * iReal2[i + 1]);
+        *oReal++ += (iReal1[i + 2] * iReal2[i + 2]) - (iImag1[i + 2] * iImag2[i + 2]);
+        *oImag++ += (iReal1[i + 2] * iImag2[i + 2]) + (iImag1[i + 2] * iReal2[i + 2]);
+        *oReal++ += (iReal1[i + 3] * iReal2[i + 3]) - (iImag1[i + 3] * iImag2[i + 3]);
+        *oImag++ += (iReal1[i + 3] * iImag2[i + 3]) + (iImag1[i + 3] * iReal2[i + 3]);
     }
     
     // Replace nyquist bins
