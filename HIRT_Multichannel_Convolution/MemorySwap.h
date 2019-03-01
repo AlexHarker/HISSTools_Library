@@ -132,7 +132,7 @@ public:
         return tryLock() ? Ptr(this, mPtr, mSize) : Ptr();
     }
     
-    Ptr swap(void *ptr, uintptr_t size)
+    Ptr swap(T *ptr, uintptr_t size)
     {
         lock();
         set(ptr, size, nullptr);
