@@ -21,10 +21,18 @@
 #include <stdio.h>
 #include <string.h>
 
-uintptr_t pad_length(uintptr_t length)
+#ifdef __APPLE__
+uintptr_t padded_length(uintptr_t length)
+{
+    return ((length + 15) >> 4) << 4;
+    // return length;
+}
+#else
+uintptr_t padded_length(uintptr_t length)
 {
     return ((length + 15) >> 4) << 4;
 }
+#endif
 
 HISSTools::TimeDomainConvolve::TimeDomainConvolve(uintptr_t offset, uintptr_t length) : mInputPosition(0), mImpulseLength(0)
 {
@@ -35,8 +43,8 @@ HISSTools::TimeDomainConvolve::TimeDomainConvolve(uintptr_t offset, uintptr_t le
     
     // Allocate impulse buffer and input bufferr
     
-    mImpulseBuffer = (float *) ALIGNED_MALLOC (sizeof(float) * 2048);
-    mInputBuffer = (float *) ALIGNED_MALLOC (sizeof(float) * 8192);
+    mImpulseBuffer = (float *) ALIGNED_MALLOC(sizeof(float) * 2048);
+    mInputBuffer = (float *) ALIGNED_MALLOC(sizeof(float) * 8192);
     
     // Zero buffers
     
@@ -71,13 +79,9 @@ t_convolve_error HISSTools::TimeDomainConvolve::set(const float *input, uintptr_
         
         mImpulseLength = std::min(length - mOffset, (mLength ? mLength : 2044));
     
-        uintptr_t impulseOffset = pad_length(mImpulseLength) - mImpulseLength;
-#ifdef __APPLE__
-        //impulseOffset = 0;
-#endif
-        input += mOffset;
-        std::fill_n(mImpulseBuffer, impulseOffset, 0.f);
-        std::reverse_copy(input, input + mImpulseLength, mImpulseBuffer + impulseOffset);
+        uintptr_t pad = padded_length(mImpulseLength) - mImpulseLength;
+        std::fill_n(mImpulseBuffer, pad, 0.f);
+        std::reverse_copy(input + mOffset, input + mOffset + mImpulseLength, mImpulseBuffer + pad);
     }
     
     reset();
@@ -93,7 +97,7 @@ void HISSTools::TimeDomainConvolve::reset()
 template <class T>
 void convolve(const float *in, T *impulse, float *output, uintptr_t N, uintptr_t L)
 {
-    L = pad_length(L);
+    L = padded_length(L);
     
     for (uintptr_t i = 0; i < N; i++)
     {
@@ -104,27 +108,19 @@ void convolve(const float *in, T *impulse, float *output, uintptr_t N, uintptr_t
         {
             // Load vals
             
-            outputAccum = outputAccum + (impulse[j + 0] * T::unaligned_load(input += T::size));
-            outputAccum = outputAccum + (impulse[j + 1] * T::unaligned_load(input += T::size));
-            outputAccum = outputAccum + (impulse[j + 2] * T::unaligned_load(input += T::size));
-            outputAccum = outputAccum + (impulse[j + 3] * T::unaligned_load(input += T::size));
+            outputAccum += (impulse[j + 0] * T::unaligned_load(input += T::size));
+            outputAccum += (impulse[j + 1] * T::unaligned_load(input += T::size));
+            outputAccum += (impulse[j + 2] * T::unaligned_load(input += T::size));
+            outputAccum += (impulse[j + 3] * T::unaligned_load(input += T::size));
         }
         
         *output++ = outputAccum.sum();
     }
 }
-/*
-#ifdef __APPLE__
-template<>
+
 void convolve(const float *in, float *impulse, float *output, uintptr_t N, uintptr_t L)
 {
-    vDSP_conv(in + 1 - L, (vDSP_Stride) 1, impulse, (vDSP_Stride) 1, output, (vDSP_Stride) 1, (vDSP_Length) N, L);
-}
-#endif
-*/
-void convolve(const float *in, float *impulse, float *output, uintptr_t N, uintptr_t L)
-{
-    L = pad_length(L);
+    L = padded_length(L);
     
     for (uintptr_t i = 0; i < N; i++)
     {
@@ -148,6 +144,16 @@ void convolve(const float *in, float *impulse, float *output, uintptr_t N, uintp
         *output++ = outputAccum;
     }
 }
+
+/*
+#ifdef __APPLE__
+template<>
+void convolve(const float *in, float *impulse, float *output, uintptr_t N, uintptr_t L)
+{
+    vDSP_conv(in + 1 - L, (vDSP_Stride) 1, impulse, (vDSP_Stride) 1, output, (vDSP_Stride) 1, (vDSP_Length) N, L);
+}
+#endif
+*/
 
 bool HISSTools::TimeDomainConvolve::process(const float *in, float *out, uintptr_t numSamples)
 {
