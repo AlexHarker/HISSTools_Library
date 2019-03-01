@@ -1,54 +1,48 @@
 
-
-#ifndef __ZEROLATENCYCONVOLVE__
-#define __ZEROLATENCYCONVOLVE__
+#pragma once
 
 #include "PartitionedConvolve.h"
 #include "TimeDomainConvolve.h"
 #include "convolve_errors.h"
 
-#include "AH_Generic_Memory_Swap.h"
+#include "MemorySwap.h"
+#include <memory>
 
 #include <stdint.h>
 
-typedef enum
+enum LatencyMode
 {
-    CONVOLVE_LATENCY_ZERO = 0,
-    CONVOLVE_LATENCY_SHORT = 1,
-    CONVOLVE_LATENCY_MEDIUM = 2,
-    
-} t_convolve_latency_mode;
+    kLatencyZero,
+    kLatencyShort,
+    kLatencyMedium,
+} ;
 
 namespace HISSTools
 {
     class MonoConvolve
     {
-        
+    	typedef MemorySwap<PartitionedConvolve>::Ptr PartPtr;
+    	
     public:
         
-        MonoConvolve(uintptr_t maxLength, t_convolve_latency_mode latency);
-        ~MonoConvolve();
+        MonoConvolve(uintptr_t maxLength, LatencyMode latency);
+
+        void resize(uintptr_t length);
+        t_convolve_error set(const float *input, uintptr_t length, bool requestResize);
+        void reset();
         
-        PartitionedConvolve *resize(uintptr_t length, bool keepLock);
-        t_convolve_error set(const float *input, uintptr_t length, bool resizeFlag);
-        t_convolve_error reset();
-        
-        void sum(float *out, float *add, uintptr_t numSamples);
         void process(const float *in, float *temp, float *out, uintptr_t numSamples);
         
     private:
+    
+        std::unique_ptr<TimeDomainConvolve> mTime1;
+        std::unique_ptr<PartitionedConvolve> mPart1;
+        std::unique_ptr<PartitionedConvolve> mPart2;
+        std::unique_ptr<PartitionedConvolve> mPart3;
         
-        TimeDomainConvolve *mTime1;
-        PartitionedConvolve *mPart1;
-        PartitionedConvolve *mPart2;
-        PartitionedConvolve *mPart3;
-        
-        t_memory_swap mPart4;
+        MemorySwap<PartitionedConvolve> mPart4;
         
         uintptr_t mLength;
-        t_convolve_latency_mode mLatency;
+        LatencyMode mLatency;
     };
 }
-
-#endif // __ZEROLATENCYCONVOLVE__
-

@@ -1,17 +1,14 @@
 
-#ifndef __TIMEDOMAINCONVOLVE__
-#define __TIMEDOMAINCONVOLVE__
+#pragma once
 
 #include "convolve_errors.h"
-
 #include <stdint.h>
-
 
 namespace HISSTools
 {
     class TimeDomainConvolve
     {
- 
+        
     public:
         
         TimeDomainConvolve(uintptr_t offset, uintptr_t length);
@@ -23,12 +20,9 @@ namespace HISSTools
         t_convolve_error set(const float *input, uintptr_t length);
         void reset();
         
-        void process(const float *in, float *out, uintptr_t numSamples);
-
-    private:
+        bool process(const float *in, float *out, uintptr_t numSamples);
         
-        void processScalar(const float *in, float *out, uintptr_t numSamples);
-        void processSIMD(const float *in, float *out, uintptr_t numSamples);
+    private:
         
         // Internal buffers
         
@@ -46,5 +40,3 @@ namespace HISSTools
         bool mReset;
     };
 }
-
-#endif /* __TIMEDOMAINCONVOLVE__ */

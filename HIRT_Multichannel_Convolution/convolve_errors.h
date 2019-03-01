@@ -1,9 +1,7 @@
 
-#ifndef __CONVOLVE_ERRORS__
-#define __CONVOLVE_ERRORS__
+#pragma once
 
-
-typedef enum
+enum t_convolve_error
 {
 	CONVOLVE_ERR_NONE = 0,
 	CONVOLVE_ERR_IN_CHAN_OUT_OF_RANGE = 1,
@@ -19,7 +17,4 @@ typedef enum
 	CONVOLVE_ERR_FFT_SIZE_OUT_OF_RANGE = 11,
 	CONVOLVE_ERR_FFT_SIZE_NON_POWER_OF_TWO = 12,
 	
-} t_convolve_error;
-
-
-#endif /* __CONVOLVE_ERRORS__ */
+};
