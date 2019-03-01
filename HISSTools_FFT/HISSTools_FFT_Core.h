@@ -124,21 +124,14 @@ namespace hisstools_fft_impl{
     struct SIMDVector
     {};
     
-    template<class T>
+    template <class T>
     struct SIMDVector<T, 1> : public SIMDVectorBase<T, T, 1>
     {
-        static const int size = 1;
-        typedef T scalar_type;
-        typedef Split<scalar_type> split_type;
-        typedef Setup<scalar_type> setup_type;
-        
         SIMDVector() {}
-        SIMDVector(T a) : mVal(a) {}
+        SIMDVector(T a) : SIMDVectorBase<T, T, 1>(a) {}
         friend SIMDVector operator + (const SIMDVector& a, const SIMDVector& b) { return a.mVal + b.mVal; }
         friend SIMDVector operator - (const SIMDVector& a, const SIMDVector& b) { return a.mVal - b.mVal; }
         friend SIMDVector operator * (const SIMDVector& a, const SIMDVector& b) { return a.mVal * b.mVal; }
-        
-        T mVal;
     };
     
 #if defined(__AVX512F__) || defined(__AVX__) || defined(__SSE__)
@@ -226,22 +219,6 @@ namespace hisstools_fft_impl{
 #endif
     
 #if defined(__arm__)
-    
-    template <>
-    struct SIMDVector<double, 1> : public SIMDVectorBase<double, double, 1>
-    {
-        SIMDVector() {}
-        SIMDVector(double a) : SIMDVectorBase(a) {}
-        friend SIMDVector operator + (const SIMDVector &a, const SIMDVector& b) { return a.mVal + b.mVal; }
-        friend SIMDVector operator - (const SIMDVector &a, const SIMDVector& b) { return a.mVal - b.mVal; }
-        friend SIMDVector operator * (const SIMDVector &a, const SIMDVector& b) { return a.mVal * b.mVal; }
-        
-        template <int y, int x>
-        static SIMDVector shuffle(const SIMDVector& a, const SIMDVector& b)
-        {
-            //return _mm_shuffle_pd(a.mVal, b.mVal, (y<<1)|x);
-        }
-    };
     
     template <>
     struct SIMDVector<float, 4> : public SIMDVectorBase<float, float32x4_t, 4>
