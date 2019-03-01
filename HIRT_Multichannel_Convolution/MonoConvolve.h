@@ -21,11 +21,35 @@ namespace HISSTools
 {
     class MonoConvolve
     {
-    	typedef MemorySwap<PartitionedConvolve>::Ptr PartPtr;
     	
     public:
         
         MonoConvolve(uintptr_t maxLength, LatencyMode latency);
+        MonoConvolve(MonoConvolve& obj) = delete;
+        MonoConvolve& operator = (MonoConvolve& obj) = delete;
+        
+        MonoConvolve(MonoConvolve&& obj)
+        : mTime1(std::move(obj.mTime1)),
+          mPart1(std::move(obj.mPart1)),
+          mPart2(std::move(obj.mPart2)),
+          mPart3(std::move(obj.mPart3)),
+          mPart4(std::move(obj.mPart4)),
+          mLength(obj.mLength),
+          mLatency(obj.mLatency)
+        {}
+        
+        MonoConvolve& operator = (MonoConvolve&& obj)
+        {
+            mTime1 = std::move(obj.mTime1);
+            mPart1 = std::move(obj.mPart1);
+            mPart2 = std::move(obj.mPart2);
+            mPart3 = std::move(obj.mPart3);
+            mPart4 = std::move(obj.mPart4);
+            mLength = obj.mLength;
+            mLatency = obj.mLatency;
+            
+            return *this;
+        }
 
         void resize(uintptr_t length);
         t_convolve_error set(const float *input, uintptr_t length, bool requestResize);

@@ -4,6 +4,8 @@
 #include "ConvolveSIMD.h"
 #include <functional>
 
+typedef MemorySwap<HISSTools::PartitionedConvolve>::Ptr PartPtr;
+
 // Allocation Utilities
 
 template <uintptr_t x>
