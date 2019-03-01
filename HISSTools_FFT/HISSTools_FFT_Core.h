@@ -1,13 +1,17 @@
 
-#ifndef __APPLE__
-#include <intrin.h>
-#endif
-
 #include <cmath>
 #include <algorithm>
 #include <functional>
+
+#ifdef __arm__
+#include <arm_neon.h>
+#else
+#ifndef __APPLE__
+#include <intrin.h>
+#endif
 #include <emmintrin.h>
 #include <immintrin.h>
+#endif
 
 // Setup Structures
 
@@ -21,23 +25,27 @@ struct Setup
 struct DoubleSetup : public Setup<double> {};
 struct FloatSetup : public Setup<float> {};
 
-#define SIMD_COMPILER_SUPPORT_SCALAR 0
-#define SIMD_COMPILER_SUPPORT_SSE128 1
-#define SIMD_COMPILER_SUPPORT_AVX256 2
-#define SIMD_COMPILER_SUPPORT_AVX512 3
-
-#if defined(__AVX512F__)
-#define SIMD_COMPILER_SUPPORT_LEVEL SIMD_COMPILER_SUPPORT_AVX512
-#elif defined(__AVX__)
-#define SIMD_COMPILER_SUPPORT_LEVEL SIMD_COMPILER_SUPPORT_AVX256
-#elif defined(__SSE__)
-#define SIMD_COMPILER_SUPPORT_LEVEL SIMD_COMPILER_SUPPORT_SSE128
-#else
-#define SIMD_COMPILER_SUPPORT_LEVEL SIMD_COMPILER_SUPPORT_SCALAR
-#endif
-
 namespace hisstools_fft_impl{
-
+    
+    template<class T> struct SIMDLimits     { static const int max_size = 1;};
+    
+#if defined(__AVX512F__)
+    
+    template<> struct SIMDLimits<double>    { static const int max_size = 8; };
+    template<> struct SIMDLimits<float>     { static const int max_size = 16; };
+    
+#elif defined(__AVX__)
+    
+    template<> struct SIMDLimits<double>    { static const int max_size = 4; };
+    template<> struct SIMDLimits<float>     { static const int max_size = 8; };
+    
+#elif defined(__SSE__) || defined(__arm__)
+    
+    template<> struct SIMDLimits<double>    { static const int max_size = 2; };
+    template<> struct SIMDLimits<float>     { static const int max_size = 4; };
+    
+#endif
+    
     // Aligned Allocation
     
 #ifdef __APPLE__
@@ -54,9 +62,25 @@ namespace hisstools_fft_impl{
         free(ptr);
     }
     
+#elif defined(__arm__)
+    
+#include <memory.h>
+    
+    template <class T>
+    T *allocate_aligned(size_t size)
+    {
+        return static_cast<T *>(aligned_alloc(16, size * sizeof(T)));
+    }
+    
+    template <class T>
+    void deallocate_aligned(T *ptr)
+    {
+        free(ptr);
+    }
+    
 #else
 #include <malloc.h>
-
+    
     template <class T>
     T *allocate_aligned(size_t size)
     {
@@ -70,7 +94,7 @@ namespace hisstools_fft_impl{
     }
     
 #endif
-
+    
     template <class T>
     bool isAligned(const T *ptr) { return !(reinterpret_cast<uintptr_t>(ptr) % 16); }
     
@@ -81,6 +105,24 @@ namespace hisstools_fft_impl{
     // Data Type Definitions
     
     // ******************** Basic Data Type Defintions ******************** //
+    
+    template <class T, class U, int vec_size>
+    struct SIMDVectorBase
+    {
+        static const int size = vec_size;
+        typedef T scalar_type;
+        typedef Split<scalar_type> split_type;
+        typedef Setup<scalar_type> setup_type;
+        
+        SIMDVectorBase() {}
+        SIMDVectorBase(U a) : mVal(a) {}
+        
+        U mVal;
+    };
+    
+    template <class T, int vec_size>
+    struct SIMDVector
+    {};
     
     template <class T>
     struct Scalar
@@ -99,47 +141,35 @@ namespace hisstools_fft_impl{
         T mVal;
     };
     
-    template <class T, class U, int vec_size>
-    struct SIMDVector
+#if defined(__AVX512F__) || defined(__AVX__) || defined(__SSE__)
+    
+    template <>
+    struct SIMDVector<double, 2> : public SIMDVectorBase<double, __m128d, 2>
     {
-        static const int size = vec_size;
-        typedef T scalar_type;
-        typedef Split<scalar_type> split_type;
-        typedef Setup<scalar_type> setup_type;
-        
         SIMDVector() {}
-        SIMDVector(U a) : mVal(a) {}
-        
-        U mVal;
-    };
-    
-#if (SIMD_COMPILER_SUPPORT_LEVEL >= SIMD_COMPILER_SUPPORT_SSE128)
-    
-    struct SSEDouble : public SIMDVector<double, __m128d, 2>
-    {
-        SSEDouble() {}
-        SSEDouble(__m128d a) : SIMDVector(a) {}
-        friend SSEDouble operator + (const SSEDouble &a, const SSEDouble& b) { return _mm_add_pd(a.mVal, b.mVal); }
-        friend SSEDouble operator - (const SSEDouble &a, const SSEDouble& b) { return _mm_sub_pd(a.mVal, b.mVal); }
-        friend SSEDouble operator * (const SSEDouble &a, const SSEDouble& b) { return _mm_mul_pd(a.mVal, b.mVal); }
+        SIMDVector(__m128d a) : SIMDVectorBase(a) {}
+        friend SIMDVector operator + (const SIMDVector &a, const SIMDVector& b) { return _mm_add_pd(a.mVal, b.mVal); }
+        friend SIMDVector operator - (const SIMDVector &a, const SIMDVector& b) { return _mm_sub_pd(a.mVal, b.mVal); }
+        friend SIMDVector operator * (const SIMDVector &a, const SIMDVector& b) { return _mm_mul_pd(a.mVal, b.mVal); }
         
         template <int y, int x>
-        static SSEDouble shuffle(const SSEDouble& a, const SSEDouble& b)
+        static SIMDVector shuffle(const SIMDVector& a, const SIMDVector& b)
         {
             return _mm_shuffle_pd(a.mVal, b.mVal, (y<<1)|x);
         }
     };
     
-    struct SSEFloat : public SIMDVector<float, __m128, 4>
+    template <>
+    struct SIMDVector<float, 4> : public SIMDVectorBase<float, __m128, 4>
     {
-        SSEFloat() {}
-        SSEFloat(__m128 a) : SIMDVector(a) {}
-        friend SSEFloat operator + (const SSEFloat& a, const SSEFloat& b) { return _mm_add_ps(a.mVal, b.mVal); }
-        friend SSEFloat operator - (const SSEFloat& a, const SSEFloat& b) { return _mm_sub_ps(a.mVal, b.mVal); }
-        friend SSEFloat operator * (const SSEFloat& a, const SSEFloat& b) { return _mm_mul_ps(a.mVal, b.mVal); }
+        SIMDVector() {}
+        SIMDVector(__m128 a) : SIMDVectorBase(a) {}
+        friend SIMDVector operator + (const SIMDVector& a, const SIMDVector& b) { return _mm_add_ps(a.mVal, b.mVal); }
+        friend SIMDVector operator - (const SIMDVector& a, const SIMDVector& b) { return _mm_sub_ps(a.mVal, b.mVal); }
+        friend SIMDVector operator * (const SIMDVector& a, const SIMDVector& b) { return _mm_mul_ps(a.mVal, b.mVal); }
         
         template <int z, int y, int x, int w>
-        static SSEFloat shuffle(const SSEFloat& a, const SSEFloat& b)
+        static SIMDVector shuffle(const SIMDVector& a, const SIMDVector& b)
         {
             return _mm_shuffle_ps(a.mVal, b.mVal, ((z<<6)|(y<<4)|(x<<2)|w));
         }
@@ -147,77 +177,131 @@ namespace hisstools_fft_impl{
     
 #endif
     
-#if (SIMD_COMPILER_SUPPORT_LEVEL >= SIMD_COMPILER_SUPPORT_AVX256)
-
-    struct AVX256Double : public SIMDVector<double, __m256d, 4>
+#if defined(__AVX512F__) || defined(__AVX__)
+    
+    template <>
+    struct SIMDVector<double, 4> : public SIMDVectorBase<double, __m256d, 4>
     {
-        AVX256Double() {}
-        AVX256Double(__m256d a) : SIMDVector(a) {}
-        friend AVX256Double operator + (const AVX256Double &a, const AVX256Double &b) { return _mm256_add_pd(a.mVal, b.mVal); }
-        friend AVX256Double operator - (const AVX256Double &a, const AVX256Double &b) { return _mm256_sub_pd(a.mVal, b.mVal); }
-        friend AVX256Double operator * (const AVX256Double &a, const AVX256Double &b) { return _mm256_mul_pd(a.mVal, b.mVal); }
+        SIMDVector() {}
+        SIMDVector(__m256d a) : SIMDVectorBase(a) {}
+        friend SIMDVector operator + (const SIMDVector &a, const SIMDVector &b) { return _mm256_add_pd(a.mVal, b.mVal); }
+        friend SIMDVector operator - (const SIMDVector &a, const SIMDVector &b) { return _mm256_sub_pd(a.mVal, b.mVal); }
+        friend SIMDVector operator * (const SIMDVector &a, const SIMDVector &b) { return _mm256_mul_pd(a.mVal, b.mVal); }
     };
     
-    struct AVX256Float : public SIMDVector<float, __m256, 8>
+    template <>
+    struct SIMDVector<float, 8> : public SIMDVectorBase<float, __m256, 8>
     {
-        AVX256Float() {}
-        AVX256Float(__m256 a) : SIMDVector(a) {}
-        friend AVX256Float operator + (const AVX256Float &a, const AVX256Float &b) { return _mm256_add_ps(a.mVal, b.mVal); }
-        friend AVX256Float operator - (const AVX256Float &a, const AVX256Float &b) { return _mm256_sub_ps(a.mVal, b.mVal); }
-        friend AVX256Float operator * (const AVX256Float &a, const AVX256Float &b) { return _mm256_mul_ps(a.mVal, b.mVal); }
-    };
-    
-#endif
-    
-#if (SIMD_COMPILER_SUPPORT_LEVEL >= SIMD_COMPILER_SUPPORT_AVX512)
-
-    struct AVX512Double : public SIMDVector<double, __m512d, 8>
-    {
-        AVX512Double() {}
-        AVX512Double(__m512d a) : SIMDVector(a) {}
-        friend AVX512Double operator + (const AVX512Double &a, const AVX512Double &b) { return _mm512_add_pd(a.mVal, b.mVal); }
-        friend AVX512Double operator - (const AVX512Double &a, const AVX512Double &b) { return _mm512_sub_pd(a.mVal, b.mVal); }
-        friend AVX512Double operator * (const AVX512Double &a, const AVX512Double &b) { return _mm512_mul_pd(a.mVal, b.mVal); }
-    };
-    
-    struct AVX512Float : public SIMDVector<float, __m512, 16>
-    {
-        AVX512Float() {}
-        AVX512Float(__m512 a) : SIMDVector(a) {}
-        friend AVX512Float operator + (const AVX512Float &a, const AVX512Float &b) { return _mm512_add_ps(a.mVal, b.mVal); }
-        friend AVX512Float operator - (const AVX512Float &a, const AVX512Float &b) { return _mm512_sub_ps(a.mVal, b.mVal); }
-        friend AVX512Float operator * (const AVX512Float &a, const AVX512Float &b) { return _mm512_mul_ps(a.mVal, b.mVal); }
+        SIMDVector() {}
+        SIMDVector(__m256 a) : SIMDVectorBase(a) {}
+        friend SIMDVector operator + (const SIMDVector &a, const SIMDVector &b) { return _mm256_add_ps(a.mVal, b.mVal); }
+        friend SIMDVector operator - (const SIMDVector &a, const SIMDVector &b) { return _mm256_sub_ps(a.mVal, b.mVal); }
+        friend SIMDVector operator * (const SIMDVector &a, const SIMDVector &b) { return _mm256_mul_ps(a.mVal, b.mVal); }
     };
     
 #endif
     
-    // ******************** A Vector of Given Size (Made of Vectors / Scalars) ******************** //
+#if defined(__AVX512F__)
     
-    template <int final_size, class T>
-    struct SizedVector
+    template <>
+    struct SIMDVector<double, 8> : public SIMDVectorBase<double, __m512d, 8>
     {
-        static const int size = final_size;
+        SIMDVector() {}
+        SIMDVector(__m512d a) : SIMDVectorBase(a) {}
+        friend SIMDVector operator + (const SIMDVector &a, const SIMDVector &b) { return _mm512_add_pd(a.mVal, b.mVal); }
+        friend SIMDVector operator - (const SIMDVector &a, const SIMDVector &b) { return _mm512_sub_pd(a.mVal, b.mVal); }
+        friend SIMDVector operator * (const SIMDVector &a, const SIMDVector &b) { return _mm512_mul_pd(a.mVal, b.mVal); }
+    };
+    
+    template <>
+    struct SIMDVector<float, 16> : public SIMDVectorBase<float, __m512, 16>
+    {
+        SIMDVector() {}
+        SIMDVector(__m512 a) : SIMDVectorBase(a) {}
+        friend SIMDVector operator + (const SIMDVector &a, const SIMDVector &b) { return _mm512_add_ps(a.mVal, b.mVal); }
+        friend SIMDVector operator - (const SIMDVector &a, const SIMDVector &b) { return _mm512_sub_ps(a.mVal, b.mVal); }
+        friend SIMDVector operator * (const SIMDVector &a, const SIMDVector &b) { return _mm512_mul_ps(a.mVal, b.mVal); }
+    };
+    
+#endif
+    
+#if defined(__arm__)
+    
+    template <>
+    struct SIMDVector<double, 1> : public SIMDVectorBase<double, double, 1>
+    {
+        SIMDVector() {}
+        SIMDVector(double a) : SIMDVectorBase(a) {}
+        friend SIMDVector operator + (const SIMDVector &a, const SIMDVector& b) { return a.mVal + b.mVal; }
+        friend SIMDVector operator - (const SIMDVector &a, const SIMDVector& b) { return a.mVal - b.mVal; }
+        friend SIMDVector operator * (const SIMDVector &a, const SIMDVector& b) { return a.mVal * b.mVal; }
+        
+        template <int y, int x>
+        static SIMDVector shuffle(const SIMDVector& a, const SIMDVector& b)
+        {
+            //return _mm_shuffle_pd(a.mVal, b.mVal, (y<<1)|x);
+        }
+    };
+    
+    template <>
+    struct SIMDVector<float, 4> : public SIMDVectorBase<float, float32x4_t, 4>
+    {
+        SIMDVector() {}
+        SIMDVector(float32x4_t a) : SIMDVectorBase(a) {}
+        friend SIMDVector operator + (const SIMDVector& a, const SIMDVector& b) { return vaddq_f32(a.mVal, b.mVal); }
+        friend SIMDVector operator - (const SIMDVector& a, const SIMDVector& b) { return vsubq_f32(a.mVal, b.mVal); }
+        friend SIMDVector operator * (const SIMDVector& a, const SIMDVector& b) { return vmulq_f32(a.mVal, b.mVal); }
+        
+        static SIMDVector shuffle_lo(const SIMDVector& a, const SIMDVector& b)
+        {
+            return vcombine_f32(vget_low_f32(a.mVal), vget_low_f32(b.mVal));
+        }
+        
+        static SIMDVector shuffle_hi(const SIMDVector& a, const SIMDVector& b)
+        {
+            return vcombine_f32(vget_high_f32(a.mVal), vget_high_f32(b.mVal));
+        }
+        
+        static SIMDVector shuffle_interleave_lo(const SIMDVector& a, const SIMDVector& b)
+        {
+            return vuzpq_f32(a.mVal, b.mVal).val[0];
+        }
+        
+        static SIMDVector shuffle_interleave_hi(const SIMDVector& a, const SIMDVector& b)
+        {
+            return vuzpq_f32(a.mVal, b.mVal).val[1];
+        }
+    };
+    
+#endif
+    
+    // ******************** A Vector of 4 Items (Made of Vectors / Scalars) ******************** //
+    
+    template <class T>
+    struct Vector4x
+    {
+        static const int size = 4;
         typedef typename T::scalar_type scalar_type;
         typedef Split<scalar_type> split_type;
         typedef Setup<scalar_type> setup_type;
-        static const int array_size = final_size / T::size;
+        static const int array_size = 4 / T::size;
         
-        SizedVector() {}
-        SizedVector(const SizedVector *ptr) { *this = *ptr; }
-        SizedVector(const typename T::scalar_type *array) { *this = *reinterpret_cast<const SizedVector *>(array); }
+        Vector4x() {}
+        Vector4x(const Vector4x *ptr) { *this = *ptr; }
+        Vector4x(const typename T::scalar_type *array) { *this = *reinterpret_cast<const Vector4x *>(array); }
         
         // This template allows a static loop
         
-        template <int First, int Last>
+        template <int first, int last>
         struct static_for
         {
             template <typename Fn>
-            void operator()(SizedVector &result, const SizedVector &a, const SizedVector &b, Fn const& fn) const
+            void operator()(Vector4x &result, const Vector4x &a, const Vector4x &b, Fn const& fn) const
             {
-                if (First < Last)
+                if (first < last)
                 {
-                    result.mData[First] = fn(a.mData[First], b.mData[First]);
-                    static_for<First + 1, Last>()(result, a, b, fn);
+                    result.mData[first] = fn(a.mData[first], b.mData[first]);
+                    static_for<first + 1, last>()(result, a, b, fn);
                 }
             }
         };
@@ -228,29 +312,30 @@ namespace hisstools_fft_impl{
         struct static_for<N, N>
         {
             template <typename Fn>
-            void operator()(SizedVector &result, const SizedVector &a, const SizedVector &b, Fn const& fn) const {}
+            void operator()(Vector4x &result, const Vector4x &a, const Vector4x &b, Fn const& fn) const {}
         };
         
-        template <typename Op> friend SizedVector operate(const SizedVector& a, const SizedVector& b, Op op)
+        template <typename Op>
+        friend Vector4x operate(const Vector4x& a, const Vector4x& b, Op op)
         {
-            SizedVector result;
+            Vector4x result;
             
             static_for<0, array_size>()(result, a, b, op);
             
             return result;
         }
         
-        friend SizedVector operator + (const SizedVector& a, const SizedVector& b)
+        friend Vector4x operator + (const Vector4x& a, const Vector4x& b)
         {
             return operate(a, b, std::plus<T>());
         }
         
-        friend SizedVector operator - (const SizedVector& a, const SizedVector& b)
+        friend Vector4x operator - (const Vector4x& a, const Vector4x& b)
         {
             return operate(a, b, std::minus<T>());
         }
         
-        friend SizedVector operator * (const SizedVector& a, const SizedVector& b)
+        friend Vector4x operator * (const Vector4x& a, const Vector4x& b)
         {
             return operate(a, b, std::multiplies<T>());
         }
@@ -317,27 +402,27 @@ namespace hisstools_fft_impl{
     // Template for an SIMD Vectors With 4 Elements
     
     template <class T>
-    void shuffle4(const SizedVector<4, T> &A,
-                  const SizedVector<4, T> &B,
-                  const SizedVector<4, T> &C,
-                  const SizedVector<4, T> &D,
-                  SizedVector<4, T> *ptr1,
-                  SizedVector<4, T> *ptr2,
-                  SizedVector<4, T> *ptr3,
-                  SizedVector<4, T> *ptr4)
+    void shuffle4(const Vector4x<T> &A,
+                  const Vector4x<T> &B,
+                  const Vector4x<T> &C,
+                  const Vector4x<T> &D,
+                  Vector4x<T> *ptr1,
+                  Vector4x<T> *ptr2,
+                  Vector4x<T> *ptr3,
+                  Vector4x<T> *ptr4)
     {}
     
     // Template for Scalars
     
     template<class T>
-    void shuffle4(const SizedVector<4, Scalar<T> > &A,
-                  const SizedVector<4, Scalar<T> > &B,
-                  const SizedVector<4, Scalar<T> > &C,
-                  const SizedVector<4, Scalar<T> > &D,
-                  SizedVector<4, Scalar<T> > *ptr1,
-                  SizedVector<4, Scalar<T> > *ptr2,
-                  SizedVector<4, Scalar<T> > *ptr3,
-                  SizedVector<4, Scalar<T> > *ptr4)
+    void shuffle4(const Vector4x<Scalar<T> > &A,
+                  const Vector4x<Scalar<T> > &B,
+                  const Vector4x<Scalar<T> > &C,
+                  const Vector4x<Scalar<T> > &D,
+                  Vector4x<Scalar<T> > *ptr1,
+                  Vector4x<Scalar<T> > *ptr2,
+                  Vector4x<Scalar<T> > *ptr3,
+                  Vector4x<Scalar<T> > *ptr4)
     {
         ptr1->mData[0] = A.mData[0];
         ptr1->mData[1] = C.mData[0];
@@ -356,20 +441,23 @@ namespace hisstools_fft_impl{
         ptr4->mData[2] = B.mData[3];
         ptr4->mData[3] = D.mData[3];
     }
-
-#if (SIMD_COMPILER_SUPPORT_LEVEL >= SIMD_COMPILER_SUPPORT_SSE128)
-
+    
+#if defined(__AVX512F__) || defined(__AVX__) || defined(__SSE__)
+    
     // Template Specialisation for an SSE Float Packed (1 SIMD Element)
     
+    typedef SIMDVector<float, 4> SSEFloat;
+    typedef SIMDVector<double, 2> SSEDouble;
+    
     template<>
-    void shuffle4(const SizedVector<4, SSEFloat> &A,
-                  const SizedVector<4, SSEFloat> &B,
-                  const SizedVector<4, SSEFloat> &C,
-                  const SizedVector<4, SSEFloat> &D,
-                  SizedVector<4, SSEFloat> *ptr1,
-                  SizedVector<4, SSEFloat> *ptr2,
-                  SizedVector<4, SSEFloat> *ptr3,
-                  SizedVector<4, SSEFloat> *ptr4)
+    void shuffle4(const Vector4x<SSEFloat> &A,
+                  const Vector4x<SSEFloat> &B,
+                  const Vector4x<SSEFloat> &C,
+                  const Vector4x<SSEFloat> &D,
+                  Vector4x<SSEFloat> *ptr1,
+                  Vector4x<SSEFloat> *ptr2,
+                  Vector4x<SSEFloat> *ptr3,
+                  Vector4x<SSEFloat> *ptr4)
     {
         const SSEFloat v1 = SSEFloat::shuffle<1, 0, 1, 0>(A.mData[0], C.mData[0]);
         const SSEFloat v2 = SSEFloat::shuffle<3, 2, 3, 2>(A.mData[0], C.mData[0]);
@@ -385,14 +473,14 @@ namespace hisstools_fft_impl{
     // Template Specialisation for an SSE Double Packed (2 SIMD Elements)
     
     template<>
-    void shuffle4(const SizedVector<4, SSEDouble> &A,
-                  const SizedVector<4, SSEDouble> &B,
-                  const SizedVector<4, SSEDouble> &C,
-                  const SizedVector<4, SSEDouble> &D,
-                  SizedVector<4, SSEDouble> *ptr1,
-                  SizedVector<4, SSEDouble> *ptr2,
-                  SizedVector<4, SSEDouble> *ptr3,
-                  SizedVector<4, SSEDouble> *ptr4)
+    void shuffle4(const Vector4x<SSEDouble> &A,
+                  const Vector4x<SSEDouble> &B,
+                  const Vector4x<SSEDouble> &C,
+                  const Vector4x<SSEDouble> &D,
+                  Vector4x<SSEDouble> *ptr1,
+                  Vector4x<SSEDouble> *ptr2,
+                  Vector4x<SSEDouble> *ptr3,
+                  Vector4x<SSEDouble> *ptr4)
     {
         ptr1->mData[0] = SSEDouble::shuffle<0, 0>(A.mData[0], C.mData[0]);
         ptr1->mData[1] = SSEDouble::shuffle<0, 0>(B.mData[0], D.mData[0]);
@@ -405,7 +493,34 @@ namespace hisstools_fft_impl{
     }
     
 #endif
-
+    
+#if defined (__arm__)
+    
+    typedef SIMDVector<float, 4> ARMFloat;
+    
+    template<>
+    void shuffle4(const Vector4x<ARMFloat> &A,
+                  const Vector4x<ARMFloat> &B,
+                  const Vector4x<ARMFloat> &C,
+                  const Vector4x<ARMFloat> &D,
+                  Vector4x<ARMFloat> *ptr1,
+                  Vector4x<ARMFloat> *ptr2,
+                  Vector4x<ARMFloat> *ptr3,
+                  Vector4x<ARMFloat> *ptr4)
+    {
+        const ARMFloat v1 = ARMFloat::shuffle_lo(A.mData[0], C.mData[0]);
+        const ARMFloat v2 = ARMFloat::shuffle_hi(A.mData[0], C.mData[0]);
+        const ARMFloat v3 = ARMFloat::shuffle_lo(B.mData[0], D.mData[0]);
+        const ARMFloat v4 = ARMFloat::shuffle_hi(B.mData[0], D.mData[0]);
+        
+        ptr1->mData[0] = ARMFloat::shuffle_interleave_lo(v1, v3);
+        ptr2->mData[0] = ARMFloat::shuffle_interleave_lo(v2, v4);
+        ptr3->mData[0] = ARMFloat::shuffle_interleave_hi(v1, v3);
+        ptr4->mData[0] = ARMFloat::shuffle_interleave_hi(v2, v4);
+    }
+    
+#endif
+    
     // ******************** Templates (Scalar or SIMD) for FFT Passes ******************** //
     
     // Pass One and Two with Re-ordering
@@ -413,7 +528,7 @@ namespace hisstools_fft_impl{
     template <class T>
     void pass_1_2_reorder(Split<typename T::scalar_type> *input, uintptr_t length)
     {
-        typedef SizedVector<4, T> Vector;
+        typedef Vector4x<T> Vector;
         
         Vector *r1_ptr = reinterpret_cast<Vector *>(input->realp);
         Vector *r2_ptr = r1_ptr + (length >> 4);
@@ -464,7 +579,7 @@ namespace hisstools_fft_impl{
     // Pass Three Twiddle Factors
     
     template <class T>
-    void pass_3_twiddle(SizedVector<4, T> &tr, SizedVector<4, T> &ti)
+    void pass_3_twiddle(Vector4x<T> &tr, Vector4x<T> &ti)
     {
         static const double SQRT_2_2 = 0.70710678118654752440084436210484904;
         
@@ -477,8 +592,8 @@ namespace hisstools_fft_impl{
         typename T::scalar_type str[4] = {________one, ____sqrt2_2, _______zero, neg_sqrt2_2};
         typename T::scalar_type sti[4] = {_______zero, neg_sqrt2_2, neg_____one, neg_sqrt2_2};
         
-        tr = SizedVector<4, T>(str);
-        ti = SizedVector<4, T>(sti);
+        tr = Vector4x<T>(str);
+        ti = Vector4x<T>(sti);
     }
     
     // Pass Three With Re-ordering
@@ -486,7 +601,7 @@ namespace hisstools_fft_impl{
     template <class T>
     void pass_3_reorder(Split<typename T::scalar_type> *input, uintptr_t length)
     {
-        typedef SizedVector<4, T> Vector;
+        typedef Vector4x<T> Vector;
         
         uintptr_t offset = length >> 5;
         uintptr_t outerLoop = length >> 6;
@@ -549,7 +664,7 @@ namespace hisstools_fft_impl{
     template <class T>
     void pass_3(Split<typename T::scalar_type> *input, uintptr_t length)
     {
-        typedef SizedVector<4, T> Vector;
+        typedef Vector4x<T> Vector;
         
         Vector tr;
         Vector ti;
@@ -929,10 +1044,39 @@ namespace hisstools_fft_impl{
     
     // ******************** Unzip and Zip ******************** //
     
+#ifdef USE_APPLE_FFT
+    
+    template<class T>
+    void unzip_complex(const T *input, DSPSplitComplex *output, uintptr_t half_length)
+    {
+        vDSP_ctoz((COMPLEX *) input, (vDSP_Stride) 2, output, (vDSP_Stride) 1, (vDSP_Length) half_length);
+    }
+    
+    template<class T>
+    void unzip_complex(const T *input, DSPDoubleSplitComplex *output, uintptr_t half_length)
+    {
+        vDSP_ctozD((DOUBLE_COMPLEX *) input, (vDSP_Stride) 2, output, (vDSP_Stride) 1, (vDSP_Length) half_length);
+    }
+    
+    template<>
+    void unzip_complex(const float *input, DSPDoubleSplitComplex *output, uintptr_t half_length)
+    {
+        double *realp = output->realp;
+        double *imagp = output->imagp;
+        
+        for (uintptr_t i = 0; i < half_length; i++)
+        {
+            *realp++ = static_cast<double>(*input++);
+            *imagp++ = static_cast<double>(*input++);
+        }
+    }
+    
+#endif
+    
     // Unzip
     
-    template <class T, class U, class V>
-    void unzip_complex(const U *input, V *output, uintptr_t half_length)
+    template <class T, class U>
+    void unzip_complex(const U *input, Split<T> *output, uintptr_t half_length)
     {
         T *realp = output->realp;
         T *imagp = output->imagp;
@@ -944,17 +1088,77 @@ namespace hisstools_fft_impl{
         }
     }
     
+    template<>
+    void unzip_complex(const float *input, Split<float> *output, uintptr_t half_length)
+    {
+        /*
+         if (isAligned(input) && isAligned(output->realp) && isAligned(output->imagp))
+         {
+         const ARMFloat *inp = reinterpret_cast<const ARMFloat*>(input);
+         ARMFloat *realp = reinterpret_cast<ARMFloat*>(output->realp);
+         ARMFloat *imagp = reinterpret_cast<ARMFloat*>(output->imagp);
+         
+         for (uintptr_t i = 0; i < (half_length >> 2); i++, inp += 2)
+         {
+         float32x4x2_t v = vuzpq_f32(inp[0].mVal, inp[1].mVal);
+         *realp++ = v.val[0];
+         *imagp++ = v.val[1];
+         }
+         }
+         else*/
+        {
+            float *realp = output->realp;
+            float *imagp = output->imagp;
+            
+            for (uintptr_t i = 0; i < half_length; i++)
+            {
+                *realp++ = *input++;
+                *imagp++ = *input++;
+            }
+        }
+    }
+    
     // Zip
     
-    template <class T> void zip_complex(const Split<T> *input, T *output, uintptr_t half_length)
+    template <class T>
+    void zip_complex(const Split<T> *input, T *output, uintptr_t half_length)
     {
-        T *realp = input->realp;
-        T *imagp = input->imagp;
+        const T *realp = input->realp;
+        const T *imagp = input->imagp;
         
         for (uintptr_t i = 0; i < half_length; i++)
         {
             *output++ = *realp++;
             *output++ = *imagp++;
+        }
+    }
+    
+    template<>
+    void zip_complex(const Split<float> *input, float *output, uintptr_t half_length)
+    {/*
+      if (isAligned(output) && isAligned(input->realp) && isAligned(input->imagp))
+      {
+      ARMFloat *outp = reinterpret_cast<ARMFloat*>(output);
+      const ARMFloat *realp = reinterpret_cast<const ARMFloat*>(input->realp);
+      const ARMFloat *imagp = reinterpret_cast<const ARMFloat*>(input->imagp);
+      
+      for (uintptr_t i = 0; i < (half_length >> 2); i++, realp++, imagp++)
+      {
+      float32x4x2_t v = vzipq_f32(realp->mVal, imagp->mVal);
+      *outp++ = v.val[0];
+      *outp++ = v.val[1];
+      }
+      }
+      else*/
+        {
+            float *realp = input->realp;
+            float *imagp = input->imagp;
+            
+            for (uintptr_t i = 0; i < half_length; i++)
+            {
+                *output++ = *realp++;
+                *output++ = *imagp++;
+            }
         }
     }
     
@@ -971,7 +1175,7 @@ namespace hisstools_fft_impl{
         
         uintptr_t fft_size = static_cast<uintptr_t>(1 << log2n);
         in_length = std::min(fft_size, in_length);
-        unzip_complex<T>(input, output, in_length >> 1);
+        unzip_complex(input, output, in_length >> 1);
         
         // If necessary replace the odd sample, and zero pad the input
         
@@ -995,8 +1199,8 @@ namespace hisstools_fft_impl{
     
     // FFT Passes Template
     
-    template <class T, class U, class V, class W, class X>
-    void fft_passes(Split<X> *input, Setup<X> *setup, uintptr_t fft_log2)
+    template <class T, class U, class V, class W>
+    void fft_passes(Split<typename T::scalar_type> *input, Setup<typename T::scalar_type> *setup, uintptr_t fft_log2)
     {
         const uintptr_t length = (uintptr_t) 1 << fft_log2;
         uintptr_t i;
@@ -1012,7 +1216,7 @@ namespace hisstools_fft_impl{
             pass_trig_table_reorder<V>(input, setup, length, 3);
         else
             pass_trig_table<V>(input, setup, length, 3);
-
+        
         for (i = 4; i < (fft_log2 >> 1); i++)
             pass_trig_table_reorder<W>(input, setup, length, i);
         
@@ -1025,69 +1229,14 @@ namespace hisstools_fft_impl{
     template <class T>
     void fft_passes_simd(Split<T> *input, Setup<T> *setup, uintptr_t fft_log2)
     {
-        fft_passes<Scalar<T>, Scalar<T>, Scalar<T>, Scalar<T> >(input, setup, fft_log2);
+        typedef SIMDVector<T, SIMDLimits<T>::max_size <  4 ? SIMDLimits<T>::max_size :  4> Type1;
+        typedef SIMDVector<T, SIMDLimits<T>::max_size <  4 ? SIMDLimits<T>::max_size :  4> Type2;
+        typedef SIMDVector<T, SIMDLimits<T>::max_size <  8 ? SIMDLimits<T>::max_size :  8> Type3;
+        typedef SIMDVector<T, SIMDLimits<T>::max_size < 16 ? SIMDLimits<T>::max_size : 16> Type4;
+        
+        fft_passes<Type1, Type2, Type3, Type4>(input, setup, fft_log2);
     }
     
-#if (SIMD_COMPILER_SUPPORT_LEVEL == SIMD_COMPILER_SUPPORT_SSE128)
-    
-    // SIMD Double Specialisation
-    
-    template<>
-    void fft_passes_simd(Split<double> *input, Setup<double> *setup, uintptr_t fft_log2)
-    {
-        fft_passes<SSEDouble, SSEDouble, SSEDouble, SSEDouble>(input, setup, fft_log2);
-    }
-    
-    // SIMD Float Specialisation
-    
-    template<>
-    void fft_passes_simd(Split<float> *input, Setup<float> *setup, uintptr_t fft_log2)
-    {
-        fft_passes<SSEFloat, SSEFloat, SSEFloat, SSEFloat>(input, setup, fft_log2);
-    }
-
-#endif
-    
-#if (SIMD_COMPILER_SUPPORT_LEVEL == SIMD_COMPILER_SUPPORT_AVX256)
-
-    // SIMD Double Specialisation
-    
-    template<>
-    void fft_passes_simd(Split<double> *input, Setup<double> *setup, uintptr_t fft_log2)
-    {
-        fft_passes<SSEDouble, AVX256Double, AVX256Double, AVX256Double>(input, setup, fft_log2);
-    }
-    
-    // SIMD Float Specialisation
-    
-    template<>
-    void fft_passes_simd(Split<float> *input, Setup<float> *setup, uintptr_t fft_log2)
-    {
-        fft_passes<SSEFloat, SSEFloat, AVX256Float, AVX256Float>(input, setup, fft_log2);
-    }
-
-#endif
-    
-#if (SIMD_COMPILER_SUPPORT_LEVEL == SIMD_COMPILER_SUPPORT_AVX512)
-    
-    // SIMD Double Specialisation
-    
-    template<>
-    void fft_passes_simd(Split<double> *input, Setup<double> *setup, uintptr_t fft_log2)
-    {
-        fft_passes<SSEDouble, AVX256Double, AVX512Double, AVX512Double>(input, setup, fft_log2);
-    }
-    
-    // SIMD Float Specialisation
-    
-    template<>
-    void fft_passes_simd(Split<float> *input, Setup<float> *setup, uintptr_t fft_log2)
-    {
-        fft_passes<SSEFloat, SSEFloat, AVX256Float, AVX512Float>(input, setup, fft_log2);
-    }
-    
-#endif
-
     // ******************** Main Calls ******************** //
     
     // A Complex FFT
@@ -1097,7 +1246,7 @@ namespace hisstools_fft_impl{
     {
         if (fft_log2 >= 4)
         {
-            if (reinterpret_cast<uintptr_t>(input->realp) % 16 || reinterpret_cast<uintptr_t>(input->imagp) % 16)
+            if (!isAligned(input->realp) || !isAligned(input->imagp))
                 fft_passes<Scalar<T>, Scalar<T>, Scalar<T>, Scalar<T> >(input, setup, fft_log2);
             else
                 fft_passes_simd(input, setup, fft_log2);
@@ -1144,3 +1293,4 @@ namespace hisstools_fft_impl{
     }
     
 } /* hisstools_fft_impl */
+
