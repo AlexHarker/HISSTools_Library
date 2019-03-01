@@ -34,6 +34,12 @@ struct SSEFloat : public SIMDVector<float, __m128, 4>
     friend SSEFloat operator - (const SSEFloat& a, const SSEFloat& b) { return _mm_sub_ps(a.mVal, b.mVal); }
     friend SSEFloat operator * (const SSEFloat& a, const SSEFloat& b) { return _mm_mul_ps(a.mVal, b.mVal); }
     
+    SSEFloat operator += (const SSEFloat& a)
+    {
+        *this = *this + a;
+        return *this;
+    }
+    
     static SSEFloat unaligned_load(const float* ptr) { return _mm_loadu_ps(ptr); }
     
     void unaligned_store(float* ptr)
