@@ -124,19 +124,19 @@ namespace hisstools_fft_impl{
     struct SIMDVector
     {};
     
-    template <class T>
-    struct Scalar
+    template<class T>
+    struct SIMDVector<T, 1> : public SIMDVectorBase<T, T, 1>
     {
         static const int size = 1;
         typedef T scalar_type;
         typedef Split<scalar_type> split_type;
         typedef Setup<scalar_type> setup_type;
         
-        Scalar() {}
-        Scalar(T a) : mVal(a) {}
-        friend Scalar operator + (const Scalar& a, const Scalar& b) { return Scalar(a.mVal + b.mVal); }
-        friend Scalar operator - (const Scalar& a, const Scalar& b) { return Scalar(a.mVal - b.mVal); }
-        friend Scalar operator * (const Scalar& a, const Scalar& b) { return Scalar(a.mVal * b.mVal); }
+        SIMDVector() {}
+        SIMDVector(T a) : mVal(a) {}
+        friend SIMDVector operator + (const SIMDVector& a, const SIMDVector& b) { return a.mVal + b.mVal; }
+        friend SIMDVector operator - (const SIMDVector& a, const SIMDVector& b) { return a.mVal - b.mVal; }
+        friend SIMDVector operator * (const SIMDVector& a, const SIMDVector& b) { return a.mVal * b.mVal; }
         
         T mVal;
     };
@@ -415,14 +415,14 @@ namespace hisstools_fft_impl{
     // Template for Scalars
     
     template<class T>
-    void shuffle4(const Vector4x<Scalar<T> > &A,
-                  const Vector4x<Scalar<T> > &B,
-                  const Vector4x<Scalar<T> > &C,
-                  const Vector4x<Scalar<T> > &D,
-                  Vector4x<Scalar<T> > *ptr1,
-                  Vector4x<Scalar<T> > *ptr2,
-                  Vector4x<Scalar<T> > *ptr3,
-                  Vector4x<Scalar<T> > *ptr4)
+    void shuffle4(const Vector4x<SIMDVector<T, 1>> &A,
+                  const Vector4x<SIMDVector<T, 1>> &B,
+                  const Vector4x<SIMDVector<T, 1>> &C,
+                  const Vector4x<SIMDVector<T, 1>> &D,
+                  Vector4x<SIMDVector<T, 1>> *ptr1,
+                  Vector4x<SIMDVector<T, 1>> *ptr2,
+                  Vector4x<SIMDVector<T, 1>> *ptr3,
+                  Vector4x<SIMDVector<T, 1>> *ptr4)
     {
         ptr1->mData[0] = A.mData[0];
         ptr1->mData[1] = C.mData[0];
@@ -979,7 +979,7 @@ namespace hisstools_fft_impl{
             
             // Pass Three
             
-            pass_3<Scalar<T> >(input, 8);
+            pass_3<SIMDVector<T, 1>>(input, 8);
         }
     }
     
@@ -1244,10 +1244,12 @@ namespace hisstools_fft_impl{
     template <class T>
     void hisstools_fft(Split<T> *input, Setup<T> *setup, uintptr_t fft_log2)
     {
+        typedef SIMDVector<T, 1> Scalar;
+        
         if (fft_log2 >= 4)
         {
             if (!isAligned(input->realp) || !isAligned(input->imagp))
-                fft_passes<Scalar<T>, Scalar<T>, Scalar<T>, Scalar<T> >(input, setup, fft_log2);
+                fft_passes<Scalar, Scalar, Scalar, Scalar>(input, setup, fft_log2);
             else
                 fft_passes_simd(input, setup, fft_log2);
         }
