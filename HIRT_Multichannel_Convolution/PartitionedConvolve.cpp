@@ -90,7 +90,7 @@ ConvolveError HISSTools::PartitionedConvolve::setMaxFFTSize(uintptr_t maxFFTSize
 }
 
 HISSTools::PartitionedConvolve::PartitionedConvolve(uintptr_t maxFFTSize, uintptr_t maxLength, uintptr_t offset, uintptr_t length)
-: mMaxImpulseLength(maxLength), mFFTSizeLog2(0), mInputPosition(0), mPartitionsDone(0), mLastPartition(0), mNumPartitions(0), mValidPartitions(0), mResetFlag(true)
+: mMaxImpulseLength(maxLength), mFFTSizeLog2(0), mInputPosition(0), mPartitionsDone(0), mLastPartition(0), mNumPartitions(0), mValidPartitions(0), mResetOffset(-1), mResetFlag(true)
 {
     // Set default initial attributes and variables
     
@@ -194,6 +194,11 @@ void HISSTools::PartitionedConvolve::setOffset(uintptr_t offset)
     mOffset = offset;
 }
 
+void HISSTools::PartitionedConvolve::setResetOffset(intptr_t offset)
+{
+    mResetOffset = offset;
+}
+
 ConvolveError HISSTools::PartitionedConvolve::set(const float *input, uintptr_t length)
 {
     ConvolveError error = CONVOLVE_ERR_NONE;
@@ -295,9 +300,12 @@ bool HISSTools::PartitionedConvolve::process(const float *in, float *out, uintpt
         
         memset(mFFTBuffers[0], 0, getMaxFFTSize() * 5 * sizeof(float));
         
-        // Reset fft RWCounter (randomly)
+        // Reset fft RWCounter (randomly or by fixed amount)
         
-        while (FFTSizeHalved < (uintptr_t) (RWCounter = rand() / (RAND_MAX / FFTSizeHalved)));
+        if (mResetOffset < 0)
+            while (FFTSizeHalved < (uintptr_t) (RWCounter = rand() / (RAND_MAX / FFTSizeHalved)));
+        else
+            RWCounter = mResetOffset % FFTSizeHalved;
         
         // Reset scheduling variables
         

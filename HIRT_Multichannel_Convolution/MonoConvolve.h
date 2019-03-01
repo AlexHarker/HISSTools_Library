@@ -35,7 +35,8 @@ namespace HISSTools
           mPart3(std::move(obj.mPart3)),
           mPart4(std::move(obj.mPart4)),
           mLength(obj.mLength),
-          mLatency(obj.mLatency)
+          mLatency(obj.mLatency),
+          mReset(true)
         {}
         
         MonoConvolve& operator = (MonoConvolve&& obj)
@@ -47,9 +48,12 @@ namespace HISSTools
             mPart4 = std::move(obj.mPart4);
             mLength = obj.mLength;
             mLatency = obj.mLatency;
+            mReset = true;
             
             return *this;
         }
+
+        void setResetOffset(intptr_t offset = -1);
 
         ConvolveError resize(uintptr_t length);
         ConvolveError set(const float *input, uintptr_t length, bool requestResize);
@@ -68,5 +72,8 @@ namespace HISSTools
         
         uintptr_t mLength;
         LatencyMode mLatency;
+        
+        intptr_t mResetOffset;
+        bool mReset;
     };
 }

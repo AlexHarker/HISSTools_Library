@@ -1,5 +1,5 @@
-#ifndef _HISSTOOLS_CONVOLVER_
-#define _HISSTOOLS_CONVOLVER_
+
+#pragma once
 
 #include <stdint.h>
 #include <vector>
@@ -45,11 +45,9 @@ namespace HISSTools
         ConvolveError set(uint32_t inChan, uint32_t outChan, const double* input, uintptr_t length, bool resize);
         
         // DSP
-        
-        void process(const double** ins, double** outs, size_t numIns, size_t numOuts, size_t numSamples);
-        
         // FIX - consts
         
+        void process(const double** ins, double** outs, size_t numIns, size_t numOuts, size_t numSamples);
         void process(const float** ins, float** outs, size_t numIns, size_t numOuts, size_t numSamples);
         
     private:
@@ -71,6 +69,3 @@ namespace HISSTools
         std::vector<NToMonoConvolve*> mConvolvers;
     };
 }
-
-#endif
-

@@ -25,7 +25,8 @@ namespace HISSTools
         ConvolveError setFFTSize(uintptr_t FFTSize);
         ConvolveError setLength(uintptr_t length);
         void setOffset(uintptr_t offset);
-        
+        void setResetOffset(intptr_t offset = -1);
+
         ConvolveError set(const float *input, uintptr_t length);
         void reset();
         
@@ -73,6 +74,7 @@ namespace HISSTools
         
         // Flags
         
+        intptr_t mResetOffset;
         bool mResetFlag;
     };
 }

@@ -3,6 +3,7 @@
 
 #include "ConvolveSIMD.h"
 #include <functional>
+#include <random>
 
 typedef MemorySwap<HISSTools::PartitionedConvolve>::Ptr PartPtr;
 
@@ -32,7 +33,7 @@ void largeFree(HISSTools::PartitionedConvolve *largePartition)
 // Constructor and Deconstructor
 
 HISSTools::MonoConvolve::MonoConvolve(uintptr_t maxLength, LatencyMode latency)
-: mPart4(getAllocator(latency), largeFree, maxLength), mLength(0), mLatency(latency)
+: mPart4(getAllocator(latency), largeFree, maxLength), mLength(0), mLatency(latency), mReset(false)
 {
     switch (latency)
     {
@@ -54,6 +55,21 @@ HISSTools::MonoConvolve::MonoConvolve(uintptr_t maxLength, LatencyMode latency)
             mPart3.reset(new PartitionedConvolve(4096, 6144, 1536, 6144));
             break;
     }
+
+    setResetOffset();
+}
+
+void HISSTools::MonoConvolve::setResetOffset(intptr_t offset)
+{
+    PartPtr part4 = mPart4.access();
+    
+    if (offset < 0)
+        offset = std::rand() % 8192;
+    
+    if (mPart1) mPart1.get()->setResetOffset(offset + 16);
+    if (mPart2) mPart2.get()->setResetOffset(offset + 128);
+    if (mPart3) mPart3.get()->setResetOffset(offset + 1024);
+    if (part4.get()) part4.get()->setResetOffset(offset + 0);
 }
 
 ConvolveError HISSTools::MonoConvolve::resize(uintptr_t length)
@@ -86,6 +102,7 @@ ConvolveError HISSTools::MonoConvolve::set(const float *input, uintptr_t length,
         setPart(part4.get(), input, length);
         
         mLength = length;
+        reset();
     }
     
     return (length && !part4.get()) ? CONVOLVE_ERR_MEM_UNAVAILABLE : (length > part4.getSize()) ? CONVOLVE_ERR_MEM_ALLOC_TOO_SMALL : CONVOLVE_ERR_NONE;
@@ -99,15 +116,7 @@ void resetPart(T *obj)
 
 ConvolveError HISSTools::MonoConvolve::reset()
 {
-    mLength = 0;
-    PartPtr part4 = mPart4.access();
-    
-    resetPart(mTime1.get());
-    resetPart(mPart1.get());
-    resetPart(mPart2.get());
-    resetPart(mPart3.get());
-    resetPart(part4.get());
-    
+    mReset = true;
     return CONVOLVE_ERR_NONE;
 }
 
@@ -138,6 +147,16 @@ void HISSTools::MonoConvolve::process(const float *in, float *temp, float *out, 
     
     if (mLength && mLength <= part4.getSize())
     {
+        if (mReset)
+        {
+            resetPart(mTime1.get());
+            resetPart(mPart1.get());
+            resetPart(mPart2.get());
+            resetPart(mPart3.get());
+            resetPart(part4.get());
+            mReset = false;
+        }
+        
         processAndSum(mTime1.get(), in, temp, out, numSamples);
         processAndSum(mPart1.get(), in, temp, out, numSamples);
         processAndSum(mPart2.get(), in, temp, out, numSamples);
