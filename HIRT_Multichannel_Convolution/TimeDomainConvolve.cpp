@@ -63,13 +63,14 @@ void HISSTools::TimeDomainConvolve::setOffset(uintptr_t offset)
     mOffset = offset;
 }
 
-t_convolve_error HISSTools::TimeDomainConvolve::setLength(uintptr_t length)
+ConvolveError HISSTools::TimeDomainConvolve::setLength(uintptr_t length)
 {
     mLength = std::min(length, uintptr_t(2044));
+    
     return length > 2044 ? CONVOLVE_ERR_TIME_LENGTH_OUT_OF_RANGE : CONVOLVE_ERR_NONE;
 }
 
-t_convolve_error HISSTools::TimeDomainConvolve::set(const float *input, uintptr_t length)
+ConvolveError HISSTools::TimeDomainConvolve::set(const float *input, uintptr_t length)
 {
     mImpulseLength = 0;
     

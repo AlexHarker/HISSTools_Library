@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include "convolve_errors.h"
+#include "ConvolveErrors.h"
 #include <stdint.h>
 
 namespace HISSTools
@@ -14,10 +14,10 @@ namespace HISSTools
         TimeDomainConvolve(uintptr_t offset, uintptr_t length);
         ~TimeDomainConvolve();
         
-        t_convolve_error setLength(uintptr_t length);
+        ConvolveError setLength(uintptr_t length);
         void setOffset(uintptr_t offset);
         
-        t_convolve_error set(const float *input, uintptr_t length);
+        ConvolveError set(const float *input, uintptr_t length);
         void reset();
         
         bool process(const float *in, float *out, uintptr_t numSamples);

@@ -56,10 +56,12 @@ HISSTools::MonoConvolve::MonoConvolve(uintptr_t maxLength, LatencyMode latency)
     }
 }
 
-void HISSTools::MonoConvolve::resize(uintptr_t length)
+ConvolveError HISSTools::MonoConvolve::resize(uintptr_t length)
 {
     mLength = 0;
-    mPart4.equal(getAllocator(mLatency), largeFree, length, length);
+    PartPtr part4 = mPart4.equal(getAllocator(mLatency), largeFree, length, length);
+    
+    return part4.getSize() == length ? CONVOLVE_ERR_NONE : CONVOLVE_ERR_MEM_UNAVAILABLE;
 }
 
 template <class T>
@@ -68,7 +70,7 @@ void setPart(T *obj, const float *input, uintptr_t length)
     if (obj) obj->set(input, length);
 }
 
-t_convolve_error HISSTools::MonoConvolve::set(const float *input, uintptr_t length, bool requestResize)
+ConvolveError HISSTools::MonoConvolve::set(const float *input, uintptr_t length, bool requestResize)
 {
     // Lock or resize first to ensure that audio finishes processing before we replace
     
@@ -95,7 +97,7 @@ void resetPart(T *obj)
     if (obj) obj->reset();
 }
 
-void HISSTools::MonoConvolve::reset()
+ConvolveError HISSTools::MonoConvolve::reset()
 {
     mLength = 0;
     PartPtr part4 = mPart4.access();
@@ -105,6 +107,8 @@ void HISSTools::MonoConvolve::reset()
     resetPart(mPart2.get());
     resetPart(mPart3.get());
     resetPart(part4.get());
+    
+    return CONVOLVE_ERR_NONE;
 }
 
 template<class T>

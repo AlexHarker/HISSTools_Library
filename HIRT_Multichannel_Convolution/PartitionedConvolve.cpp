@@ -63,11 +63,11 @@ void offsetSplitPointer(FFT_SPLIT_COMPLEX_F &complex1, const FFT_SPLIT_COMPLEX_F
  }
  */
 
-t_convolve_error HISSTools::PartitionedConvolve::setMaxFFTSize(uintptr_t maxFFTSize)
+ConvolveError HISSTools::PartitionedConvolve::setMaxFFTSize(uintptr_t maxFFTSize)
 {
     uintptr_t maxFFTSizeLog2 = log2(maxFFTSize);
     
-    t_convolve_error error = CONVOLVE_ERR_NONE;
+    ConvolveError error = CONVOLVE_ERR_NONE;
     
     if (maxFFTSizeLog2 > MAX_FFT_SIZE_LOG2)
     {
@@ -159,11 +159,11 @@ uintptr_t HISSTools::PartitionedConvolve::log2(uintptr_t value)
         return bitCount;
 }
 
-t_convolve_error HISSTools::PartitionedConvolve::setFFTSize(uintptr_t FFTSize)
+ConvolveError HISSTools::PartitionedConvolve::setFFTSize(uintptr_t FFTSize)
 {
     uintptr_t FFTSizeLog2 = log2(FFTSize);
     
-    t_convolve_error error = CONVOLVE_ERR_NONE;
+    ConvolveError error = CONVOLVE_ERR_NONE;
     
     if (FFTSizeLog2 < MIN_FFT_SIZE_LOG2 || FFTSizeLog2 > mMaxFFTSizeLog2)
         return CONVOLVE_ERR_FFT_SIZE_OUT_OF_RANGE;
@@ -182,19 +182,11 @@ t_convolve_error HISSTools::PartitionedConvolve::setFFTSize(uintptr_t FFTSize)
     return error;
 }
 
-t_convolve_error HISSTools::PartitionedConvolve::setLength(uintptr_t length)
+ConvolveError HISSTools::PartitionedConvolve::setLength(uintptr_t length)
 {
-    t_convolve_error error = CONVOLVE_ERR_NONE;
+    mLength = std::min(length, mMaxImpulseLength);
     
-    if (length > mMaxImpulseLength)
-    {
-        error = CONVOLVE_ERR_PARTITION_LENGTH_TOO_LARGE;
-        length = mMaxImpulseLength;
-    }
-    
-    mLength = length;
-    
-    return error;
+    return (length > mMaxImpulseLength) ? CONVOLVE_ERR_PARTITION_LENGTH_TOO_LARGE : CONVOLVE_ERR_NONE;
 }
 
 void HISSTools::PartitionedConvolve::setOffset(uintptr_t offset)
@@ -202,9 +194,9 @@ void HISSTools::PartitionedConvolve::setOffset(uintptr_t offset)
     mOffset = offset;
 }
 
-t_convolve_error HISSTools::PartitionedConvolve::set(const float *input, uintptr_t length)
+ConvolveError HISSTools::PartitionedConvolve::set(const float *input, uintptr_t length)
 {
-    t_convolve_error error = CONVOLVE_ERR_NONE;
+    ConvolveError error = CONVOLVE_ERR_NONE;
     
     // FFT variables / attributes
     

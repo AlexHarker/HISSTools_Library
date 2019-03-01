@@ -3,7 +3,7 @@
 
 #include "PartitionedConvolve.h"
 #include "TimeDomainConvolve.h"
-#include "convolve_errors.h"
+#include "ConvolveErrors.h"
 
 #include "MemorySwap.h"
 #include <memory>
@@ -51,9 +51,9 @@ namespace HISSTools
             return *this;
         }
 
-        void resize(uintptr_t length);
-        t_convolve_error set(const float *input, uintptr_t length, bool requestResize);
-        void reset();
+        ConvolveError resize(uintptr_t length);
+        ConvolveError set(const float *input, uintptr_t length, bool requestResize);
+        ConvolveError reset();
         
         void process(const float *in, float *temp, float *out, uintptr_t numSamples);
         

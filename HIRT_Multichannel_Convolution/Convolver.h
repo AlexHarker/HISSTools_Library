@@ -6,7 +6,7 @@
 
 #include "MemorySwap.h"
 #include "NToMonoConvolve.h"
-#include "convolve_errors.h"
+#include "ConvolveErrors.h"
 
 namespace HISSTools
 {
@@ -35,18 +35,15 @@ namespace HISSTools
         // DSP Engine Reset
         
         void reset();
-        t_convolve_error reset(uint32_t in_chan, uint32_t out_chan);
-
+        ConvolveError reset(uint32_t in_chan, uint32_t out_chan);
+        
         // Resize and set IR
-
-        t_convolve_error resize(uint32_t inChan, uint32_t outChan,
-                                uintptr_t impulseLength);
-
-        t_convolve_error set(uint32_t inChan, uint32_t outChan, const float* input,
-                             uintptr_t length, bool resize);
-        t_convolve_error set(uint32_t inChan, uint32_t outChan, const double* input,
-                             uintptr_t length, bool resize);
-
+        
+        ConvolveError resize(uint32_t inChan, uint32_t outChan, uintptr_t impulseLength);
+        
+        ConvolveError set(uint32_t inChan, uint32_t outChan, const float* input, uintptr_t length, bool resize);
+        ConvolveError set(uint32_t inChan, uint32_t outChan, const double* input, uintptr_t length, bool resize);
+        
         // DSP
         
         void process(const double** ins, double** outs, size_t numIns, size_t numOuts, size_t numSamples);

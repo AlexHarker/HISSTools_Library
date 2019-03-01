@@ -86,7 +86,7 @@ void HISSTools::Convolver::reset()
     }
 }
 
-t_convolve_error HISSTools::Convolver::reset(uint32_t in_chan, uint32_t out_chan)
+ConvolveError HISSTools::Convolver::reset(uint32_t in_chan, uint32_t out_chan)
 {
     // For Parallel operation you must pass the same in/out channel
     
@@ -100,9 +100,7 @@ t_convolve_error HISSTools::Convolver::reset(uint32_t in_chan, uint32_t out_chan
 
 // Resize and set IR
 
-
-t_convolve_error HISSTools::Convolver::resize(uint32_t inChan, uint32_t outChan,
-                                                   uintptr_t length)
+ConvolveError HISSTools::Convolver::resize(uint32_t inChan, uint32_t outChan, uintptr_t length)
 {
     // For Parallel operation you must pass the same in/out channel
     
@@ -114,9 +112,7 @@ t_convolve_error HISSTools::Convolver::resize(uint32_t inChan, uint32_t outChan,
         return CONVOLVE_ERR_IN_CHAN_OUT_OF_RANGE;
 }
 
-t_convolve_error HISSTools::Convolver::set(uint32_t inChan, uint32_t outChan,
-                                                const float* input, uintptr_t length,
-                                                bool resize)
+ConvolveError HISSTools::Convolver::set(uint32_t inChan, uint32_t outChan, const float* input, uintptr_t length, bool resize)
 {
     // For Parallel operation you must pass the same in/out channel
     
@@ -128,9 +124,7 @@ t_convolve_error HISSTools::Convolver::set(uint32_t inChan, uint32_t outChan,
         return CONVOLVE_ERR_OUT_CHAN_OUT_OF_RANGE;
 }
 
-t_convolve_error HISSTools::Convolver::set(uint32_t inChan, uint32_t outChan,
-                                                const double* input,
-                                                uintptr_t impulseLength, bool resize)
+ConvolveError HISSTools::Convolver::set(uint32_t inChan, uint32_t outChan, const double* input, uintptr_t impulseLength, bool resize)
 {
     // For Parallel operation you must pass the same in/out channel
     
@@ -147,7 +141,7 @@ t_convolve_error HISSTools::Convolver::set(uint32_t inChan, uint32_t outChan,
     for (unsigned long i = 0; i < impulseLength; i++)
         inputFloat[i] = input[i];
     
-    t_convolve_error err = set(inChan, outChan, inputFloat, impulseLength, resize);
+    ConvolveError err = set(inChan, outChan, inputFloat, impulseLength, resize);
     
     delete[] inputFloat;
     

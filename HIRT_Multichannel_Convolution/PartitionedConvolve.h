@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include "convolve_errors.h"
+#include "ConvolveErrors.h"
 
 #include "../HISSTools_FFT/HISSTools_FFT.h"
 
@@ -22,11 +22,11 @@ namespace HISSTools
         PartitionedConvolve(uintptr_t maxFFTSize, uintptr_t maxLength, uintptr_t offset, uintptr_t length);
         ~PartitionedConvolve();
         
-        t_convolve_error setFFTSize(uintptr_t FFTSize);
-        t_convolve_error setLength(uintptr_t length);
+        ConvolveError setFFTSize(uintptr_t FFTSize);
+        ConvolveError setLength(uintptr_t length);
         void setOffset(uintptr_t offset);
         
-        t_convolve_error set(const float *input, uintptr_t length);
+        ConvolveError set(const float *input, uintptr_t length);
         void reset();
         
         bool process(const float *in, float *out, uintptr_t numSamples);
@@ -37,7 +37,7 @@ namespace HISSTools
         uintptr_t getMaxFFTSize()   { return uintptr_t(1) << mMaxFFTSizeLog2; }
         
         void processPartition(FFT_SPLIT_COMPLEX_F in1, FFT_SPLIT_COMPLEX_F in2, FFT_SPLIT_COMPLEX_F out, uintptr_t numBins);
-        t_convolve_error setMaxFFTSize(uintptr_t max_fft_size);
+        ConvolveError setMaxFFTSize(uintptr_t max_fft_size);
         uintptr_t log2(uintptr_t value);
 
         // Parameters
