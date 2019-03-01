@@ -39,11 +39,15 @@ namespace hisstools_fft_impl{
     template<> struct SIMDLimits<double>    { static const int max_size = 4; };
     template<> struct SIMDLimits<float>     { static const int max_size = 8; };
     
-#elif defined(__SSE__) || defined(__arm__)
+#elif defined(__SSE__)
     
     template<> struct SIMDLimits<double>    { static const int max_size = 2; };
     template<> struct SIMDLimits<float>     { static const int max_size = 4; };
     
+#elif defined(__arm__)
+
+    template<> struct SIMDLimits<float>     { static const int max_size = 4; };
+
 #endif
     
     // Aligned Allocation
@@ -132,9 +136,21 @@ namespace hisstools_fft_impl{
         friend SIMDVector operator + (const SIMDVector& a, const SIMDVector& b) { return a.mVal + b.mVal; }
         friend SIMDVector operator - (const SIMDVector& a, const SIMDVector& b) { return a.mVal - b.mVal; }
         friend SIMDVector operator * (const SIMDVector& a, const SIMDVector& b) { return a.mVal * b.mVal; }
+        
+        static void deinterleave(const SIMDVector *input, SIMDVector *outReal, SIMDVector *outImag)
+        {
+            *outReal = input[0];
+            *outImag = input[1];
+        }
+        
+        static void interleave(const SIMDVector *inReal, const SIMDVector *inImag, SIMDVector *output)
+        {
+            output[0] = *inReal;
+            output[1] = *inImag;
+        }
     };
     
-#if defined(__AVX512F__) || defined(__AVX__) || defined(__SSE__)
+#if defined(__SSE__) || defined(__AVX__) || defined(__AVX512F__)
     
     template <>
     struct SIMDVector<double, 2> : public SIMDVectorBase<double, __m128d, 2>
@@ -149,6 +165,18 @@ namespace hisstools_fft_impl{
         static SIMDVector shuffle(const SIMDVector& a, const SIMDVector& b)
         {
             return _mm_shuffle_pd(a.mVal, b.mVal, (y<<1)|x);
+        }
+        
+        static void deinterleave(const SIMDVector *input, SIMDVector *outReal, SIMDVector *outImag)
+        {
+            *outReal = _mm_unpacklo_pd(input[0].mVal, input[1].mVal);
+            *outImag = _mm_unpackhi_pd(input[0].mVal, input[1].mVal);
+        }
+        
+        static void interleave(const SIMDVector *inReal, const SIMDVector *inImag, SIMDVector *output)
+        {
+            output[0] = _mm_unpacklo_pd(inReal->mVal, inImag->mVal);
+            output[1] = _mm_unpackhi_pd(inReal->mVal, inImag->mVal);
         }
     };
     
@@ -166,11 +194,23 @@ namespace hisstools_fft_impl{
         {
             return _mm_shuffle_ps(a.mVal, b.mVal, ((z<<6)|(y<<4)|(x<<2)|w));
         }
+        
+        static void deinterleave(const SIMDVector *input, SIMDVector *outReal, SIMDVector *outImag)
+        {
+            *outReal = shuffle<2, 0, 2, 0>(input[0], input[1]);
+            *outImag = shuffle<3, 1, 3, 1>(input[0], input[1]);
+        }
+        
+        static void interleave(const SIMDVector *inReal, const SIMDVector *inImag, SIMDVector *output)
+        {
+            output[0] = shuffle<2, 0, 2, 0>(*inReal, *inImag);
+            output[1] = shuffle<3, 1, 3, 1>(*inReal, *inImag);
+        }
     };
     
 #endif
     
-#if defined(__AVX512F__) || defined(__AVX__)
+#if defined(__AVX__) || defined(__AVX512F__)
     
     template <>
     struct SIMDVector<double, 4> : public SIMDVectorBase<double, __m256d, 4>
@@ -180,6 +220,18 @@ namespace hisstools_fft_impl{
         friend SIMDVector operator + (const SIMDVector &a, const SIMDVector &b) { return _mm256_add_pd(a.mVal, b.mVal); }
         friend SIMDVector operator - (const SIMDVector &a, const SIMDVector &b) { return _mm256_sub_pd(a.mVal, b.mVal); }
         friend SIMDVector operator * (const SIMDVector &a, const SIMDVector &b) { return _mm256_mul_pd(a.mVal, b.mVal); }
+        
+        static void deinterleave(const SIMDVector *input, SIMDVector *outReal, SIMDVector *outImag)
+        {
+            *outReal = _mm256_unpacklo_pd(input[0].mVal, input[1].mVal);
+            *outImag = _mm256_unpackhi_pd(input[0].mVal, input[1].mVal);
+        }
+        
+        static void interleave(const SIMDVector *inReal, const SIMDVector *inImag, SIMDVector *output)
+        {
+            output[0] = _mm256_unpacklo_pd(inReal->mVal, inImag->mVal);
+            output[1] = _mm256_unpackhi_pd(inReal->mVal, inImag->mVal);
+        }
     };
     
     template <>
@@ -190,6 +242,18 @@ namespace hisstools_fft_impl{
         friend SIMDVector operator + (const SIMDVector &a, const SIMDVector &b) { return _mm256_add_ps(a.mVal, b.mVal); }
         friend SIMDVector operator - (const SIMDVector &a, const SIMDVector &b) { return _mm256_sub_ps(a.mVal, b.mVal); }
         friend SIMDVector operator * (const SIMDVector &a, const SIMDVector &b) { return _mm256_mul_ps(a.mVal, b.mVal); }
+        
+        static void deinterleave(const SIMDVector *input, SIMDVector *outReal, SIMDVector *outImag)
+        {
+            *outReal = _mm256_unpacklo_ps(input[0].mVal, input[1].mVal);
+            *outImag = _mm256_unpackhi_ps(input[0].mVal, input[1].mVal);
+        }
+        
+        static void interleave(const SIMDVector *inReal, const SIMDVector *inImag, SIMDVector *output)
+        {
+            output[0] = _mm256_unpacklo_ps(inReal->mVal, inImag->mVal);
+            output[1] = _mm256_unpackhi_ps(inReal->mVal, inImag->mVal);
+        }
     };
     
 #endif
@@ -204,6 +268,18 @@ namespace hisstools_fft_impl{
         friend SIMDVector operator + (const SIMDVector &a, const SIMDVector &b) { return _mm512_add_pd(a.mVal, b.mVal); }
         friend SIMDVector operator - (const SIMDVector &a, const SIMDVector &b) { return _mm512_sub_pd(a.mVal, b.mVal); }
         friend SIMDVector operator * (const SIMDVector &a, const SIMDVector &b) { return _mm512_mul_pd(a.mVal, b.mVal); }
+        
+        static void deinterleave(const SIMDVector *input, SIMDVector *outReal, SIMDVector *outImag)
+        {
+            *outReal = _mm512_unpacklo_pd(input[0].mVal, input[1].mVal);
+            *outImag = _mm512_unpackhi_pd(input[0].mVal, input[1].mVal);
+        }
+        
+        static void interleave(const SIMDVector *inReal, const SIMDVector *inImag, SIMDVector *output)
+        {
+            output[0] = _mm512_unpacklo_pd(inReal->mVal, inImag->mVal);
+            output[1] = _mm512_unpackhi_pd(inReal->mVal, inImag->mVal);
+        }
     };
     
     template <>
@@ -214,6 +290,18 @@ namespace hisstools_fft_impl{
         friend SIMDVector operator + (const SIMDVector &a, const SIMDVector &b) { return _mm512_add_ps(a.mVal, b.mVal); }
         friend SIMDVector operator - (const SIMDVector &a, const SIMDVector &b) { return _mm512_sub_ps(a.mVal, b.mVal); }
         friend SIMDVector operator * (const SIMDVector &a, const SIMDVector &b) { return _mm512_mul_ps(a.mVal, b.mVal); }
+        
+        static void deinterleave(const SIMDVector *input, SIMDVector *outReal, SIMDVector *outImag)
+        {
+            *outReal = _mm512_unpacklo_ps(input[0].mVal, input[1].mVal);
+            *outImag = _mm512_unpackhi_ps(input[0].mVal, input[1].mVal);
+        }
+        
+        static void interleave(const SIMDVector *inReal, const SIMDVector *inImag, SIMDVector *output)
+        {
+            output[0] = _mm512_unpacklo_ps(inReal->mVal, inImag->mVal);
+            output[1] = _mm512_unpackhi_ps(inReal->mVal, inImag->mVal);
+        }
     };
     
 #endif
@@ -247,6 +335,20 @@ namespace hisstools_fft_impl{
         static SIMDVector shuffle_interleave_hi(const SIMDVector& a, const SIMDVector& b)
         {
             return vuzpq_f32(a.mVal, b.mVal).val[1];
+        }
+        
+        static void deinterleave(const SIMDVector *input, SIMDVector *outReal, SIMDVector *outImag)
+        {
+            float32x4x2_t v = vuzpq_f32(input[0].mVal, input[1].mVal);
+            *outReal = v.val[0];
+            *outImag = v.val[1];
+        }
+        
+        static void interleave(const SIMDVector *inReal, const SIMDVector *inImag, SIMDVector *output)
+        {
+            float32x4x2_t v = vzipq_f32(inReal->mVal, inImag->mVal);
+            output[0] = v.val[0];
+            output[1] = v.val[1];
         }
     };
     
@@ -419,7 +521,7 @@ namespace hisstools_fft_impl{
         ptr4->mData[3] = D.mData[3];
     }
     
-#if defined(__AVX512F__) || defined(__AVX__) || defined(__SSE__)
+#if defined(__SSE__) || defined(__AVX__) || defined(__AVX512F__)
     
     // Template Specialisation for an SSE Float Packed (1 SIMD Element)
     
@@ -1053,6 +1155,17 @@ namespace hisstools_fft_impl{
     // Unzip
     
     template <class T, class U>
+    void unzip_impl(const U *input, typename T::scalar_type *real, typename T::scalar_type *imag, uintptr_t half_length)
+    {
+        const T *in_ptr = reinterpret_cast<const T*>(input);
+        T *realp = reinterpret_cast<T*>(real);
+        T *imagp = reinterpret_cast<T*>(imag);
+        
+        for (uintptr_t i = 0; i < (half_length / T::size); i++, in_ptr += 2)
+            T::deinterleave(in_ptr, realp++, imagp++);
+    }
+    
+    template <class T, class U>
     void unzip_complex(const U *input, Split<T> *output, uintptr_t half_length)
     {
         T *realp = output->realp;
@@ -1065,78 +1178,51 @@ namespace hisstools_fft_impl{
         }
     }
     
-    template<>
-    void unzip_complex(const float *input, Split<float> *output, uintptr_t half_length)
+    template<class T>
+    void unzip_complex(const T *input, Split<T> *output, uintptr_t half_length)
     {
-        /*
-         if (isAligned(input) && isAligned(output->realp) && isAligned(output->imagp))
-         {
-         const ARMFloat *inp = reinterpret_cast<const ARMFloat*>(input);
-         ARMFloat *realp = reinterpret_cast<ARMFloat*>(output->realp);
-         ARMFloat *imagp = reinterpret_cast<ARMFloat*>(output->imagp);
-         
-         for (uintptr_t i = 0; i < (half_length >> 2); i++, inp += 2)
-         {
-         float32x4x2_t v = vuzpq_f32(inp[0].mVal, inp[1].mVal);
-         *realp++ = v.val[0];
-         *imagp++ = v.val[1];
-         }
-         }
-         else*/
+        const int v_size = SIMDLimits<T>::max_size;
+        typedef SIMDVector<T, v_size> Vector;
+        typedef SIMDVector<T, v_size> Scalar;
+        
+        if (isAligned(input) && isAligned(output->realp) && isAligned(output->imagp))
         {
-            float *realp = output->realp;
-            float *imagp = output->imagp;
-            
-            for (uintptr_t i = 0; i < half_length; i++)
-            {
-                *realp++ = *input++;
-                *imagp++ = *input++;
-            }
+            uintptr_t v_length = (half_length / v_size) * v_size;
+            unzip_impl<Vector>(input, output->realp, output->imagp, v_length);
+            unzip_impl<Scalar>(input + (v_length * 2), output->realp + v_length, output->imagp + v_length, half_length - v_length);
         }
+        else
+            unzip_impl<Scalar>(input, output->realp, output->imagp, half_length);
     }
     
     // Zip
     
-    template <class T>
-    void zip_complex(const Split<T> *input, T *output, uintptr_t half_length)
+    template <class T, class U>
+    void zip_impl(const typename T::scalar_type *real, const typename T::scalar_type *imag, U *output, uintptr_t half_length)
     {
-        const T *realp = input->realp;
-        const T *imagp = input->imagp;
+        const T *realp = reinterpret_cast<const T*>(real);
+        const T *imagp = reinterpret_cast<const T*>(imag);
+        T *out_ptr = reinterpret_cast<T*>(output);
         
-        for (uintptr_t i = 0; i < half_length; i++)
-        {
-            *output++ = *realp++;
-            *output++ = *imagp++;
-        }
+        for (uintptr_t i = 0; i < (half_length / T::size); i++, out_ptr += 2)
+            T::interleave(realp++, imagp++, out_ptr);
     }
     
-    template<>
-    void zip_complex(const Split<float> *input, float *output, uintptr_t half_length)
-    {/*
-      if (isAligned(output) && isAligned(input->realp) && isAligned(input->imagp))
-      {
-      ARMFloat *outp = reinterpret_cast<ARMFloat*>(output);
-      const ARMFloat *realp = reinterpret_cast<const ARMFloat*>(input->realp);
-      const ARMFloat *imagp = reinterpret_cast<const ARMFloat*>(input->imagp);
-      
-      for (uintptr_t i = 0; i < (half_length >> 2); i++, realp++, imagp++)
-      {
-      float32x4x2_t v = vzipq_f32(realp->mVal, imagp->mVal);
-      *outp++ = v.val[0];
-      *outp++ = v.val[1];
-      }
-      }
-      else*/
+    template<class T>
+    void zip_complex(const Split<T> *input, T *output, uintptr_t half_length)
+    {
+        const int v_size = SIMDLimits<T>::max_size;
+        typedef SIMDVector<T, v_size> Vector;
+        typedef SIMDVector<T, v_size> Scalar;
+        
+        if (isAligned(output) && isAligned(input->realp) && isAligned(input->imagp))
         {
-            float *realp = input->realp;
-            float *imagp = input->imagp;
-            
-            for (uintptr_t i = 0; i < half_length; i++)
-            {
-                *output++ = *realp++;
-                *output++ = *imagp++;
-            }
+            uintptr_t v_length = (half_length / v_size) * v_size;
+            zip_impl<Vector>(input->realp, input->imagp, output, v_length);
+            zip_impl<Scalar>(input->realp + v_length, input->imagp + v_length, output + (2 * v_length), half_length - v_length);
         }
+        else
+            zip_impl<Scalar>(input->realp, input->imagp, output, half_length);
     }
     
     // Unzip With Zero Padding
@@ -1272,4 +1358,3 @@ namespace hisstools_fft_impl{
     }
     
 } /* hisstools_fft_impl */
-
