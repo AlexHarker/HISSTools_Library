@@ -152,7 +152,7 @@ namespace hisstools_fft_impl{
     
 #if defined(__SSE__) || defined(__AVX__) || defined(__AVX512F__)
     
-    template <>
+    template<>
     struct SIMDVector<double, 2> : public SIMDVectorBase<double, __m128d, 2>
     {
         SIMDVector() {}
@@ -180,7 +180,7 @@ namespace hisstools_fft_impl{
         }
     };
     
-    template <>
+    template<>
     struct SIMDVector<float, 4> : public SIMDVectorBase<float, __m128, 4>
     {
         SIMDVector() {}
@@ -212,7 +212,7 @@ namespace hisstools_fft_impl{
     
 #if defined(__AVX__) || defined(__AVX512F__)
     
-    template <>
+    template<>
     struct SIMDVector<double, 4> : public SIMDVectorBase<double, __m256d, 4>
     {
         SIMDVector() {}
@@ -234,7 +234,7 @@ namespace hisstools_fft_impl{
         }
     };
     
-    template <>
+    template<>
     struct SIMDVector<float, 8> : public SIMDVectorBase<float, __m256, 8>
     {
         SIMDVector() {}
@@ -260,7 +260,7 @@ namespace hisstools_fft_impl{
     
 #if defined(__AVX512F__)
     
-    template <>
+    template<>
     struct SIMDVector<double, 8> : public SIMDVectorBase<double, __m512d, 8>
     {
         SIMDVector() {}
@@ -282,7 +282,7 @@ namespace hisstools_fft_impl{
         }
     };
     
-    template <>
+    template<>
     struct SIMDVector<float, 16> : public SIMDVectorBase<float, __m512, 16>
     {
         SIMDVector() {}
@@ -308,7 +308,7 @@ namespace hisstools_fft_impl{
     
 #if defined(__arm__)
     
-    template <>
+    template<>
     struct SIMDVector<float, 4> : public SIMDVectorBase<float, float32x4_t, 4>
     {
         SIMDVector() {}
