@@ -9,7 +9,7 @@ typedef MemorySwap<HISSTools::PartitionedConvolve>::Ptr PartPtr;
 // Allocation Utilities
 
 template <uintptr_t x>
-HISSTools::PartitionedConvolve *alloc(uintptr_t size, uintptr_t)
+HISSTools::PartitionedConvolve *alloc(uintptr_t size)
 {
     return new HISSTools::PartitionedConvolve(16384, std::max(size, uintptr_t(16384)) - x, x, 0);
 }
@@ -32,7 +32,7 @@ void largeFree(HISSTools::PartitionedConvolve *largePartition)
 // Constructor and Deconstructor
 
 HISSTools::MonoConvolve::MonoConvolve(uintptr_t maxLength, LatencyMode latency)
-: mPart4(getAllocator(latency), largeFree, maxLength, maxLength), mLength(0), mLatency(latency)
+: mPart4(getAllocator(latency), largeFree, maxLength), mLength(0), mLatency(latency)
 {
     switch (latency)
     {
@@ -59,7 +59,7 @@ HISSTools::MonoConvolve::MonoConvolve(uintptr_t maxLength, LatencyMode latency)
 ConvolveError HISSTools::MonoConvolve::resize(uintptr_t length)
 {
     mLength = 0;
-    PartPtr part4 = mPart4.equal(getAllocator(mLatency), largeFree, length, length);
+    PartPtr part4 = mPart4.equal(getAllocator(mLatency), largeFree, length);
     
     return part4.getSize() == length ? CONVOLVE_ERR_NONE : CONVOLVE_ERR_MEM_UNAVAILABLE;
 }
@@ -75,7 +75,7 @@ ConvolveError HISSTools::MonoConvolve::set(const float *input, uintptr_t length,
     // Lock or resize first to ensure that audio finishes processing before we replace
     
     mLength = 0;
-    PartPtr part4 = requestResize ? mPart4.equal(getAllocator(mLatency), largeFree, length, length) : mPart4.access();
+    PartPtr part4 = requestResize ? mPart4.equal(getAllocator(mLatency), largeFree, length) : mPart4.access();
     
     if (part4.get())
     {

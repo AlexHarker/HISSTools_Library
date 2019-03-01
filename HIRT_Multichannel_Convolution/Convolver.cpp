@@ -6,7 +6,7 @@
 #include <string.h>
 
 HISSTools::Convolver::Convolver(uint32_t numIns, uint32_t numOuts, LatencyMode latency)
-: mTemporaryMemory(0, 0)
+: mTemporaryMemory(0)
 {
     numIns = numIns < 1 ? 1 : numIns;
     
@@ -25,7 +25,7 @@ HISSTools::Convolver::Convolver(uint32_t numIns, uint32_t numOuts, LatencyMode l
 }
 
 HISSTools::Convolver::Convolver(uint32_t numIO, LatencyMode latency)
-: mTemporaryMemory(0, 0)
+: mTemporaryMemory(0)
 {
     numIO = numIO < 1 ? 1 : numIO;
     
@@ -152,7 +152,7 @@ ConvolveError HISSTools::Convolver::set(uint32_t inChan, uint32_t outChan, const
 
 void HISSTools::Convolver::process(const float** ins, float** outs, size_t numIns, size_t numOuts, size_t numSamples)
 {
-    auto memPointer = mTemporaryMemory.grow((mNumIns + 2) * numSamples * sizeof(float), numSamples);
+    auto memPointer = mTemporaryMemory.grow((mNumIns + 2) * numSamples);
     tempSetup(memPointer.get(), memPointer.getSize());
     
     if (!memPointer.get())
@@ -168,7 +168,7 @@ void HISSTools::Convolver::process(const float** ins, float** outs, size_t numIn
 
 void HISSTools::Convolver::process(const double** ins, double** outs, size_t numIns, size_t numOuts, size_t numSamples)
 {
-    auto memPointer = mTemporaryMemory.grow((mNumIns + 2) * numSamples * sizeof(float), numSamples);
+    auto memPointer = mTemporaryMemory.grow((mNumIns + 2) * numSamples);
     tempSetup(memPointer.get(), memPointer.getSize());
     
     if (!memPointer.get())
