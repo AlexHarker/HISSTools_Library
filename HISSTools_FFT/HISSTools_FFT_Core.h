@@ -38,7 +38,7 @@ struct FloatSetup : public Setup<float> {};
 
 namespace hisstools_fft_impl{
 
-    // Aligned Allocation and Platform CPU Detection
+    // Aligned Allocation
     
 #ifdef __APPLE__
     
@@ -71,6 +71,9 @@ namespace hisstools_fft_impl{
     
 #endif
 
+    template <class T>
+    bool isAligned(const T *ptr) { return !(reinterpret_cast<uintptr_t>(ptr) % 16); }
+    
     // Offset for Table
     
     static const uintptr_t trig_table_offset = 3;
