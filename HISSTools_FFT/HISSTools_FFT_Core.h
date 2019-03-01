@@ -11,7 +11,8 @@
 
 // Setup Structures
 
-template <class T> struct Setup
+template <class T>
+struct Setup
 {
     unsigned long max_fft_log2;
     Split<T> tables[28];
@@ -41,52 +42,32 @@ namespace hisstools_fft_impl{
     
 #ifdef __APPLE__
     
-#include <cpuid.h>
-
-    template <class T> T *allocate_aligned(size_t size)
+    template <class T>
+    T *allocate_aligned(size_t size)
     {
         return static_cast<T *>(malloc(size * sizeof(T)));
     }
     
-    template <class T> void deallocate_aligned(T *ptr)
+    template <class T>
+    void deallocate_aligned(T *ptr)
     {
         free(ptr);
     }
     
-    void cpuid(int32_t out[4], int32_t x)
-    {
-        __cpuid_count(x, 0, out[0], out[1], out[2], out[3]);
-    }
-    
-	uint64_t xgetbv(unsigned int index)
-	{
-		uint32_t eax, edx;
-		__asm__ __volatile__("xgetbv" : "=a"(eax), "=d"(edx) : "c"(index));
-		return ((uint64_t)edx << 32) | eax;
-	}
-
 #else
 #include <malloc.h>
 
-    template <class T> T *allocate_aligned(size_t size)
+    template <class T>
+    T *allocate_aligned(size_t size)
     {
         return static_cast<T *>(_aligned_malloc(size * sizeof(T), 16));
     }
     
-    template <class T> void deallocate_aligned(T *ptr)
+    template <class T>
+    void deallocate_aligned(T *ptr)
     {
         _aligned_free(ptr);
     }
-
-    void cpuid(int32_t out[4], int32_t x)
-    {
-        __cpuid(out, x);
-    }
-
-	uint64_t xgetbv(unsigned int x) 
-	{
-		return _xgetbv(x);
-	}
     
 #endif
 
@@ -94,52 +75,12 @@ namespace hisstools_fft_impl{
     
     static const uintptr_t trig_table_offset = 3;
     
-    // CPU Detection
-    
-    enum SIMDType { kNone, kSSE, kAVX256, kAVX512 };
-    
-    extern SIMDType SIMD_Support;
-
-    SIMDType detect_SIMD()
-    {
-        int cpu_info[4] = {-1, 0, 0, 0};
-        
-        cpuid(cpu_info, 0);
-        
-        if (cpu_info[0] <= 0)
-            return kNone;
-        
-        cpuid(cpu_info, 1);
-        
-        if ((cpu_info[3] >> 26) & 0x1)
-        {
-            bool os_uses_xsave_xrstore = (cpu_info[2] & (1 << 27)) != 0;
-            bool cpu_AVX_suport = (cpu_info[2] & (1 << 28)) != 0;
-            
-            if (os_uses_xsave_xrstore && cpu_AVX_suport)
-            {
-                uint64_t xcr_feature_mask = xgetbv(0);
-                
-                if ((xcr_feature_mask & 0x6) == 0x6)
-                {
-                    if ((xcr_feature_mask & 0xe6) == 0xe6)
-                        return kAVX512;
-                    else
-                        return kAVX256;
-                }
-            }
-            
-            return kSSE;
-        }
-        
-        return kNone;
-    }
-    
     // Data Type Definitions
     
     // ******************** Basic Data Type Defintions ******************** //
     
-    template <class T> struct Scalar
+    template <class T>
+    struct Scalar
     {
         static const int size = 1;
         typedef T scalar_type;
@@ -155,7 +96,8 @@ namespace hisstools_fft_impl{
         T mVal;
     };
     
-    template <class T, class U, int vec_size> struct SIMDVector
+    template <class T, class U, int vec_size>
+    struct SIMDVector
     {
         static const int size = vec_size;
         typedef T scalar_type;
@@ -178,7 +120,8 @@ namespace hisstools_fft_impl{
         friend SSEDouble operator - (const SSEDouble &a, const SSEDouble& b) { return _mm_sub_pd(a.mVal, b.mVal); }
         friend SSEDouble operator * (const SSEDouble &a, const SSEDouble& b) { return _mm_mul_pd(a.mVal, b.mVal); }
         
-        template <int y, int x> static SSEDouble shuffle(const SSEDouble& a, const SSEDouble& b)
+        template <int y, int x>
+        static SSEDouble shuffle(const SSEDouble& a, const SSEDouble& b)
         {
             return _mm_shuffle_pd(a.mVal, b.mVal, (y<<1)|x);
         }
@@ -192,7 +135,8 @@ namespace hisstools_fft_impl{
         friend SSEFloat operator - (const SSEFloat& a, const SSEFloat& b) { return _mm_sub_ps(a.mVal, b.mVal); }
         friend SSEFloat operator * (const SSEFloat& a, const SSEFloat& b) { return _mm_mul_ps(a.mVal, b.mVal); }
         
-        template <int z, int y, int x, int w> static SSEFloat shuffle(const SSEFloat& a, const SSEFloat& b)
+        template <int z, int y, int x, int w>
+        static SSEFloat shuffle(const SSEFloat& a, const SSEFloat& b)
         {
             return _mm_shuffle_ps(a.mVal, b.mVal, ((z<<6)|(y<<4)|(x<<2)|w));
         }
@@ -246,7 +190,8 @@ namespace hisstools_fft_impl{
     
     // ******************** A Vector of Given Size (Made of Vectors / Scalars) ******************** //
     
-    template <int final_size, class T> struct SizedVector
+    template <int final_size, class T>
+    struct SizedVector
     {
         static const int size = final_size;
         typedef typename T::scalar_type scalar_type;
@@ -314,13 +259,9 @@ namespace hisstools_fft_impl{
     
     // Creation
     
-    template <class T> Setup<T> *create_setup(uintptr_t max_fft_log2)
+    template <class T>
+    Setup<T> *create_setup(uintptr_t max_fft_log2)
     {
-        // Check for SIMD Support here (this must be called anyway before doing an FFT)
-        
-        if (SIMD_Support == kNone)
-            SIMD_Support = detect_SIMD();
-        
         Setup<T> *setup = allocate_aligned<Setup<T> >(1);
         
         // Set Max FFT Size
@@ -356,7 +297,8 @@ namespace hisstools_fft_impl{
     
     // Destruction
     
-    template <class T> void destroy_setup(Setup<T> *setup)
+    template <class T>
+    void destroy_setup(Setup<T> *setup)
     {
         if (setup)
         {
@@ -465,7 +407,8 @@ namespace hisstools_fft_impl{
     
     // Pass One and Two with Re-ordering
     
-    template <class T> void pass_1_2_reorder(Split<typename T::scalar_type> *input, uintptr_t length)
+    template <class T>
+    void pass_1_2_reorder(Split<typename T::scalar_type> *input, uintptr_t length)
     {
         typedef SizedVector<4, T> Vector;
         
@@ -517,7 +460,8 @@ namespace hisstools_fft_impl{
     
     // Pass Three Twiddle Factors
     
-    template <class T> void pass_3_twiddle(SizedVector<4, T> &tr, SizedVector<4, T> &ti)
+    template <class T>
+    void pass_3_twiddle(SizedVector<4, T> &tr, SizedVector<4, T> &ti)
     {
         static const double SQRT_2_2 = 0.70710678118654752440084436210484904;
         
@@ -536,7 +480,8 @@ namespace hisstools_fft_impl{
     
     // Pass Three With Re-ordering
     
-    template <class T> void pass_3_reorder(Split<typename T::scalar_type> *input, uintptr_t length)
+    template <class T>
+    void pass_3_reorder(Split<typename T::scalar_type> *input, uintptr_t length)
     {
         typedef SizedVector<4, T> Vector;
         
@@ -598,7 +543,8 @@ namespace hisstools_fft_impl{
     
     // Pass Three Without Re-ordering
     
-    template <class T> void pass_3(Split<typename T::scalar_type> *input, uintptr_t length)
+    template <class T>
+    void pass_3(Split<typename T::scalar_type> *input, uintptr_t length)
     {
         typedef SizedVector<4, T> Vector;
         
@@ -636,7 +582,8 @@ namespace hisstools_fft_impl{
     
     // A Pass Requiring Tables With Re-ordering
     
-    template <class T> void pass_trig_table_reorder(typename T::split_type *input, typename T::setup_type *setup, uintptr_t length, uintptr_t pass)
+    template <class T>
+    void pass_trig_table_reorder(typename T::split_type *input, typename T::setup_type *setup, uintptr_t length, uintptr_t pass)
     {
         uintptr_t size = 2 << pass;
         uintptr_t incr = size / (T::size << 1);
@@ -708,7 +655,8 @@ namespace hisstools_fft_impl{
     
     // A Pass Requiring Tables Without Re-ordering
     
-    template <class T> void pass_trig_table(typename T::split_type *input, typename T::setup_type *setup, uintptr_t length, uintptr_t pass)
+    template <class T>
+    void pass_trig_table(typename T::split_type *input, typename T::setup_type *setup, uintptr_t length, uintptr_t pass)
     {
         uintptr_t size = 2 << pass;
         uintptr_t incr = size / (T::size << 1);
@@ -758,7 +706,8 @@ namespace hisstools_fft_impl{
     
     // A Real Pass Requiring Trig Tables (Never Reorders)
     
-    template <bool ifft, class T> void pass_real_trig_table(Split<T> *input, Setup<T> *setup, uintptr_t fft_log2)
+    template <bool ifft, class T>
+    void pass_real_trig_table(Split<T> *input, Setup<T> *setup, uintptr_t fft_log2)
     {
         uintptr_t length = (uintptr_t) 1 << (fft_log2 - 1);
         uintptr_t lengthM1 = length - 1;
@@ -817,7 +766,8 @@ namespace hisstools_fft_impl{
     
     // Small Complex FFTs (2, 4 or 8 points)
     
-    template <class T> void small_fft(Split<T> *input, uintptr_t fft_log2)
+    template <class T>
+    void small_fft(Split<T> *input, uintptr_t fft_log2)
     {
         T *r1_ptr = input->realp;
         T *i1_ptr = input->imagp;
@@ -917,7 +867,8 @@ namespace hisstools_fft_impl{
     
     // Small Real FFTs (2 or 4 points)
     
-    template <bool ifft, class T> void small_real_fft(Split<T> *input, uintptr_t fft_log2)
+    template <bool ifft, class T>
+    void small_real_fft(Split<T> *input, uintptr_t fft_log2)
     {
         T *r1_ptr = input->realp;
         T *i1_ptr = input->imagp;
@@ -977,7 +928,8 @@ namespace hisstools_fft_impl{
     
     // Unzip
     
-    template <class T, class U, class V> void unzip_complex(const U *input, V *output, uintptr_t half_length)
+    template <class T, class U, class V>
+    void unzip_complex(const U *input, V *output, uintptr_t half_length)
     {
         T *realp = output->realp;
         T *imagp = output->imagp;
@@ -991,10 +943,10 @@ namespace hisstools_fft_impl{
     
     // Zip
     
-    template <class T, class U> void zip_complex(const T *input, U *output, uintptr_t half_length)
+    template <class T> void zip_complex(const Split<T> *input, T *output, uintptr_t half_length)
     {
-        U *realp = input->realp;
-        U *imagp = input->imagp;
+        T *realp = input->realp;
+        T *imagp = input->imagp;
         
         for (uintptr_t i = 0; i < half_length; i++)
         {
@@ -1005,7 +957,8 @@ namespace hisstools_fft_impl{
     
     // Unzip With Zero Padding
     
-    template <class T, class U, class V> void unzip_zero(const U *input, V *output, uintptr_t in_length, uintptr_t log2n)
+    template <class T, class U, class V>
+    void unzip_zero(const U *input, V *output, uintptr_t in_length, uintptr_t log2n)
     {
         T odd_sample = static_cast<T>(input[in_length - 1]);
         T *realp = output->realp;
@@ -1039,7 +992,8 @@ namespace hisstools_fft_impl{
     
     // FFT Passes Template
     
-    template <class T, class U, class V, class W, class X> void fft_passes(Split<X> *input, Setup<X> *setup, uintptr_t fft_log2)
+    template <class T, class U, class V, class W, class X>
+    void fft_passes(Split<X> *input, Setup<X> *setup, uintptr_t fft_log2)
     {
         const uintptr_t length = (uintptr_t) 1 << fft_log2;
         uintptr_t i;
@@ -1075,14 +1029,16 @@ namespace hisstools_fft_impl{
     
     // SIMD Double Specialisation
     
-    template<> void fft_passes_simd(Split<double> *input, Setup<double> *setup, uintptr_t fft_log2)
+    template<>
+    void fft_passes_simd(Split<double> *input, Setup<double> *setup, uintptr_t fft_log2)
     {
         fft_passes<SSEDouble, SSEDouble, SSEDouble, SSEDouble>(input, setup, fft_log2);
     }
     
     // SIMD Float Specialisation
     
-    template<> void fft_passes_simd(Split<float> *input, Setup<float> *setup, uintptr_t fft_log2)
+    template<>
+    void fft_passes_simd(Split<float> *input, Setup<float> *setup, uintptr_t fft_log2)
     {
         fft_passes<SSEFloat, SSEFloat, SSEFloat, SSEFloat>(input, setup, fft_log2);
     }
@@ -1096,10 +1052,7 @@ namespace hisstools_fft_impl{
     template<>
     void fft_passes_simd(Split<double> *input, Setup<double> *setup, uintptr_t fft_log2)
     {
-        if (SIMD_Support >= kAVX256)
-            fft_passes<SSEDouble, AVX256Double, AVX256Double, AVX256Double>(input, setup, fft_log2);
-        else
-            fft_passes<SSEDouble, SSEDouble, SSEDouble, SSEDouble>(input, setup, fft_log2);
+        fft_passes<SSEDouble, AVX256Double, AVX256Double, AVX256Double>(input, setup, fft_log2);
     }
     
     // SIMD Float Specialisation
@@ -1107,10 +1060,7 @@ namespace hisstools_fft_impl{
     template<>
     void fft_passes_simd(Split<float> *input, Setup<float> *setup, uintptr_t fft_log2)
     {
-        if (SIMD_Support >= kAVX256)
-            fft_passes<SSEFloat, SSEFloat, AVX256Float, AVX256Float>(input, setup, fft_log2);
-        else
-            fft_passes<SSEFloat, SSEFloat, SSEFloat, SSEFloat>(input, setup, fft_log2);
+        fft_passes<SSEFloat, SSEFloat, AVX256Float, AVX256Float>(input, setup, fft_log2);
     }
 
 #endif
@@ -1122,12 +1072,7 @@ namespace hisstools_fft_impl{
     template<>
     void fft_passes_simd(Split<double> *input, Setup<double> *setup, uintptr_t fft_log2)
     {
-        if (SIMD_Support >= kAVX512)
-            fft_passes<SSEDouble, AVX256Double, AVX512Double, AVX512Double>(input, setup, fft_log2);
-        else if (SIMD_Support >= kAVX256)
-            fft_passes<SSEDouble, AVX256Double, AVX256Double, AVX256Double>(input, setup, fft_log2);
-        else
-            fft_passes<SSEDouble, SSEDouble, SSEDouble, SSEDouble>(input, setup, fft_log2);
+        fft_passes<SSEDouble, AVX256Double, AVX512Double, AVX512Double>(input, setup, fft_log2);
     }
     
     // SIMD Float Specialisation
@@ -1135,12 +1080,7 @@ namespace hisstools_fft_impl{
     template<>
     void fft_passes_simd(Split<float> *input, Setup<float> *setup, uintptr_t fft_log2)
     {
-        if (SIMD_Support >= kAVX512)
-            fft_passes<SSEFloat, SSEFloat, AVX256Float, AVX512Float>(input, setup, fft_log2);
-        else if (SIMD_Support >= kAVX256)
-            fft_passes<SSEFloat, SSEFloat, AVX256Float, AVX256Float>(input, setup, fft_log2);
-        else
-            fft_passes<SSEFloat, SSEFloat, SSEFloat, SSEFloat>(input, setup, fft_log2);
+        fft_passes<SSEFloat, SSEFloat, AVX256Float, AVX512Float>(input, setup, fft_log2);
     }
     
 #endif
@@ -1149,11 +1089,12 @@ namespace hisstools_fft_impl{
     
     // A Complex FFT
     
-    template <class T>void hisstools_fft(Split<T> *input, Setup<T> *setup, uintptr_t fft_log2)
+    template <class T>
+    void hisstools_fft(Split<T> *input, Setup<T> *setup, uintptr_t fft_log2)
     {
         if (fft_log2 >= 4)
         {
-            if (reinterpret_cast<uintptr_t>(input->realp) % 16 || reinterpret_cast<uintptr_t>(input->imagp) % 16 || SIMD_Support == kNone)
+            if (reinterpret_cast<uintptr_t>(input->realp) % 16 || reinterpret_cast<uintptr_t>(input->imagp) % 16)
                 fft_passes<Scalar<T>, Scalar<T>, Scalar<T>, Scalar<T> >(input, setup, fft_log2);
             else
                 fft_passes_simd(input, setup, fft_log2);
@@ -1164,7 +1105,8 @@ namespace hisstools_fft_impl{
     
     // A Complex iFFT
     
-    template <class T>void hisstools_ifft(Split<T> *input, Setup<T> *setup, uintptr_t fft_log2)
+    template <class T>
+    void hisstools_ifft(Split<T> *input, Setup<T> *setup, uintptr_t fft_log2)
     {
         Split<T> swap(input->imagp, input->realp);
         hisstools_fft(&swap, setup, fft_log2);
@@ -1172,7 +1114,8 @@ namespace hisstools_fft_impl{
     
     // A Real FFT
     
-    template <class T>void hisstools_rfft(Split<T> *input, Setup<T> *setup, uintptr_t fft_log2)
+    template <class T>
+    void hisstools_rfft(Split<T> *input, Setup<T> *setup, uintptr_t fft_log2)
     {
         if (fft_log2 >= 3)
         {
@@ -1185,7 +1128,8 @@ namespace hisstools_fft_impl{
     
     // A Real iFFT
     
-    template <class T>void hisstools_rifft(Split<T> *input, Setup<T> *setup, uintptr_t fft_log2)
+    template <class T>
+    void hisstools_rifft(Split<T> *input, Setup<T> *setup, uintptr_t fft_log2)
     {
         if (fft_log2 >= 3)
         {
