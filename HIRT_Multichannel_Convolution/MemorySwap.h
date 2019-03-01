@@ -78,7 +78,7 @@ public:
     : mLock(false), mPtr(nullptr), mSize(0), mFreeFunction(nullptr)
     {
         if (size)
-            set(ALIGNED_MALLOC(size), nominalSize, ALIGNED_FREE);
+            set(allocate(size), nominalSize, &deallocate);
     }
     
     // Constructor (custom allocation)
@@ -93,6 +93,27 @@ public:
     ~MemorySwap()
     {
         clear();
+    }
+    
+    MemorySwap(const MemorySwap&) = delete;
+    MemorySwap& operator = (const MemorySwap&) = delete;
+
+    MemorySwap(MemorySwap&& obj)
+    : mLock(false), mPtr(nullptr), mSize(0), mFreeFunction(nullptr)
+    {
+        *this = std::move(obj);
+    }
+    
+    MemorySwap& operator = (MemorySwap&& obj)
+    {
+        clear();
+        obj.lock();
+        mPtr = std::move(obj.mPtr);
+        mSize = std::move(obj.mSize);
+        mFreeFunction = std::move(obj.mFreeFunction);
+        obj.unlock();
+        
+        return *this;
     }
     
     // Free - frees the memory immediately
@@ -140,7 +161,7 @@ public:
         lock();
         
         if (mSize < nominalSize)
-            set(ALIGNED_MALLOC(size), nominalSize, ALIGNED_FREE);
+            set(allocate(size), nominalSize, &deallocate);
         
         return Ptr(this, mPtr, mSize);
     }
@@ -152,7 +173,7 @@ public:
         lock();
         
         if (mSize != nominalSize)
-            set(ALIGNED_MALLOC(size), nominalSize, ALIGNED_FREE);
+            set(allocate(size), nominalSize, &deallocate);
         
         return Ptr(this, mPtr, mSize);
     }
@@ -209,6 +230,16 @@ private:
     {
         bool expected = true;
         mLock.compare_exchange_strong(expected, false);
+    }
+    
+    static T* allocate(size_t size)
+    {
+        return reinterpret_cast<T *>(ALIGNED_MALLOC(size));
+    }
+    
+    static void deallocate(T *ptr)
+    {
+        ALIGNED_FREE(ptr);
     }
     
     std::atomic<bool> mLock;
