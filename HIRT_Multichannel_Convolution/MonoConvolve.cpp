@@ -5,6 +5,7 @@
 #include <cassert>
 #include <functional>
 #include <random>
+#include <stdexcept>
 
 typedef MemorySwap<HISSTools::PartitionedConvolve>::Ptr PartPtr;
 typedef std::unique_ptr<HISSTools::PartitionedConvolve> PartUniquePtr;
@@ -149,14 +150,15 @@ void HISSTools::MonoConvolve::createPartitions(uintptr_t maxLength, bool zeroLat
     
     // Utilities
     
-    auto checkFFTSize = [&sizes](int size, int prev)
+    auto checkAndStoreFFTSize = [&sizes](int size, int prev)
     {
         bool valid = (size >= (1 << 5)) && (size <= (1 << 20)) && size > prev;
         
         if (valid)
             sizes.push_back(size);
         
-        return valid || !size;
+        if (!valid && size)
+            throw std::runtime_error("invalid FFT size or order");
     };
     
     auto createPart = [](PartUniquePtr& obj, uint32_t& offset, uint32_t size, uint32_t next)
@@ -167,11 +169,13 @@ void HISSTools::MonoConvolve::createPartitions(uintptr_t maxLength, bool zeroLat
     
     // Sanity checks
     
-    assert(checkFFTSize(A, 0) && "FFT size is not valid (wrong value or out of order)");
-    assert(checkFFTSize(B, A) && "FFT size is not valid (wrong value or out of order)");
-    assert(checkFFTSize(C, B) && "FFT size is not valid (wrong value or out of order)");
-    assert(checkFFTSize(D, C) && "FFT size is not valid (wrong value or out of order)");
-    assert(sizes.size() && "No valid FFT sizes given");
+    checkAndStoreFFTSize(A, 0);
+    checkAndStoreFFTSize(B, A);
+    checkAndStoreFFTSize(C, B);
+    checkAndStoreFFTSize(D, C);
+    
+    if (!sizes.size())
+        throw std::runtime_error("no valid FFT sizes given");
     
     size_t numSizes = sizes.size();
     uint32_t offset = zeroLatency ? sizes[0] >> 1 : 0;
