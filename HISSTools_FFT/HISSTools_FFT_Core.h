@@ -161,12 +161,6 @@ namespace hisstools_fft_impl{
         friend SIMDVector operator - (const SIMDVector &a, const SIMDVector& b) { return _mm_sub_pd(a.mVal, b.mVal); }
         friend SIMDVector operator * (const SIMDVector &a, const SIMDVector& b) { return _mm_mul_pd(a.mVal, b.mVal); }
         
-        template <int y, int x>
-        static SIMDVector shuffle(const SIMDVector& a, const SIMDVector& b)
-        {
-            return _mm_shuffle_pd(a.mVal, b.mVal, (y<<1)|x);
-        }
-        
         static void deinterleave(const SIMDVector *input, SIMDVector *outReal, SIMDVector *outImag)
         {
             *outReal = _mm_unpacklo_pd(input[0].mVal, input[1].mVal);
@@ -189,22 +183,16 @@ namespace hisstools_fft_impl{
         friend SIMDVector operator - (const SIMDVector& a, const SIMDVector& b) { return _mm_sub_ps(a.mVal, b.mVal); }
         friend SIMDVector operator * (const SIMDVector& a, const SIMDVector& b) { return _mm_mul_ps(a.mVal, b.mVal); }
         
-        template <int z, int y, int x, int w>
-        static SIMDVector shuffle(const SIMDVector& a, const SIMDVector& b)
-        {
-            return _mm_shuffle_ps(a.mVal, b.mVal, ((z<<6)|(y<<4)|(x<<2)|w));
-        }
-        
         static void deinterleave(const SIMDVector *input, SIMDVector *outReal, SIMDVector *outImag)
         {
-            *outReal = shuffle<2, 0, 2, 0>(input[0], input[1]);
-            *outImag = shuffle<3, 1, 3, 1>(input[0], input[1]);
+            *outReal = _mm_unpacklo_ps(input[0].mVal, input[1].mVal);
+            *outImag = _mm_unpackhi_ps(input[0].mVal, input[1].mVal);
         }
         
         static void interleave(const SIMDVector *inReal, const SIMDVector *inImag, SIMDVector *output)
         {
-            output[0] = shuffle<2, 0, 2, 0>(*inReal, *inImag);
-            output[1] = shuffle<3, 1, 3, 1>(*inReal, *inImag);
+            output[0] = _mm_unpacklo_ps(inReal->mVal, inImag->mVal);
+            output[1] = _mm_unpackhi_ps(inReal->mVal, inImag->mVal);
         }
     };
     
@@ -316,26 +304,6 @@ namespace hisstools_fft_impl{
         friend SIMDVector operator + (const SIMDVector& a, const SIMDVector& b) { return vaddq_f32(a.mVal, b.mVal); }
         friend SIMDVector operator - (const SIMDVector& a, const SIMDVector& b) { return vsubq_f32(a.mVal, b.mVal); }
         friend SIMDVector operator * (const SIMDVector& a, const SIMDVector& b) { return vmulq_f32(a.mVal, b.mVal); }
-        
-        static SIMDVector shuffle_lo(const SIMDVector& a, const SIMDVector& b)
-        {
-            return vcombine_f32(vget_low_f32(a.mVal), vget_low_f32(b.mVal));
-        }
-        
-        static SIMDVector shuffle_hi(const SIMDVector& a, const SIMDVector& b)
-        {
-            return vcombine_f32(vget_high_f32(a.mVal), vget_high_f32(b.mVal));
-        }
-        
-        static SIMDVector shuffle_interleave_lo(const SIMDVector& a, const SIMDVector& b)
-        {
-            return vuzpq_f32(a.mVal, b.mVal).val[0];
-        }
-        
-        static SIMDVector shuffle_interleave_hi(const SIMDVector& a, const SIMDVector& b)
-        {
-            return vuzpq_f32(a.mVal, b.mVal).val[1];
-        }
         
         static void deinterleave(const SIMDVector *input, SIMDVector *outReal, SIMDVector *outImag)
         {
@@ -489,7 +457,9 @@ namespace hisstools_fft_impl{
                   Vector4x<T> *ptr2,
                   Vector4x<T> *ptr3,
                   Vector4x<T> *ptr4)
-    {}
+    {
+        static_assert(T::size != T::size, "Shuffle not implemented for this type");
+    }
     
     // Template for Scalars
     
@@ -525,77 +495,106 @@ namespace hisstools_fft_impl{
     
     // Template Specialisation for an SSE Float Packed (1 SIMD Element)
     
-    typedef SIMDVector<float, 4> SSEFloat;
-    typedef SIMDVector<double, 2> SSEDouble;
-    
     template<>
-    void shuffle4(const Vector4x<SSEFloat> &A,
-                  const Vector4x<SSEFloat> &B,
-                  const Vector4x<SSEFloat> &C,
-                  const Vector4x<SSEFloat> &D,
-                  Vector4x<SSEFloat> *ptr1,
-                  Vector4x<SSEFloat> *ptr2,
-                  Vector4x<SSEFloat> *ptr3,
-                  Vector4x<SSEFloat> *ptr4)
+    void shuffle4(const Vector4x<SIMDVector<float, 4>> &A,
+                  const Vector4x<SIMDVector<float, 4>> &B,
+                  const Vector4x<SIMDVector<float, 4>> &C,
+                  const Vector4x<SIMDVector<float, 4>> &D,
+                  Vector4x<SIMDVector<float, 4>> *ptr1,
+                  Vector4x<SIMDVector<float, 4>> *ptr2,
+                  Vector4x<SIMDVector<float, 4>> *ptr3,
+                  Vector4x<SIMDVector<float, 4>> *ptr4)
     {
-        const SSEFloat v1 = SSEFloat::shuffle<1, 0, 1, 0>(A.mData[0], C.mData[0]);
-        const SSEFloat v2 = SSEFloat::shuffle<3, 2, 3, 2>(A.mData[0], C.mData[0]);
-        const SSEFloat v3 = SSEFloat::shuffle<1, 0, 1, 0>(B.mData[0], D.mData[0]);
-        const SSEFloat v4 = SSEFloat::shuffle<3, 2, 3, 2>(B.mData[0], D.mData[0]);
-        
-        ptr1->mData[0] = SSEFloat::shuffle<2, 0, 2, 0>(v1, v3);
-        ptr2->mData[0] = SSEFloat::shuffle<2, 0, 2, 0>(v2, v4);
-        ptr3->mData[0] = SSEFloat::shuffle<3, 1, 3, 1>(v1, v3);
-        ptr4->mData[0] = SSEFloat::shuffle<3, 1, 3, 1>(v2, v4);
+        const __m128 v1 = _mm_unpacklo_ps(A.mData[0].mVal, B.mData[0].mVal);
+        const __m128 v2 = _mm_unpackhi_ps(A.mData[0].mVal, B.mData[0].mVal);
+        const __m128 v3 = _mm_unpacklo_ps(C.mData[0].mVal, D.mData[0].mVal);
+        const __m128 v4 = _mm_unpackhi_ps(C.mData[0].mVal, D.mData[0].mVal);
+
+        ptr1->mData[0] = _mm_unpacklo_ps(v1, v3);
+        ptr2->mData[0] = _mm_unpacklo_ps(v2, v4);
+        ptr3->mData[0] = _mm_unpackhi_ps(v1, v3);
+        ptr4->mData[0] = _mm_unpackhi_ps(v2, v4);
     }
     
     // Template Specialisation for an SSE Double Packed (2 SIMD Elements)
     
     template<>
-    void shuffle4(const Vector4x<SSEDouble> &A,
-                  const Vector4x<SSEDouble> &B,
-                  const Vector4x<SSEDouble> &C,
-                  const Vector4x<SSEDouble> &D,
-                  Vector4x<SSEDouble> *ptr1,
-                  Vector4x<SSEDouble> *ptr2,
-                  Vector4x<SSEDouble> *ptr3,
-                  Vector4x<SSEDouble> *ptr4)
+    void shuffle4(const Vector4x<SIMDVector<double, 2>> &A,
+                  const Vector4x<SIMDVector<double, 2>> &B,
+                  const Vector4x<SIMDVector<double, 2>> &C,
+                  const Vector4x<SIMDVector<double, 2>> &D,
+                  Vector4x<SIMDVector<double, 2>> *ptr1,
+                  Vector4x<SIMDVector<double, 2>> *ptr2,
+                  Vector4x<SIMDVector<double, 2>> *ptr3,
+                  Vector4x<SIMDVector<double, 2>> *ptr4)
     {
-        ptr1->mData[0] = SSEDouble::shuffle<0, 0>(A.mData[0], C.mData[0]);
-        ptr1->mData[1] = SSEDouble::shuffle<0, 0>(B.mData[0], D.mData[0]);
-        ptr2->mData[0] = SSEDouble::shuffle<0, 0>(A.mData[1], C.mData[1]);
-        ptr2->mData[1] = SSEDouble::shuffle<0, 0>(B.mData[1], D.mData[1]);
-        ptr3->mData[0] = SSEDouble::shuffle<1, 1>(A.mData[0], C.mData[0]);
-        ptr3->mData[1] = SSEDouble::shuffle<1, 1>(B.mData[0], D.mData[0]);
-        ptr4->mData[0] = SSEDouble::shuffle<1, 1>(A.mData[1], C.mData[1]);
-        ptr4->mData[1] = SSEDouble::shuffle<1, 1>(B.mData[1], D.mData[1]);
+        ptr1->mData[0] = _mm_unpacklo_pd(A.mData[0].mVal, C.mData[0].mVal);
+        ptr1->mData[1] = _mm_unpacklo_pd(B.mData[0].mVal, D.mData[0].mVal);
+        ptr2->mData[0] = _mm_unpacklo_pd(A.mData[1].mVal, C.mData[1].mVal);
+        ptr2->mData[1] = _mm_unpacklo_pd(B.mData[1].mVal, D.mData[1].mVal);
+        ptr3->mData[0] = _mm_unpackhi_pd(A.mData[0].mVal, C.mData[0].mVal);
+        ptr3->mData[1] = _mm_unpackhi_pd(B.mData[0].mVal, D.mData[0].mVal);
+        ptr4->mData[0] = _mm_unpackhi_pd(A.mData[1].mVal, C.mData[1].mVal);
+        ptr4->mData[1] = _mm_unpackhi_pd(B.mData[1].mVal, D.mData[1].mVal);
+    }
+    
+#endif
+    
+#if defined(__AVX__) || defined(__AVX512F__)
+    
+    // Template Specialisation for an AVX256 Double Packed (1 SIMD Element)
+    
+    template<>
+    void shuffle4(const Vector4x<SIMDVector<double, 4>> &A,
+                  const Vector4x<SIMDVector<double, 4>> &B,
+                  const Vector4x<SIMDVector<double, 4>> &C,
+                  const Vector4x<SIMDVector<double, 4>> &D,
+                  Vector4x<SIMDVector<double, 4>> *ptr1,
+                  Vector4x<SIMDVector<double, 4>> *ptr2,
+                  Vector4x<SIMDVector<double, 4>> *ptr3,
+                  Vector4x<SIMDVector<double, 4>> *ptr4)
+    {
+        const __m256 v1 = _mm256_unpacklo_pd(A.mData[0].mVal, B.mData[0].mVal);
+        const __m256 v2 = _mm256_unpackhi_pd(A.mData[0].mVal, B.mData[0].mVal);
+        const __m256 v3 = _mm256_unpacklo_pd(C.mData[0].mVal, D.mData[0].mVal);
+        const __m256 v4 = _mm256_unpackhi_pd(C.mData[0].mVal, D.mData[0].mVal);
+        
+        ptr1->mData[0] = _mm256_unpacklo_pd(v1, v3);
+        ptr2->mData[0] = _mm256_unpacklo_pd(v2, v4);
+        ptr3->mData[0] = _mm256_unpackhi_pd(v1, v3);
+        ptr4->mData[0] = _mm256_unpackhi_pd(v2, v4);
     }
     
 #endif
     
 #if defined (__arm__)
     
+    // Template Specialisation for an ARM Float Packed (1 SIMD Element)
+
     typedef SIMDVector<float, 4> ARMFloat;
     
     template<>
-    void shuffle4(const Vector4x<ARMFloat> &A,
-                  const Vector4x<ARMFloat> &B,
-                  const Vector4x<ARMFloat> &C,
-                  const Vector4x<ARMFloat> &D,
-                  Vector4x<ARMFloat> *ptr1,
-                  Vector4x<ARMFloat> *ptr2,
-                  Vector4x<ARMFloat> *ptr3,
-                  Vector4x<ARMFloat> *ptr4)
+    void shuffle4(const Vector4x<SIMDVector<float, 4>> &A,
+                  const Vector4x<SIMDVector<float, 4>> &B,
+                  const Vector4x<SIMDVector<float, 4>> &C,
+                  const Vector4x<SIMDVector<float, 4>> &D,
+                  Vector4x<SIMDVector<float, 4>> *ptr1,
+                  Vector4x<SIMDVector<float, 4>> *ptr2,
+                  Vector4x<SIMDVector<float, 4>> *ptr3,
+                  Vector4x<SIMDVector<float, 4>> *ptr4)
     {
-        const ARMFloat v1 = ARMFloat::shuffle_lo(A.mData[0], C.mData[0]);
-        const ARMFloat v2 = ARMFloat::shuffle_hi(A.mData[0], C.mData[0]);
-        const ARMFloat v3 = ARMFloat::shuffle_lo(B.mData[0], D.mData[0]);
-        const ARMFloat v4 = ARMFloat::shuffle_hi(B.mData[0], D.mData[0]);
+        const float32x4_t v1 = vcombine_f32( vget_low_f32(A.mData[0].mVal),  vget_low_f32(C.mData[0].mVal));
+        const float32x4_t v2 = vcombine_f32(vget_high_f32(A.mData[0].mVal), vget_high_f32(C.mData[0].mVal));
+        const float32x4_t v3 = vcombine_f32( vget_low_f32(B.mData[0].mVal),  vget_low_f32(D.mData[0].mVal));
+        const float32x4_t v4 = vcombine_f32(vget_high_f32(B.mData[0].mVal), vget_high_f32(D.mData[0].mVal));
         
-        ptr1->mData[0] = ARMFloat::shuffle_interleave_lo(v1, v3);
-        ptr2->mData[0] = ARMFloat::shuffle_interleave_lo(v2, v4);
-        ptr3->mData[0] = ARMFloat::shuffle_interleave_hi(v1, v3);
-        ptr4->mData[0] = ARMFloat::shuffle_interleave_hi(v2, v4);
+        const float32x4x2_t v5 vuzpq_f32(v1.mVal, v3.mVal);
+        const float32x4x2_t v6 vuzpq_f32(v2.mVal, v4.mVal);
+        
+        ptr1->mData[0] = v5.val[0];
+        ptr2->mData[0] = v6.val[0];
+        ptr3->mData[0] = v5.val[1];
+        ptr4->mData[0] = v6.val[1];
     }
     
 #endif
@@ -1262,7 +1261,7 @@ namespace hisstools_fft_impl{
     
     // FFT Passes Template
     
-    template <class T, class U, class V, class W>
+    template <class T, class U, class V>
     void fft_passes(Split<typename T::scalar_type> *input, Setup<typename T::scalar_type> *setup, uintptr_t fft_log2)
     {
         const uintptr_t length = (uintptr_t) 1 << fft_log2;
@@ -1271,20 +1270,20 @@ namespace hisstools_fft_impl{
         pass_1_2_reorder<T>(input, length);
         
         if (fft_log2 > 5)
-            pass_3_reorder<U>(input, length);
+            pass_3_reorder<T>(input, length);
         else
-            pass_3<U>(input, length);
+            pass_3<T>(input, length);
         
         if (3 < (fft_log2 >> 1))
-            pass_trig_table_reorder<V>(input, setup, length, 3);
+            pass_trig_table_reorder<U>(input, setup, length, 3);
         else
-            pass_trig_table<V>(input, setup, length, 3);
+            pass_trig_table<U>(input, setup, length, 3);
         
         for (i = 4; i < (fft_log2 >> 1); i++)
-            pass_trig_table_reorder<W>(input, setup, length, i);
+            pass_trig_table_reorder<V>(input, setup, length, i);
         
         for (; i < fft_log2; i++)
-            pass_trig_table<W>(input, setup, length, i);
+            pass_trig_table<V>(input, setup, length, i);
     }
     
     // SIMD Options
@@ -1293,11 +1292,10 @@ namespace hisstools_fft_impl{
     void fft_passes_simd(Split<T> *input, Setup<T> *setup, uintptr_t fft_log2)
     {
         typedef SIMDVector<T, SIMDLimits<T>::max_size <  4 ? SIMDLimits<T>::max_size :  4> Type1;
-        typedef SIMDVector<T, SIMDLimits<T>::max_size <  4 ? SIMDLimits<T>::max_size :  4> Type2;
-        typedef SIMDVector<T, SIMDLimits<T>::max_size <  8 ? SIMDLimits<T>::max_size :  8> Type3;
-        typedef SIMDVector<T, SIMDLimits<T>::max_size < 16 ? SIMDLimits<T>::max_size : 16> Type4;
+        typedef SIMDVector<T, SIMDLimits<T>::max_size <  8 ? SIMDLimits<T>::max_size :  8> Type2;
+        typedef SIMDVector<T, SIMDLimits<T>::max_size < 16 ? SIMDLimits<T>::max_size : 16> Type3;
         
-        fft_passes<Type1, Type2, Type3, Type4>(input, setup, fft_log2);
+        fft_passes<Type1, Type2, Type3>(input, setup, fft_log2);
     }
     
     // ******************** Main Calls ******************** //
@@ -1312,7 +1310,7 @@ namespace hisstools_fft_impl{
         if (fft_log2 >= 4)
         {
             if (!isAligned(input->realp) || !isAligned(input->imagp))
-                fft_passes<Scalar, Scalar, Scalar, Scalar>(input, setup, fft_log2);
+                fft_passes<Scalar, Scalar, Scalar>(input, setup, fft_log2);
             else
                 fft_passes_simd(input, setup, fft_log2);
         }
