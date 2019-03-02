@@ -324,18 +324,15 @@ namespace hisstools_fft_impl{
     
     // ******************** A Vector of 4 Items (Made of Vectors / Scalars) ******************** //
     
-    template <class T>
+    template <class T, int size>
     struct Vector4x
     {
-        static const int size = 4;
-        typedef typename T::scalar_type scalar_type;
-        typedef Split<scalar_type> split_type;
-        typedef Setup<scalar_type> setup_type;
-        static const int array_size = 4 / T::size;
+        typedef SIMDVector<T, size> ArrayType;
+        static const int array_size = 4 / size;
         
         Vector4x() {}
         Vector4x(const Vector4x *ptr) { *this = *ptr; }
-        Vector4x(const typename T::scalar_type *array) { *this = *reinterpret_cast<const Vector4x *>(array); }
+        Vector4x(const T *array) { *this = *reinterpret_cast<const Vector4x *>(array); }
         
         // This template allows a static loop
         
@@ -374,20 +371,20 @@ namespace hisstools_fft_impl{
         
         friend Vector4x operator + (const Vector4x& a, const Vector4x& b)
         {
-            return operate(a, b, std::plus<T>());
+            return operate(a, b, std::plus<ArrayType>());
         }
         
         friend Vector4x operator - (const Vector4x& a, const Vector4x& b)
         {
-            return operate(a, b, std::minus<T>());
+            return operate(a, b, std::minus<ArrayType>());
         }
         
         friend Vector4x operator * (const Vector4x& a, const Vector4x& b)
         {
-            return operate(a, b, std::multiplies<T>());
+            return operate(a, b, std::multiplies<ArrayType>());
         }
         
-        T mData[array_size];
+        ArrayType mData[array_size];
     };
     
     // ******************** Setup Creation and Destruction ******************** //
@@ -448,15 +445,15 @@ namespace hisstools_fft_impl{
     
     // Template for an SIMD Vectors With 4 Elements
     
-    template <class T>
-    void shuffle4(const Vector4x<T> &A,
-                  const Vector4x<T> &B,
-                  const Vector4x<T> &C,
-                  const Vector4x<T> &D,
-                  Vector4x<T> *ptr1,
-                  Vector4x<T> *ptr2,
-                  Vector4x<T> *ptr3,
-                  Vector4x<T> *ptr4)
+    template <class T, int size>
+    void shuffle4(const Vector4x<T, size> &A,
+                  const Vector4x<T, size> &B,
+                  const Vector4x<T, size> &C,
+                  const Vector4x<T, size> &D,
+                  Vector4x<T, size> *ptr1,
+                  Vector4x<T, size> *ptr2,
+                  Vector4x<T, size> *ptr3,
+                  Vector4x<T, size> *ptr4)
     {
         static_assert(T::size != T::size, "Shuffle not implemented for this type");
     }
@@ -464,14 +461,14 @@ namespace hisstools_fft_impl{
     // Template for Scalars
     
     template<class T>
-    void shuffle4(const Vector4x<SIMDVector<T, 1>> &A,
-                  const Vector4x<SIMDVector<T, 1>> &B,
-                  const Vector4x<SIMDVector<T, 1>> &C,
-                  const Vector4x<SIMDVector<T, 1>> &D,
-                  Vector4x<SIMDVector<T, 1>> *ptr1,
-                  Vector4x<SIMDVector<T, 1>> *ptr2,
-                  Vector4x<SIMDVector<T, 1>> *ptr3,
-                  Vector4x<SIMDVector<T, 1>> *ptr4)
+    void shuffle4(const Vector4x<T, 1> &A,
+                  const Vector4x<T, 1> &B,
+                  const Vector4x<T, 1> &C,
+                  const Vector4x<T, 1> &D,
+                  Vector4x<T, 1> *ptr1,
+                  Vector4x<T, 1> *ptr2,
+                  Vector4x<T, 1> *ptr3,
+                  Vector4x<T, 1> *ptr4)
     {
         ptr1->mData[0] = A.mData[0];
         ptr1->mData[1] = C.mData[0];
@@ -496,14 +493,14 @@ namespace hisstools_fft_impl{
     // Template Specialisation for an SSE Float Packed (1 SIMD Element)
     
     template<>
-    void shuffle4(const Vector4x<SIMDVector<float, 4>> &A,
-                  const Vector4x<SIMDVector<float, 4>> &B,
-                  const Vector4x<SIMDVector<float, 4>> &C,
-                  const Vector4x<SIMDVector<float, 4>> &D,
-                  Vector4x<SIMDVector<float, 4>> *ptr1,
-                  Vector4x<SIMDVector<float, 4>> *ptr2,
-                  Vector4x<SIMDVector<float, 4>> *ptr3,
-                  Vector4x<SIMDVector<float, 4>> *ptr4)
+    void shuffle4(const Vector4x<float, 4> &A,
+                  const Vector4x<float, 4> &B,
+                  const Vector4x<float, 4> &C,
+                  const Vector4x<float, 4> &D,
+                  Vector4x<float, 4> *ptr1,
+                  Vector4x<float, 4> *ptr2,
+                  Vector4x<float, 4> *ptr3,
+                  Vector4x<float, 4> *ptr4)
     {
         const __m128 v1 = _mm_unpacklo_ps(A.mData[0].mVal, B.mData[0].mVal);
         const __m128 v2 = _mm_unpackhi_ps(A.mData[0].mVal, B.mData[0].mVal);
@@ -519,14 +516,14 @@ namespace hisstools_fft_impl{
     // Template Specialisation for an SSE Double Packed (2 SIMD Elements)
     
     template<>
-    void shuffle4(const Vector4x<SIMDVector<double, 2>> &A,
-                  const Vector4x<SIMDVector<double, 2>> &B,
-                  const Vector4x<SIMDVector<double, 2>> &C,
-                  const Vector4x<SIMDVector<double, 2>> &D,
-                  Vector4x<SIMDVector<double, 2>> *ptr1,
-                  Vector4x<SIMDVector<double, 2>> *ptr2,
-                  Vector4x<SIMDVector<double, 2>> *ptr3,
-                  Vector4x<SIMDVector<double, 2>> *ptr4)
+    void shuffle4(const Vector4x<double, 2> &A,
+                  const Vector4x<double, 2> &B,
+                  const Vector4x<double, 2> &C,
+                  const Vector4x<double, 2> &D,
+                  Vector4x<double, 2> *ptr1,
+                  Vector4x<double, 2> *ptr2,
+                  Vector4x<double, 2> *ptr3,
+                  Vector4x<double, 2> *ptr4)
     {
         ptr1->mData[0] = _mm_unpacklo_pd(A.mData[0].mVal, C.mData[0].mVal);
         ptr1->mData[1] = _mm_unpacklo_pd(B.mData[0].mVal, D.mData[0].mVal);
@@ -545,14 +542,14 @@ namespace hisstools_fft_impl{
     // Template Specialisation for an AVX256 Double Packed (1 SIMD Element)
     
     template<>
-    void shuffle4(const Vector4x<SIMDVector<double, 4>> &A,
-                  const Vector4x<SIMDVector<double, 4>> &B,
-                  const Vector4x<SIMDVector<double, 4>> &C,
-                  const Vector4x<SIMDVector<double, 4>> &D,
-                  Vector4x<SIMDVector<double, 4>> *ptr1,
-                  Vector4x<SIMDVector<double, 4>> *ptr2,
-                  Vector4x<SIMDVector<double, 4>> *ptr3,
-                  Vector4x<SIMDVector<double, 4>> *ptr4)
+    void shuffle4(const Vector4x<double, 4> &A,
+                  const Vector4x<double, 4> &B,
+                  const Vector4x<double, 4> &C,
+                  const Vector4x<double, 4> &D,
+                  Vector4x<double, 4> *ptr1,
+                  Vector4x<double, 4> *ptr2,
+                  Vector4x<double, 4> *ptr3,
+                  Vector4x<double, 4> *ptr4)
     {
         const __m256 v1 = _mm256_unpacklo_pd(A.mData[0].mVal, B.mData[0].mVal);
         const __m256 v2 = _mm256_unpackhi_pd(A.mData[0].mVal, B.mData[0].mVal);
@@ -570,18 +567,16 @@ namespace hisstools_fft_impl{
 #if defined (__arm__)
     
     // Template Specialisation for an ARM Float Packed (1 SIMD Element)
-
-    typedef SIMDVector<float, 4> ARMFloat;
     
     template<>
-    void shuffle4(const Vector4x<SIMDVector<float, 4>> &A,
-                  const Vector4x<SIMDVector<float, 4>> &B,
-                  const Vector4x<SIMDVector<float, 4>> &C,
-                  const Vector4x<SIMDVector<float, 4>> &D,
-                  Vector4x<SIMDVector<float, 4>> *ptr1,
-                  Vector4x<SIMDVector<float, 4>> *ptr2,
-                  Vector4x<SIMDVector<float, 4>> *ptr3,
-                  Vector4x<SIMDVector<float, 4>> *ptr4)
+    void shuffle4(const Vector4x<float, 4> &A,
+                  const Vector4x<float, 4> &B,
+                  const Vector4x<float, 4> &C,
+                  const Vector4x<float, 4> &D,
+                  Vector4x<float, 4> *ptr1,
+                  Vector4x<float, 4> *ptr2,
+                  Vector4x<float, 4> *ptr3,
+                  Vector4x<float, 4> *ptr4)
     {
         const float32x4_t v1 = vcombine_f32( vget_low_f32(A.mData[0].mVal),  vget_low_f32(C.mData[0].mVal));
         const float32x4_t v2 = vcombine_f32(vget_high_f32(A.mData[0].mVal), vget_high_f32(C.mData[0].mVal));
@@ -606,7 +601,7 @@ namespace hisstools_fft_impl{
     template <class T>
     void pass_1_2_reorder(Split<typename T::scalar_type> *input, uintptr_t length)
     {
-        typedef Vector4x<T> Vector;
+        typedef Vector4x<typename T::scalar_type, T::size> Vector;
         
         Vector *r1_ptr = reinterpret_cast<Vector *>(input->realp);
         Vector *r2_ptr = r1_ptr + (length >> 4);
@@ -656,22 +651,22 @@ namespace hisstools_fft_impl{
     
     // Pass Three Twiddle Factors
     
-    template <class T>
-    void pass_3_twiddle(Vector4x<T> &tr, Vector4x<T> &ti)
+    template <class T, int size>
+    void pass_3_twiddle(Vector4x<T, size> &tr, Vector4x<T, size> &ti)
     {
         static const double SQRT_2_2 = 0.70710678118654752440084436210484904;
         
-        typename T::scalar_type _______zero = static_cast<typename T::scalar_type>(0);
-        typename T::scalar_type ________one = static_cast<typename T::scalar_type>(1);
-        typename T::scalar_type neg_____one = static_cast<typename T::scalar_type>(-1);
-        typename T::scalar_type ____sqrt2_2 = static_cast<typename T::scalar_type>(SQRT_2_2);
-        typename T::scalar_type neg_sqrt2_2 = static_cast<typename T::scalar_type>(-SQRT_2_2);
+        const T _______zero = static_cast<T>(0);
+        const T ________one = static_cast<T>(1);
+        const T neg_____one = static_cast<T>(-1);
+        const T ____sqrt2_2 = static_cast<T>(SQRT_2_2);
+        const T neg_sqrt2_2 = static_cast<T>(-SQRT_2_2);
         
-        typename T::scalar_type str[4] = {________one, ____sqrt2_2, _______zero, neg_sqrt2_2};
-        typename T::scalar_type sti[4] = {_______zero, neg_sqrt2_2, neg_____one, neg_sqrt2_2};
+        const T str[4] = {________one, ____sqrt2_2, _______zero, neg_sqrt2_2};
+        const T sti[4] = {_______zero, neg_sqrt2_2, neg_____one, neg_sqrt2_2};
         
-        tr = Vector4x<T>(str);
-        ti = Vector4x<T>(sti);
+        tr = Vector4x<T, size>(str);
+        ti = Vector4x<T, size>(sti);
     }
     
     // Pass Three With Re-ordering
@@ -679,7 +674,7 @@ namespace hisstools_fft_impl{
     template <class T>
     void pass_3_reorder(Split<typename T::scalar_type> *input, uintptr_t length)
     {
-        typedef Vector4x<T> Vector;
+        typedef Vector4x<typename T::scalar_type, T::size> Vector;
         
         uintptr_t offset = length >> 5;
         uintptr_t outerLoop = length >> 6;
@@ -742,7 +737,7 @@ namespace hisstools_fft_impl{
     template <class T>
     void pass_3(Split<typename T::scalar_type> *input, uintptr_t length)
     {
-        typedef Vector4x<T> Vector;
+        typedef Vector4x<typename T::scalar_type, T::size> Vector;
         
         Vector tr;
         Vector ti;
