@@ -114,9 +114,6 @@ namespace hisstools_fft_impl{
     struct SIMDVectorBase
     {
         static const int size = vec_size;
-        typedef T scalar_type;
-        typedef Split<scalar_type> split_type;
-        typedef Setup<scalar_type> setup_type;
         
         SIMDVectorBase() {}
         SIMDVectorBase(U a) : mVal(a) {}
@@ -324,11 +321,11 @@ namespace hisstools_fft_impl{
     
     // ******************** A Vector of 4 Items (Made of Vectors / Scalars) ******************** //
     
-    template <class T, int size>
+    template <class T, int vec_size>
     struct Vector4x
     {
-        typedef SIMDVector<T, size> ArrayType;
-        static const int array_size = 4 / size;
+        typedef SIMDVector<T, vec_size> ArrayType;
+        static const int array_size = 4 / vec_size;
         
         Vector4x() {}
         Vector4x(const Vector4x *ptr) { *this = *ptr; }
@@ -445,17 +442,17 @@ namespace hisstools_fft_impl{
     
     // Template for an SIMD Vectors With 4 Elements
     
-    template <class T, int size>
-    void shuffle4(const Vector4x<T, size> &A,
-                  const Vector4x<T, size> &B,
-                  const Vector4x<T, size> &C,
-                  const Vector4x<T, size> &D,
-                  Vector4x<T, size> *ptr1,
-                  Vector4x<T, size> *ptr2,
-                  Vector4x<T, size> *ptr3,
-                  Vector4x<T, size> *ptr4)
+    template <class T, int vec_size>
+    void shuffle4(const Vector4x<T, vec_size> &A,
+                  const Vector4x<T, vec_size> &B,
+                  const Vector4x<T, vec_size> &C,
+                  const Vector4x<T, vec_size> &D,
+                  Vector4x<T, vec_size> *ptr1,
+                  Vector4x<T, vec_size> *ptr2,
+                  Vector4x<T, vec_size> *ptr3,
+                  Vector4x<T, vec_size> *ptr4)
     {
-        static_assert(T::size != T::size, "Shuffle not implemented for this type");
+        static_assert(vec_size != vec_size, "Shuffle not implemented for this type");
     }
     
     // Template for Scalars
@@ -598,10 +595,10 @@ namespace hisstools_fft_impl{
     
     // Pass One and Two with Re-ordering
     
-    template <class T>
-    void pass_1_2_reorder(Split<typename T::scalar_type> *input, uintptr_t length)
+    template <class T, int vec_size>
+    void pass_1_2_reorder(Split<T> *input, uintptr_t length)
     {
-        typedef Vector4x<typename T::scalar_type, T::size> Vector;
+        typedef Vector4x<T, vec_size> Vector;
         
         Vector *r1_ptr = reinterpret_cast<Vector *>(input->realp);
         Vector *r2_ptr = r1_ptr + (length >> 4);
@@ -651,8 +648,8 @@ namespace hisstools_fft_impl{
     
     // Pass Three Twiddle Factors
     
-    template <class T, int size>
-    void pass_3_twiddle(Vector4x<T, size> &tr, Vector4x<T, size> &ti)
+    template <class T, int vec_size>
+    void pass_3_twiddle(Vector4x<T, vec_size> &tr, Vector4x<T, vec_size> &ti)
     {
         static const double SQRT_2_2 = 0.70710678118654752440084436210484904;
         
@@ -665,16 +662,16 @@ namespace hisstools_fft_impl{
         const T str[4] = {________one, ____sqrt2_2, _______zero, neg_sqrt2_2};
         const T sti[4] = {_______zero, neg_sqrt2_2, neg_____one, neg_sqrt2_2};
         
-        tr = Vector4x<T, size>(str);
-        ti = Vector4x<T, size>(sti);
+        tr = Vector4x<T, vec_size>(str);
+        ti = Vector4x<T, vec_size>(sti);
     }
     
     // Pass Three With Re-ordering
     
-    template <class T>
-    void pass_3_reorder(Split<typename T::scalar_type> *input, uintptr_t length)
+    template <class T, int vec_size>
+    void pass_3_reorder(Split<T> *input, uintptr_t length)
     {
-        typedef Vector4x<typename T::scalar_type, T::size> Vector;
+        typedef Vector4x<T, vec_size> Vector;
         
         uintptr_t offset = length >> 5;
         uintptr_t outerLoop = length >> 6;
@@ -734,11 +731,11 @@ namespace hisstools_fft_impl{
     
     // Pass Three Without Re-ordering
     
-    template <class T>
-    void pass_3(Split<typename T::scalar_type> *input, uintptr_t length)
+    template <class T, int vec_size>
+    void pass_3(Split<T> *input, uintptr_t length)
     {
-        typedef Vector4x<typename T::scalar_type, T::size> Vector;
-        
+        typedef Vector4x<T, vec_size> Vector;
+
         Vector tr;
         Vector ti;
         
@@ -773,48 +770,50 @@ namespace hisstools_fft_impl{
     
     // A Pass Requiring Tables With Re-ordering
     
-    template <class T>
-    void pass_trig_table_reorder(typename T::split_type *input, typename T::setup_type *setup, uintptr_t length, uintptr_t pass)
+    template <class T, int vec_size>
+    void pass_trig_table_reorder(Split<T> *input, Setup<T> *setup, uintptr_t length, uintptr_t pass)
     {
+        typedef SIMDVector<T, vec_size> Vector;
+
         uintptr_t size = 2 << pass;
-        uintptr_t incr = size / (T::size << 1);
+        uintptr_t incr = size / (vec_size << 1);
         uintptr_t loop = size;
-        uintptr_t offset = (length >> pass) / (T::size << 1);
+        uintptr_t offset = (length >> pass) / (vec_size << 1);
         uintptr_t outerLoop = ((length >> 1) / size) / ((uintptr_t) 1 << pass);
         
-        T *r1_ptr = reinterpret_cast<T *>(input->realp);
-        T *i1_ptr = reinterpret_cast<T *>(input->imagp);
-        T *r2_ptr = r1_ptr + offset;
-        T *i2_ptr = i1_ptr + offset;
+        Vector *r1_ptr = reinterpret_cast<Vector *>(input->realp);
+        Vector *i1_ptr = reinterpret_cast<Vector *>(input->imagp);
+        Vector *r2_ptr = r1_ptr + offset;
+        Vector *i2_ptr = i1_ptr + offset;
         
         for (uintptr_t i = 0, j = 0; i < (length >> 1); loop += size)
         {
-            T *tr_ptr = reinterpret_cast<T *>(setup->tables[pass - (trig_table_offset - 1)].realp);
-            T *ti_ptr = reinterpret_cast<T *>(setup->tables[pass - (trig_table_offset - 1)].imagp);
+            Vector *tr_ptr = reinterpret_cast<Vector *>(setup->tables[pass - (trig_table_offset - 1)].realp);
+            Vector *ti_ptr = reinterpret_cast<Vector *>(setup->tables[pass - (trig_table_offset - 1)].imagp);
             
-            for (; i < loop; i += (T::size << 1))
+            for (; i < loop; i += (vec_size << 1))
             {
                 // Get input and twiddle
                 
-                const T tr = *tr_ptr++;
-                const T ti = *ti_ptr++;
+                const Vector tr = *tr_ptr++;
+                const Vector ti = *ti_ptr++;
                 
-                const T r1 = *r1_ptr;
-                const T i1 = *i1_ptr;
-                const T r2 = *r2_ptr;
-                const T i2 = *i2_ptr;
+                const Vector r1 = *r1_ptr;
+                const Vector i1 = *i1_ptr;
+                const Vector r2 = *r2_ptr;
+                const Vector i2 = *i2_ptr;
                 
-                const T r3 = *(r1_ptr + incr);
-                const T i3 = *(i1_ptr + incr);
-                const T r4 = *(r2_ptr + incr);
-                const T i4 = *(i2_ptr + incr);
+                const Vector r3 = *(r1_ptr + incr);
+                const Vector i3 = *(i1_ptr + incr);
+                const Vector r4 = *(r2_ptr + incr);
+                const Vector i4 = *(i2_ptr + incr);
                 
                 // Multiply by twiddle
                 
-                const T r5 = (r2 * tr) - (i2 * ti);
-                const T i5 = (r2 * ti) + (i2 * tr);
-                const T r6 = (r4 * tr) - (i4 * ti);
-                const T i6 = (r4 * ti) + (i4 * tr);
+                const Vector r5 = (r2 * tr) - (i2 * ti);
+                const Vector i5 = (r2 * ti) + (i2 * tr);
+                const Vector r6 = (r4 * tr) - (i4 * ti);
+                const Vector i6 = (r4 * ti) + (i4 * tr);
                 
                 // Store output (swapping as necessary)
                 
@@ -846,39 +845,41 @@ namespace hisstools_fft_impl{
     
     // A Pass Requiring Tables Without Re-ordering
     
-    template <class T>
-    void pass_trig_table(typename T::split_type *input, typename T::setup_type *setup, uintptr_t length, uintptr_t pass)
+    template <class T, int vec_size>
+    void pass_trig_table(Split<T> *input, Setup<T> *setup, uintptr_t length, uintptr_t pass)
     {
+        typedef SIMDVector<T, vec_size> Vector;
+
         uintptr_t size = 2 << pass;
-        uintptr_t incr = size / (T::size << 1);
+        uintptr_t incr = size / (vec_size << 1);
         uintptr_t loop = size;
         
-        T *r1_ptr = reinterpret_cast<T *>(input->realp);
-        T *i1_ptr = reinterpret_cast<T *>(input->imagp);
-        T *r2_ptr = r1_ptr + (size >> 1) / T::size;
-        T *i2_ptr = i1_ptr + (size >> 1) / T::size;
+        Vector *r1_ptr = reinterpret_cast<Vector *>(input->realp);
+        Vector *i1_ptr = reinterpret_cast<Vector *>(input->imagp);
+        Vector *r2_ptr = r1_ptr + (size >> 1) / vec_size;
+        Vector *i2_ptr = i1_ptr + (size >> 1) / vec_size;
         
         for (uintptr_t i = 0; i < length; loop += size)
         {
-            T *tr_ptr = reinterpret_cast<T *>(setup->tables[pass - (trig_table_offset - 1)].realp);
-            T *ti_ptr = reinterpret_cast<T *>(setup->tables[pass - (trig_table_offset - 1)].imagp);
+            Vector *tr_ptr = reinterpret_cast<Vector *>(setup->tables[pass - (trig_table_offset - 1)].realp);
+            Vector *ti_ptr = reinterpret_cast<Vector *>(setup->tables[pass - (trig_table_offset - 1)].imagp);
             
-            for (; i < loop; i += (T::size << 1))
+            for (; i < loop; i += (vec_size << 1))
             {
                 // Get input and twiddle factors
                 
-                const T tr = *tr_ptr++;
-                const T ti = *ti_ptr++;
+                const Vector tr = *tr_ptr++;
+                const Vector ti = *ti_ptr++;
                 
-                const T r1 = *r1_ptr;
-                const T i1 = *i1_ptr;
-                const T r2 = *r2_ptr;
-                const T i2 = *i2_ptr;
+                const Vector r1 = *r1_ptr;
+                const Vector i1 = *i1_ptr;
+                const Vector r2 = *r2_ptr;
+                const Vector i2 = *i2_ptr;
                 
                 // Multiply by twiddle
                 
-                const T r3 = (r2 * tr) - (i2 * ti);
-                const T i3 = (r2 * ti) + (i2 * tr);
+                const Vector r3 = (r2 * tr) - (i2 * ti);
+                const Vector i3 = (r2 * ti) + (i2 * tr);
                 
                 // Store output
                 
@@ -1052,7 +1053,7 @@ namespace hisstools_fft_impl{
             
             // Pass Three
             
-            pass_3<SIMDVector<T, 1>>(input, 8);
+            pass_3<T, 1>(input, 8);
         }
     }
     
@@ -1148,15 +1149,17 @@ namespace hisstools_fft_impl{
     
     // Unzip
     
-    template <class T, class U>
-    void unzip_impl(const U *input, typename T::scalar_type *real, typename T::scalar_type *imag, uintptr_t half_length)
+    template <class T, int vec_size>
+    void unzip_impl(const T *input, T *real, T *imag, uintptr_t half_length)
     {
-        const T *in_ptr = reinterpret_cast<const T*>(input);
-        T *realp = reinterpret_cast<T*>(real);
-        T *imagp = reinterpret_cast<T*>(imag);
+        typedef SIMDVector<T, vec_size> Vector;
         
-        for (uintptr_t i = 0; i < (half_length / T::size); i++, in_ptr += 2)
-            T::deinterleave(in_ptr, realp++, imagp++);
+        const Vector *in_ptr = reinterpret_cast<const Vector*>(input);
+        Vector *realp = reinterpret_cast<Vector*>(real);
+        Vector *imagp = reinterpret_cast<Vector*>(imag);
+        
+        for (uintptr_t i = 0; i < (half_length / vec_size); i++, in_ptr += 2)
+            Vector::deinterleave(in_ptr, realp++, imagp++);
     }
     
     template <class T, class U>
@@ -1176,47 +1179,45 @@ namespace hisstools_fft_impl{
     void unzip_complex(const T *input, Split<T> *output, uintptr_t half_length)
     {
         const int v_size = SIMDLimits<T>::max_size;
-        typedef SIMDVector<T, v_size> Vector;
-        typedef SIMDVector<T, v_size> Scalar;
         
         if (isAligned(input) && isAligned(output->realp) && isAligned(output->imagp))
         {
             uintptr_t v_length = (half_length / v_size) * v_size;
-            unzip_impl<Vector>(input, output->realp, output->imagp, v_length);
-            unzip_impl<Scalar>(input + (v_length * 2), output->realp + v_length, output->imagp + v_length, half_length - v_length);
+            unzip_impl<T, v_size>(input, output->realp, output->imagp, v_length);
+            unzip_impl<T, 1>(input + (v_length * 2), output->realp + v_length, output->imagp + v_length, half_length - v_length);
         }
         else
-            unzip_impl<Scalar>(input, output->realp, output->imagp, half_length);
+            unzip_impl<T, 1>(input, output->realp, output->imagp, half_length);
     }
     
     // Zip
     
-    template <class T, class U>
-    void zip_impl(const typename T::scalar_type *real, const typename T::scalar_type *imag, U *output, uintptr_t half_length)
+    template <class T, int vec_size>
+    void zip_impl(const T *real, const T *imag, T *output, uintptr_t half_length)
     {
-        const T *realp = reinterpret_cast<const T*>(real);
-        const T *imagp = reinterpret_cast<const T*>(imag);
-        T *out_ptr = reinterpret_cast<T*>(output);
+        typedef SIMDVector<T, vec_size> Vector;
+
+        const Vector *realp = reinterpret_cast<const Vector*>(real);
+        const Vector *imagp = reinterpret_cast<const Vector*>(imag);
+        Vector *out_ptr = reinterpret_cast<Vector*>(output);
         
-        for (uintptr_t i = 0; i < (half_length / T::size); i++, out_ptr += 2)
-            T::interleave(realp++, imagp++, out_ptr);
+        for (uintptr_t i = 0; i < (half_length / vec_size); i++, out_ptr += 2)
+            Vector::interleave(realp++, imagp++, out_ptr);
     }
     
     template<class T>
     void zip_complex(const Split<T> *input, T *output, uintptr_t half_length)
     {
         const int v_size = SIMDLimits<T>::max_size;
-        typedef SIMDVector<T, v_size> Vector;
-        typedef SIMDVector<T, v_size> Scalar;
         
         if (isAligned(output) && isAligned(input->realp) && isAligned(input->imagp))
         {
             uintptr_t v_length = (half_length / v_size) * v_size;
-            zip_impl<Vector>(input->realp, input->imagp, output, v_length);
-            zip_impl<Scalar>(input->realp + v_length, input->imagp + v_length, output + (2 * v_length), half_length - v_length);
+            zip_impl<T, v_size>(input->realp, input->imagp, output, v_length);
+            zip_impl<T, 1>(input->realp + v_length, input->imagp + v_length, output + (2 * v_length), half_length - v_length);
         }
         else
-            zip_impl<Scalar>(input->realp, input->imagp, output, half_length);
+            zip_impl<T, 1>(input->realp, input->imagp, output, half_length);
     }
     
     // Unzip With Zero Padding
@@ -1256,41 +1257,32 @@ namespace hisstools_fft_impl{
     
     // FFT Passes Template
     
-    template <class T, class U, class V>
-    void fft_passes(Split<typename T::scalar_type> *input, Setup<typename T::scalar_type> *setup, uintptr_t fft_log2)
+    template <class T, int max_vec_size>
+    void fft_passes(Split<T> *input, Setup<T> *setup, uintptr_t fft_log2)
     {
+        const int A = max_vec_size <  4 ? max_vec_size :  4;
+        const int B = max_vec_size <  8 ? max_vec_size :  8;
+        const int C = max_vec_size < 16 ? max_vec_size : 16;
         const uintptr_t length = (uintptr_t) 1 << fft_log2;
         uintptr_t i;
         
-        pass_1_2_reorder<T>(input, length);
+        pass_1_2_reorder<T, A>(input, length);
         
         if (fft_log2 > 5)
-            pass_3_reorder<T>(input, length);
+            pass_3_reorder<T, A>(input, length);
         else
-            pass_3<T>(input, length);
+            pass_3<T, A>(input, length);
         
         if (3 < (fft_log2 >> 1))
-            pass_trig_table_reorder<U>(input, setup, length, 3);
+            pass_trig_table_reorder<T, B>(input, setup, length, 3);
         else
-            pass_trig_table<U>(input, setup, length, 3);
+            pass_trig_table<T, B>(input, setup, length, 3);
         
         for (i = 4; i < (fft_log2 >> 1); i++)
-            pass_trig_table_reorder<V>(input, setup, length, i);
+            pass_trig_table_reorder<T, C>(input, setup, length, i);
         
         for (; i < fft_log2; i++)
-            pass_trig_table<V>(input, setup, length, i);
-    }
-    
-    // SIMD Options
-    
-    template <class T>
-    void fft_passes_simd(Split<T> *input, Setup<T> *setup, uintptr_t fft_log2)
-    {
-        typedef SIMDVector<T, SIMDLimits<T>::max_size <  4 ? SIMDLimits<T>::max_size :  4> Type1;
-        typedef SIMDVector<T, SIMDLimits<T>::max_size <  8 ? SIMDLimits<T>::max_size :  8> Type2;
-        typedef SIMDVector<T, SIMDLimits<T>::max_size < 16 ? SIMDLimits<T>::max_size : 16> Type3;
-        
-        fft_passes<Type1, Type2, Type3>(input, setup, fft_log2);
+            pass_trig_table<T, C>(input, setup, length, i);
     }
     
     // ******************** Main Calls ******************** //
@@ -1300,14 +1292,12 @@ namespace hisstools_fft_impl{
     template <class T>
     void hisstools_fft(Split<T> *input, Setup<T> *setup, uintptr_t fft_log2)
     {
-        typedef SIMDVector<T, 1> Scalar;
-        
         if (fft_log2 >= 4)
         {
             if (!isAligned(input->realp) || !isAligned(input->imagp))
-                fft_passes<Scalar, Scalar, Scalar>(input, setup, fft_log2);
+                fft_passes<T, 1>(input, setup, fft_log2);
             else
-                fft_passes_simd(input, setup, fft_log2);
+                fft_passes<T, SIMDLimits<T>::max_size>(input, setup, fft_log2);
         }
         else
             small_fft(input, fft_log2);
