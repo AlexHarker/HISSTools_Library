@@ -18,8 +18,8 @@ public:
     
     // Alloc and free routine prototypes
     
-    typedef T *(*AllocFunc) (uintptr_t size);
-    typedef void (*FreeFunc) (T *);
+    typedef std::function<T *(uintptr_t size)> AllocFunc;
+    typedef std::function<void (T *) > FreeFunc;
     
     class Ptr
     {
