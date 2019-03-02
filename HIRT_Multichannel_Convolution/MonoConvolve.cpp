@@ -2,61 +2,39 @@
 #include "MonoConvolve.h"
 
 #include "ConvolveSIMD.h"
+#include <cassert>
 #include <functional>
 #include <random>
 
 typedef MemorySwap<HISSTools::PartitionedConvolve>::Ptr PartPtr;
+typedef std::unique_ptr<HISSTools::PartitionedConvolve> PartUniquePtr;
 
-// Allocation Utilities
-
-template <uintptr_t x>
-HISSTools::PartitionedConvolve *alloc(uintptr_t size)
-{
-    return new HISSTools::PartitionedConvolve(16384, std::max(size, uintptr_t(16384)) - x, x, 0);
-}
-
-MemorySwap<HISSTools::PartitionedConvolve>::AllocFunc getAllocator(LatencyMode latency)
-{
-    switch (latency)
-    {
-        case kLatencyZero:      return alloc<8192>;
-        case kLatencyShort:     return alloc<8064>;
-        case kLatencyMedium:    return alloc<7680>;
-    }
-}
+// Free Utility
 
 void largeFree(HISSTools::PartitionedConvolve *largePartition)
 {
     delete largePartition;
 }
 
-// Constructor and Deconstructor
+// Standard Constructor
 
 HISSTools::MonoConvolve::MonoConvolve(uintptr_t maxLength, LatencyMode latency)
-: mPart4(getAllocator(latency), largeFree, maxLength), mLength(0), mLatency(latency), mReset(false)
+: mAllocator(nullptr), mPart4(0), mLength(0), mReset(false)
 {
     switch (latency)
     {
-        case kLatencyZero:
-            mTime1.reset(new TimeDomainConvolve(0, 128));
-            mPart1.reset(new PartitionedConvolve(256, 384, 128, 384));
-            mPart2.reset(new PartitionedConvolve(1024, 1536, 512, 1536));
-            mPart3.reset(new PartitionedConvolve(4096, 6144, 2048, 6144));
-            break;
-            
-        case kLatencyShort:
-            mPart1.reset(new PartitionedConvolve(256, 384, 0, 384));
-            mPart2.reset(new PartitionedConvolve(1024, 1536, 384, 1536));
-            mPart3.reset(new PartitionedConvolve(4096, 6144, 1920, 6144));
-            break;
-            
-        case kLatencyMedium:
-            mPart2.reset(new PartitionedConvolve(1024, 1536, 0, 1536));
-            mPart3.reset(new PartitionedConvolve(4096, 6144, 1536, 6144));
-            break;
+        case kLatencyZero:      createPartitions(maxLength, true, 256, 1024, 4096, 16384);      break;
+        case kLatencyShort:     createPartitions(maxLength, false, 256, 1024, 4096, 16384);     break;
+        case kLatencyMedium:    createPartitions(maxLength, false, 1024, 4096, 16384);          break;
     }
+}
 
-    setResetOffset();
+// Constructor (custom partitioning)
+
+HISSTools::MonoConvolve::MonoConvolve(uintptr_t maxLength, bool zeroLatency, uint32_t A, uint32_t B, uint32_t C, uint32_t D)
+: mAllocator(nullptr), mPart4(0), mLength(0), mReset(false)
+{
+    createPartitions(maxLength, zeroLatency, A, B, C, D);
 }
 
 void HISSTools::MonoConvolve::setResetOffset(intptr_t offset)
@@ -75,7 +53,7 @@ void HISSTools::MonoConvolve::setResetOffset(intptr_t offset)
 ConvolveError HISSTools::MonoConvolve::resize(uintptr_t length)
 {
     mLength = 0;
-    PartPtr part4 = mPart4.equal(getAllocator(mLatency), largeFree, length);
+    PartPtr part4 = mPart4.equal(mAllocator, largeFree, length);
     
     return part4.getSize() == length ? CONVOLVE_ERR_NONE : CONVOLVE_ERR_MEM_UNAVAILABLE;
 }
@@ -91,7 +69,7 @@ ConvolveError HISSTools::MonoConvolve::set(const float *input, uintptr_t length,
     // Lock or resize first to ensure that audio finishes processing before we replace
     
     mLength = 0;
-    PartPtr part4 = requestResize ? mPart4.equal(getAllocator(mLatency), largeFree, length) : mPart4.access();
+    PartPtr part4 = requestResize ? mPart4.equal(mAllocator, largeFree, length) : mPart4.access();
     
     if (part4.get())
     {
@@ -163,4 +141,59 @@ void HISSTools::MonoConvolve::process(const float *in, float *temp, float *out, 
         processAndSum(mPart3.get(), in, temp, out, numSamples);
         processAndSum(part4.get(), in, temp, out, numSamples);
     }
+}
+
+void HISSTools::MonoConvolve::createPartitions(uintptr_t maxLength, bool zeroLatency, uint32_t A, uint32_t B, uint32_t C, uint32_t D)
+{
+    std::vector<uint32_t> sizes;
+    
+    // Utilities
+    
+    auto checkFFTSize = [&sizes](int size, int prev)
+    {
+        bool valid = (size >= (1 << 5)) && (size <= (1 << 20)) && size > prev;
+        
+        if (valid)
+            sizes.push_back(size);
+        
+        return valid || !size;
+    };
+    
+    auto createPart = [](PartUniquePtr& obj, uint32_t& offset, uint32_t size, uint32_t next)
+    {
+        obj.reset(new PartitionedConvolve(size, (next - size) >> 1, offset, (next - size) >> 1));
+        offset += (next - size) >> 1;
+    };
+    
+    // Sanity checks
+    
+    assert(checkFFTSize(A, 0) && "FFT size is not valid (wrong value or out of order)");
+    assert(checkFFTSize(B, A) && "FFT size is not valid (wrong value or out of order)");
+    assert(checkFFTSize(C, B) && "FFT size is not valid (wrong value or out of order)");
+    assert(checkFFTSize(D, C) && "FFT size is not valid (wrong value or out of order)");
+    assert(sizes.size() && "No valid FFT sizes given");
+    
+    size_t numSizes = sizes.size();
+    uint32_t offset = zeroLatency ? sizes[0] >> 1 : 0;
+    uint32_t largestSize = sizes[numSizes - 1];
+    
+    // Allocate paritions in unique pointers
+    
+    if (zeroLatency) mTime1.reset(new TimeDomainConvolve(0, sizes[0] >> 1));
+    if (numSizes == 4) createPart(mPart1, offset, sizes[0], sizes[1]);
+    if (numSizes > 2) createPart(mPart2, offset, sizes[numSizes - 3], sizes[numSizes - 2]);
+    if (numSizes > 1) createPart(mPart3, offset, sizes[numSizes - 2], sizes[numSizes - 1]);
+   
+    // Allocate the final resizeable partition
+    
+    mAllocator = [maxLength, offset, largestSize](uintptr_t size)
+    {
+        return new HISSTools::PartitionedConvolve(largestSize, std::max(size, uintptr_t(largestSize)) - offset, offset, 0);
+    };
+   
+    mPart4.equal(mAllocator, largeFree, maxLength);
+    
+    // Set offsets
+    
+    setResetOffset();
 }
