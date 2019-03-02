@@ -281,7 +281,6 @@ void hisstools_rifft(FFT_SETUP_D setup, FFT_SPLIT_COMPLEX_D *input, double *outp
 	@remark             The inverse FFT may be performed with either scalar or SIMD instructions. SIMD instuctions will be used when the pointers within the FFT_SPLIT_COMPLEX_D are sixteen byte aligned. .
  */
 
-
 void hisstools_rifft(FFT_SETUP_F setup, FFT_SPLIT_COMPLEX_F *input, float *output, uintptr_t log2n);
 
 /**
