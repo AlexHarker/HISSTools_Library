@@ -580,8 +580,8 @@ namespace hisstools_fft_impl{
         const float32x4_t v3 = vcombine_f32( vget_low_f32(B.mData[0].mVal),  vget_low_f32(D.mData[0].mVal));
         const float32x4_t v4 = vcombine_f32(vget_high_f32(B.mData[0].mVal), vget_high_f32(D.mData[0].mVal));
         
-        const float32x4x2_t v5 vuzpq_f32(v1.mVal, v3.mVal);
-        const float32x4x2_t v6 vuzpq_f32(v2.mVal, v4.mVal);
+        const float32x4x2_t v5 = vuzpq_f32(v1, v3);
+        const float32x4x2_t v6 = vuzpq_f32(v2, v4);
         
         ptr1->mData[0] = v5.val[0];
         ptr2->mData[0] = v6.val[0];
