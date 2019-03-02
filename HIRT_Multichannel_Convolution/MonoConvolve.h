@@ -73,7 +73,6 @@ namespace HISSTools
         uintptr_t mLength;
         LatencyMode mLatency;
         
-        intptr_t mResetOffset;
         bool mReset;
     };
 }
