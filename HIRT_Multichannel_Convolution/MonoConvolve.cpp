@@ -139,9 +139,9 @@ void sum(T *temp, T *out, uintptr_t numItems)
 }
 
 template<class T>
-void processAndSum(T *obj, const float *in, float *temp, float *out, uintptr_t numSamples)
+void processAndSum(T *obj, const float *in, float *temp, float *out, uintptr_t numSamples, bool accumulate)
 {
-    if (obj && obj->process(in, temp, numSamples))
+    if (obj && obj->process(in, accumulate ? temp : out, numSamples) && accumulate)
     {
         if ((numSamples % 4) || (((uintptr_t) out) % 16) || (((uintptr_t) temp) % 16))
             sum(temp, out, numSamples);
@@ -150,12 +150,10 @@ void processAndSum(T *obj, const float *in, float *temp, float *out, uintptr_t n
     }
 }
 
-void HISSTools::MonoConvolve::process(const float *in, float *temp, float *out, uintptr_t numSamples)
+void HISSTools::MonoConvolve::process(const float *in, float *temp, float *out, uintptr_t numSamples, bool accumulate)
 {
     PartPtr part4 = mPart4.attempt();
-    
-    // N.B. This function DOES NOT zero the output buffer as this is done elsewhere
-    
+        
     if (mLength && mLength <= part4.getSize())
     {
         if (mReset)
@@ -168,11 +166,11 @@ void HISSTools::MonoConvolve::process(const float *in, float *temp, float *out, 
             mReset = false;
         }
         
-        processAndSum(mTime1.get(), in, temp, out, numSamples);
-        processAndSum(mPart1.get(), in, temp, out, numSamples);
-        processAndSum(mPart2.get(), in, temp, out, numSamples);
-        processAndSum(mPart3.get(), in, temp, out, numSamples);
-        processAndSum(part4.get(), in, temp, out, numSamples);
+        processAndSum(mTime1.get(), in, temp, out, numSamples, accumulate);
+        processAndSum(mPart1.get(), in, temp, out, numSamples, accumulate || mTime1);
+        processAndSum(mPart2.get(), in, temp, out, numSamples, accumulate || mPart1);
+        processAndSum(mPart3.get(), in, temp, out, numSamples, accumulate || mPart2);
+        processAndSum(part4.get(), in, temp, out, numSamples, accumulate || mPart3);
     }
 }
 

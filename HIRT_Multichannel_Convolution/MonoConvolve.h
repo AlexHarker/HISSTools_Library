@@ -40,7 +40,7 @@ namespace HISSTools
         ConvolveError set(const float *input, uintptr_t length, bool requestResize);
         ConvolveError reset();
         
-        void process(const float *in, float *temp, float *out, uintptr_t numSamples);
+        void process(const float *in, float *temp, float *out, uintptr_t numSamples, bool accumulate = false);
         
     private:
 
