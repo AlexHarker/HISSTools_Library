@@ -42,11 +42,11 @@ namespace HISSTools
         
         void process(const float *in, float *temp, float *out, uintptr_t numSamples, bool accumulate = false);
         
+        void setPartitions(uintptr_t maxLength, bool zeroLatency, uint32_t A, uint32_t B = 0, uint32_t C = 0, uint32_t D = 0);
+
     private:
 
         size_t numSizes() { return mSizes.size(); }
-        
-        void createPartitions(uintptr_t maxLength, bool zeroLatency, uint32_t A, uint32_t B = 0, uint32_t C = 0, uint32_t D = 0);
         
         MemorySwap<PartitionedConvolve>::AllocFunc mAllocator;
 

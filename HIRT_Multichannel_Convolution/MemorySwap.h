@@ -45,6 +45,31 @@ public:
             mSize = 0;
         }
         
+        void swap(T *ptr, uintptr_t size)
+        {
+            update(&MemorySwap::set, ptr, size, nullptr);
+        }
+        
+        void grow(uintptr_t size)
+        {
+            grow(&allocate, &deallocate, size);
+        }
+        
+        void equal(uintptr_t size)
+        {
+            equal(&allocate, &deallocate, size);
+        }
+        
+        void grow(AllocFunc allocFunction, FreeFunc freeFunction, uintptr_t size)
+        {
+            updateAllocateIf(allocFunction, freeFunction, size, std::greater<uintptr_t>());
+        }
+        
+        void equal(AllocFunc allocFunction, FreeFunc freeFunction, uintptr_t size)
+        {
+            updateAllocateIf(allocFunction, freeFunction, size, std::not_equal_to<uintptr_t>());
+        }
+        
         T *get() { return mPtr; }
         uintptr_t getSize() { return mSize; }
         
@@ -54,12 +79,29 @@ public:
         : mOwner(nullptr), mPtr(nullptr), mSize(0)
         {}
         
-        Ptr(MemorySwap *owner, T *ptr, uintptr_t size)
-        : mOwner(owner), mPtr(mOwner ? ptr : nullptr), mSize(mOwner ? size : 0)
+        Ptr(MemorySwap *owner)
+        : mOwner(owner), mPtr(mOwner ? mOwner->mPtr : nullptr), mSize(mOwner ? mOwner->mSize : 0)
         {}
         
         Ptr(const Ptr& p) = delete;
         Ptr operator = (const Ptr& p) = delete;
+        
+        template<typename Op>
+        void updateAllocateIf(AllocFunc allocFunction, FreeFunc freeFunction, uintptr_t size, Op op)
+        {
+            update(&MemorySwap::allocateIfLockHeld<Op>, allocFunction, freeFunction, size, op);
+        }
+        
+        template<typename Op, typename ...Args>
+        void update(Op op, Args...args)
+        {
+            if (mOwner)
+            {
+                (mOwner->*op)(args...);
+                mPtr = mOwner->mPtr;
+                mSize = mOwner->mSize;
+            }
+        }
         
         MemorySwap *mOwner;
         T *mPtr;
@@ -122,31 +164,31 @@ public:
     Ptr access()
     {
         lock();
-        return Ptr(this, mPtr, mSize);
+        return Ptr(this);
     }
     
     // This non-blocking routine will attempt to get the pointer but fail if the pointer is being  accessed in another thread
     
     Ptr attempt()
     {
-        return tryLock() ? Ptr(this, mPtr, mSize) : Ptr();
+        return tryLock() ? Ptr(this) : Ptr();
     }
     
     Ptr swap(T *ptr, uintptr_t size)
     {
         lock();
         set(ptr, size, nullptr);
-        return Ptr(this, mPtr, mSize);
+        return Ptr(this);
     }
     
     Ptr grow(uintptr_t size)
     {
-        return grow(&allocate,  &deallocate, size);
+        return grow(&allocate, &deallocate, size);
     }
     
     Ptr equal(uintptr_t size)
     {
-        return equal(&allocate,  &deallocate, size);
+        return equal(&allocate, &deallocate, size);
     }
     
     Ptr grow(AllocFunc allocFunction, FreeFunc freeFunction, uintptr_t size)
@@ -165,11 +207,15 @@ private:
     Ptr allocateIf(AllocFunc allocFunction, FreeFunc freeFunction, uintptr_t size, Op op)
     {
         lock();
-        
+        allocateIfLockHeld(allocFunction, freeFunction, size, op);
+        return Ptr(this);
+    }
+    
+    template<typename Op>
+    void allocateIfLockHeld(AllocFunc allocFunction, FreeFunc freeFunction, uintptr_t size, Op op)
+    {
         if (op(size, mSize))
             set(allocFunction(size), size, freeFunction);
-        
-        return Ptr(this, mPtr, mSize);
     }
     
     void set(T *ptr, uintptr_t size, FreeFunc freeFunction)

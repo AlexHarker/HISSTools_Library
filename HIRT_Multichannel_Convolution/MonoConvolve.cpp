@@ -24,9 +24,9 @@ HISSTools::MonoConvolve::MonoConvolve(uintptr_t maxLength, LatencyMode latency)
 {
     switch (latency)
     {
-        case kLatencyZero:      createPartitions(maxLength, true, 256, 1024, 4096, 16384);      break;
-        case kLatencyShort:     createPartitions(maxLength, false, 256, 1024, 4096, 16384);     break;
-        case kLatencyMedium:    createPartitions(maxLength, false, 1024, 4096, 16384);          break;
+        case kLatencyZero:      setPartitions(maxLength, true, 256, 1024, 4096, 16384);     break;
+        case kLatencyShort:     setPartitions(maxLength, false, 256, 1024, 4096, 16384);    break;
+        case kLatencyMedium:    setPartitions(maxLength, false, 1024, 4096, 16384);         break;
     }
 }
 
@@ -35,7 +35,7 @@ HISSTools::MonoConvolve::MonoConvolve(uintptr_t maxLength, LatencyMode latency)
 HISSTools::MonoConvolve::MonoConvolve(uintptr_t maxLength, bool zeroLatency, uint32_t A, uint32_t B, uint32_t C, uint32_t D)
 : mAllocator(nullptr), mPart4(0), mLength(0), mPart4Offset(0), mReset(false)
 {
-    createPartitions(maxLength, zeroLatency, A, B, C, D);
+    setPartitions(maxLength, zeroLatency, A, B, C, D);
 }
 
 // Move Constructor
@@ -183,18 +183,15 @@ void HISSTools::MonoConvolve::process(const float *in, float *temp, float *out, 
     }
 }
 
-void HISSTools::MonoConvolve::createPartitions(uintptr_t maxLength, bool zeroLatency, uint32_t A, uint32_t B, uint32_t C, uint32_t D)
+void HISSTools::MonoConvolve::setPartitions(uintptr_t maxLength, bool zeroLatency, uint32_t A, uint32_t B, uint32_t C, uint32_t D)
 {
     // Utilities
     
     auto checkAndStoreFFTSize = [this](int size, int prev)
     {
-        bool valid = (size >= (1 << 5)) && (size <= (1 << 20)) && size > prev;
-        
-        if (valid)
+        if ((size >= (1 << 5)) && (size <= (1 << 20)) && size > prev)
             mSizes.push_back(size);
-        
-        if (!valid && size)
+        else if (size)
             throw std::runtime_error("invalid FFT size or order");
     };
     
@@ -214,24 +211,28 @@ void HISSTools::MonoConvolve::createPartitions(uintptr_t maxLength, bool zeroLat
     if (!numSizes())
         throw std::runtime_error("no valid FFT sizes given");
     
+    // Lock to ensure we have exclusive access
+    
+    PartPtr part4 = mPart4.access();
+
     uint32_t offset = zeroLatency ? mSizes[0] >> 1 : 0;
     uint32_t largestSize = mSizes[numSizes() - 1];
-    
+        
     // Allocate paritions in unique pointers
-    
+        
     if (zeroLatency) mTime1.reset(new TimeDomainConvolve(0, mSizes[0] >> 1));
     if (numSizes() == 4) createPart(mPart1, offset, mSizes[0], mSizes[1]);
     if (numSizes() > 2) createPart(mPart2, offset, mSizes[numSizes() - 3], mSizes[numSizes() - 2]);
     if (numSizes() > 1) createPart(mPart3, offset, mSizes[numSizes() - 2], mSizes[numSizes() - 1]);
-   
+       
     // Allocate the final resizeable partition
-    
+        
     mAllocator = [maxLength, offset, largestSize](uintptr_t size)
     {
         return new HISSTools::PartitionedConvolve(largestSize, std::max(size, uintptr_t(largestSize)) - offset, offset, 0);
     };
-   
-    mPart4.equal(mAllocator, largeFree, maxLength);
+       
+    part4.equal(mAllocator, largeFree, maxLength);
     
     // Set offsets
     
