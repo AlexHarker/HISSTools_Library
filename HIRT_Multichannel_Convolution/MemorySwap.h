@@ -2,7 +2,7 @@
 #pragma once
 
 #include <stdlib.h>
-#include <stdint.h>
+#include <cstdint>
 #include <atomic>
 #include <functional>
 

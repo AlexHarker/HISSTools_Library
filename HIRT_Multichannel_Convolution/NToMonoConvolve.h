@@ -4,7 +4,7 @@
 #include "MonoConvolve.h"
 #include "ConvolveErrors.h"
 
-#include <stdint.h>
+#include <cstdint>
 #include <vector>
 
 namespace HISSTools

@@ -1,7 +1,7 @@
 
 #include "MonoConvolve.h"
-
 #include "ConvolveSIMD.h"
+
 #include <cassert>
 #include <functional>
 #include <random>

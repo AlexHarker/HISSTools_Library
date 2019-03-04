@@ -12,7 +12,6 @@
  */
 
 #include "TimeDomainConvolve.h"
-
 #include "ConvolveSIMD.h"
 
 #include <algorithm>

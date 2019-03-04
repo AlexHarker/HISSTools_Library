@@ -1,12 +1,12 @@
 
 #pragma once
 
-#include <stdint.h>
-#include <vector>
-
 #include "MemorySwap.h"
 #include "NToMonoConvolve.h"
 #include "ConvolveErrors.h"
+
+#include <cstdint>
+#include <vector>
 
 namespace HISSTools
 {

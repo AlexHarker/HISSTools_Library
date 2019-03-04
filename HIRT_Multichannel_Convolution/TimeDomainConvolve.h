@@ -2,7 +2,8 @@
 #pragma once
 
 #include "ConvolveErrors.h"
-#include <stdint.h>
+
+#include <cstdint>
 
 namespace HISSTools
 {
