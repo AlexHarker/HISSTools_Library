@@ -206,11 +206,10 @@ namespace HISSTools
         return value;
     }
 
-    template <int BITS, class T>
+    template <int32_t BITS, class T>
     void IAudioFile::u32ToOutput(T* output, uint32_t value)
     {
-        *output = *reinterpret_cast<int32_t*>(&value)
-        * (T)0.00000000046566128730773925; //0x1.0fp-31; // 
+        *output = *reinterpret_cast<int32_t*>(&value) * (T(1.0) / static_cast<T>(1 << (BITS - 1)));
     }
     
     template <class T>

@@ -556,13 +556,27 @@ namespace HISSTools
         return success;
     }
 
-    uint32_t OAudioFile::inputToU32(double input, int bitDepth)
+    uint32_t OAudioFile::inputToU32(double input, int32_t bitDepth)
     {
-        // FIX - issues of value (note the value is 2^31 - 1 below)
+        // FIX - issues of value (note 1 might be clipped by one value - what to do?)
+        
+        const uint32_t maxVal = 1 << (bitDepth - 1);
+        
+        input = round(input * static_cast<double>(maxVal));
+        
+        std::min(std::max(input, static_cast<double>(-maxVal)), static_cast<double>(maxVal - 1));
 
-        input = std::min(std::max(input, -1.0), 1.0);
-
-        return static_cast<uint32_t>(round(input * static_cast<double>(1 << (bitDepth - 1))));
+        return static_cast<uint32_t>(input);
+    }
+    
+    uint8_t OAudioFile::inputToU8(double input)
+    {
+        // Convert then clip before casting
+        
+        input = round((input * 128.0) + 128.0);
+        input = std::min(std::max(input, 0.0), 255.0);
+        
+        return static_cast<uint8_t>(input);
     }
 
     template <class T>
@@ -589,11 +603,23 @@ namespace HISSTools
         switch (getPCMFormat())
         {
         case kAudioFileInt8:
-            for (uintptr_t i = 0; i < inputSamples; i++)
+            if (getFileType() == kAudioFileWAVE)
             {
-                seekRelativeInternal(offset);
-                putU08(inputToU32(input[i], 8));
-                seekRelativeInternal(byteStep);
+                for (uintptr_t i = 0; i < inputSamples; i++)
+                {
+                    seekRelativeInternal(offset);
+                    putU08(inputToU8(input[i]));
+                    seekRelativeInternal(byteStep);
+                }
+            }
+            else
+            {
+                for (uintptr_t i = 0; i < inputSamples; i++)
+                {
+                    seekRelativeInternal(offset);
+                    putU08(inputToU32(input[i], 8));
+                    seekRelativeInternal(byteStep);
+                }
             }
             break;
 

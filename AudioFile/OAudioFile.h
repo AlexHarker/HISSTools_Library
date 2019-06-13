@@ -57,7 +57,8 @@ namespace HISSTools
         void writeWaveHeader();
         void writeAIFCHeader();
 
-        uint32_t inputToU32(double input, int bitDepth);
+        uint32_t inputToU32(double input, int32_t bitDepth);
+        uint8_t inputToU8(double input);
         
         bool resize(FrameCount numFrames);
         bool updateHeader();
