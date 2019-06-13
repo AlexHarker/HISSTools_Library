@@ -206,11 +206,17 @@ namespace HISSTools
         return value;
     }
 
-    template <class T>
+    template <int BITS, class T>
     void IAudioFile::u32ToOutput(T* output, uint32_t value)
     {
         *output = *reinterpret_cast<int32_t*>(&value)
         * (T)0.00000000046566128730773925; //0x1.0fp-31; // 
+    }
+    
+    template <class T>
+    void IAudioFile::u8ToOutput(T* output, uint8_t value)
+    {
+        *output = (T(value) - T(128)) / T(128);
     }
     
     template <class T>
@@ -619,8 +625,16 @@ namespace HISSTools
             switch (getPCMFormat())
             {
                 case kAudioFileInt8:
-                    for (uintptr_t i = 0; i < loopSamples; i++, j += byteStep)
-                        u32ToOutput(output + i, mBuffer[j] << 24);
+                    if (getFileType == kAudioFileWAVE)
+                    {
+                        for (uintptr_t i = 0; i < loopSamples; i++, j += byteStep)
+                            u8ToOutput(output + i, *reinterpret_cast<uint8_t *>(mBuffer[j]));
+                    }
+                    else
+                    {
+                        for (uintptr_t i = 0; i < loopSamples; i++, j += byteStep)
+                            u32ToOutput(output + i, mBuffer[j] << 24);
+                    }
                     break;
 
                 case kAudioFileInt16:
