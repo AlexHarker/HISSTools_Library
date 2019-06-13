@@ -625,36 +625,27 @@ namespace HISSTools
 
                 case kAudioFileInt16:
                     for (uintptr_t i = 0; i < loopSamples; i++, j += byteStep)
-                        u32ToOutput(
-                                    output + i,
-                                    getU16(mBuffer + j, getAudioEndianness())
-                                    << 16);
+                        u32ToOutput(output + i, getU16(mBuffer + j, getAudioEndianness()) << 16);
                     break;
 
                 case kAudioFileInt24:
                     for (uintptr_t i = 0; i < loopSamples; i++, j += byteStep)
-                        u32ToOutput(
-                                    output + i,
-                                    getU24(mBuffer + j, getAudioEndianness())
-                                    << 8);
+                        u32ToOutput(output + i, getU24(mBuffer + j, getAudioEndianness()) << 8);
                     break;
 
             case kAudioFileInt32:
                 for (size_t i = 0; i < loopSamples; i++, j += byteStep)
-                    u32ToOutput(output + i, getU32(mBuffer + j,
-                                                   getAudioEndianness()));
+                    u32ToOutput(output + i, getU32(mBuffer + j, getAudioEndianness()));
                 break;
 
             case kAudioFileFloat32:
                 for (size_t i = 0; i < loopSamples; i++, j += byteStep)
-                    float32ToOutput(output + i, getU32(mBuffer + j,
-                                                       getAudioEndianness()));
+                    float32ToOutput(output + i, getU32(mBuffer + j, getAudioEndianness()));
                 break;
 
             case kAudioFileFloat64:
                 for (size_t i = 0; i < loopSamples; i++, j += byteStep)
-                    float64ToOutput(output + i, getU64(mBuffer + j,
-                                                       getAudioEndianness()));
+                    float64ToOutput(output + i, getU64(mBuffer + j, getAudioEndianness()));
                 break;
             }
             
