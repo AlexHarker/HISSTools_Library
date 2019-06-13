@@ -10,17 +10,13 @@ namespace HISSTools
     {
     public:
         OAudioFile();
-        OAudioFile(const std::string&, FileType, PCMFormat,
-                   uint16_t channels, double sr);
-        OAudioFile(const std::string&, FileType, PCMFormat,
-                   uint16_t channels, double sr, Endianness);
+        OAudioFile(const std::string&, FileType, PCMFormat, uint16_t channels, double sr);
+        OAudioFile(const std::string&, FileType, PCMFormat, uint16_t channels, double sr, Endianness);
         
         ~OAudioFile();
 
-        void open(const std::string&, FileType, PCMFormat,
-                  uint16_t channels, double sr);
-        void open(const std::string&, FileType, PCMFormat,
-                  uint16_t channels, double sr, Endianness);
+        void open(const std::string&, FileType, PCMFormat, uint16_t channels, double sr);
+        void open(const std::string&, FileType, PCMFormat, uint16_t channels, double sr, Endianness);
         void close();
         bool isOpen();
         void seek(FrameCount position = 0);
@@ -29,10 +25,8 @@ namespace HISSTools
         void writeInterleaved(const double* input, FrameCount numFrames);
         void writeInterleaved(const float* input, FrameCount numFrames);
         
-        void writeChannel(const double* input, FrameCount numFrames,
-                         uint16_t channel);
-        void writeChannel(const float* input, FrameCount numFrames,
-                         uint16_t channel);
+        void writeChannel(const double* input, FrameCount numFrames, uint16_t channel);
+        void writeChannel(const float* input, FrameCount numFrames, uint16_t channel);
         void writeRaw(const char *input, FrameCount numFrames) { writePCMData(input, numFrames); }
             
     protected:
@@ -67,8 +61,7 @@ namespace HISSTools
         
         bool resize(FrameCount numFrames);
         bool updateHeader();
-        template <class T> void writeAudio(const T* input, FrameCount numFrames,
-                                           int32_t channel = -1);
+        template <class T> void writeAudio(const T* input, FrameCount numFrames, int32_t channel = -1);
         bool writePCMData(const char* input, FrameCount numFrames);
 
         const char *getCompressionTag();

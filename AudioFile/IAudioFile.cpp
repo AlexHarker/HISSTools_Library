@@ -91,22 +91,19 @@ namespace HISSTools
         readAudio(output, numFrames);
     }
     
-    void IAudioFile::readChannel(double* output, FrameCount numFrames,
-                                 uint16_t channel)
+    void IAudioFile::readChannel(double* output, FrameCount numFrames, uint16_t channel)
     {
         readAudio(output, numFrames, channel);
     }
     
-    void IAudioFile::readChannel(float* output, FrameCount numFrames,
-                                 uint16_t channel)
+    void IAudioFile::readChannel(float* output, FrameCount numFrames, uint16_t channel)
     {
         readAudio(output, numFrames, channel);
     }
     
     //  Internal File Handling
 
-    bool IAudioFile::readInternal(char* buffer,
-                                                ByteCount numBytes)
+    bool IAudioFile::readInternal(char* buffer, ByteCount numBytes)
     {
         mFile.clear();
         mFile.read(buffer, numBytes);
@@ -133,11 +130,10 @@ namespace HISSTools
     
     //  Extracting Single Values
     
-    uint64_t IAudioFile::getU64(const char* b,
-                                Endianness fileEndianness) const
+    uint64_t IAudioFile::getU64(const char* b, Endianness fileEndianness) const
     {
-        const unsigned char* bytes
-        = reinterpret_cast<const unsigned char*>(b);
+        const unsigned char* bytes = reinterpret_cast<const unsigned char*>(b);
+        
         if (fileEndianness == kAudioFileBigEndian)
             return ((uint64_t)bytes[0] << 56) | ((uint64_t)bytes[1] << 48)
             | ((uint64_t)bytes[2] << 40) | ((uint64_t)bytes[3] << 32)
@@ -150,35 +146,30 @@ namespace HISSTools
             | ((uint64_t)bytes[1] << 8) | (uint64_t)bytes[0];
     }
     
-    uint32_t IAudioFile::getU32(const char* b,
-                                Endianness fileEndianness) const
+    uint32_t IAudioFile::getU32(const char* b, Endianness fileEndianness) const
     {
-        const unsigned char* bytes
-        = reinterpret_cast<const unsigned char*>(b);
+        const unsigned char* bytes = reinterpret_cast<const unsigned char*>(b);
+        
         if (fileEndianness == kAudioFileBigEndian)
-            return (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8)
-            | bytes[3];
+            return (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3];
         else
-            return (bytes[3] << 24) | (bytes[2] << 16) | (bytes[1] << 8)
-            | bytes[0];
+            return (bytes[3] << 24) | (bytes[2] << 16) | (bytes[1] << 8) | bytes[0];
     }
     
-    uint32_t IAudioFile::getU24(const char* b,
-                                Endianness fileEndianness) const
+    uint32_t IAudioFile::getU24(const char* b, Endianness fileEndianness) const
     {
-        const unsigned char* bytes
-        = reinterpret_cast<const unsigned char*>(b);
+        const unsigned char* bytes = reinterpret_cast<const unsigned char*>(b);
+        
         if (fileEndianness == kAudioFileBigEndian)
             return (bytes[0] << 16) | (bytes[1] << 8) | bytes[2];
         else
             return (bytes[2] << 16) | (bytes[1] << 8) | bytes[0];
     }
     
-    uint32_t IAudioFile::getU16(const char* b,
-                                Endianness fileEndianness) const
+    uint32_t IAudioFile::getU16(const char* b, Endianness fileEndianness) const
     {
-        const unsigned char* bytes
-        = reinterpret_cast<const unsigned char*>(b);
+        const unsigned char* bytes = reinterpret_cast<const unsigned char*>(b);
+        
         if (fileEndianness == kAudioFileBigEndian)
             return (bytes[0] << 8) | bytes[1];
         else
@@ -189,8 +180,7 @@ namespace HISSTools
     
     double IAudioFile::extendedToDouble(const char* bytes) const
     {
-        // Get double from big-endian ieee 80 bit extended floating point
-        // format
+        // Get double from big-endian ieee 80 bit extended floating point format
         
         bool sign = getU16(bytes, kAudioFileBigEndian) & 0x8000;
         int32_t exponent = getU16(bytes, kAudioFileBigEndian) & 0x777F;
@@ -209,8 +199,7 @@ namespace HISSTools
         
         exponent -= 16383;
         value = ldexp(static_cast<double>(hiSignificand), exponent - 31);
-        value += ldexp(static_cast<double>(loSignificand),
-                       exponent - (31 + 32));
+        value += ldexp(static_cast<double>(loSignificand), exponent - (31 + 32));
         
         if (sign) value = -value;
         
@@ -324,8 +313,7 @@ namespace HISSTools
 
     // AIFF Helpers
     
-    bool IAudioFile::getAIFFChunkHeader(AiffTag& enumeratedTag,
-                                        uint32_t& chunkSize)
+    bool IAudioFile::getAIFFChunkHeader(AiffTag& enumeratedTag, uint32_t& chunkSize)
     {
         char tag[4];
         
@@ -342,8 +330,7 @@ namespace HISSTools
         return true;
     }
     
-    IAudioFile::AifcCompression
-    IAudioFile::getAIFCCompression(const char* tag) const
+    IAudioFile::AifcCompression IAudioFile::getAIFCCompression(const char* tag) const
     {
         // FIX - finish this work (twos/sowt must be 16 bit?)
         
@@ -385,15 +372,12 @@ namespace HISSTools
 
         // AIFF or AIFC
 
-        if (matchTag(fileType, "FORM")
-            && (matchTag(fileSubtype, "AIFF")
-                || matchTag(fileSubtype, "AIFC")))
+        if (matchTag(fileType, "FORM") && (matchTag(fileSubtype, "AIFF") || matchTag(fileSubtype, "AIFC")))
             return parseAIFFHeader(fileSubtype);
 
         // WAVE file format
 
-        if ((matchTag(fileType, "RIFF") || matchTag(fileType, "RIFX"))
-            && matchTag(fileSubtype, "WAVE"))
+        if ((matchTag(fileType, "RIFF") || matchTag(fileType, "RIFX")) && matchTag(fileSubtype, "WAVE"))
             return parseWaveHeader(fileType);
 
         // No known format found
@@ -433,8 +417,7 @@ namespace HISSTools
             {
                 case AIFC_TAG_VERSION:
                     
-                    // Read format number and check for the correct version of
-                    // the AIFC specification
+                    // Read format number and check for the correct version of the AIFC specification
                     
                     if (!readChunk(chunk, 4, chunkSize))
                     {
@@ -454,11 +437,7 @@ namespace HISSTools
                     
                     // Read common chunk (at least 18 bytes and up to 22)
                     
-                    if (!readChunk(chunk,
-                                   (chunkSize > 22)
-                                   ? 22
-                                   : ((chunkSize < 18) ? 18 : chunkSize),
-                                   chunkSize))
+                    if (!readChunk(chunk, (chunkSize > 22) ? 22 : ((chunkSize < 18) ? 18 : chunkSize), chunkSize))
                     {
                         setErrorBit(ERR_FILE_BAD_FORMAT);
                         return;
@@ -562,16 +541,13 @@ namespace HISSTools
         
         // Check endianness
         
-        setHeaderEndianness(matchTag(fileType, "RIFX")
-                            ? kAudioFileBigEndian
-                            : kAudioFileLittleEndian);
+        setHeaderEndianness(matchTag(fileType, "RIFX") ? kAudioFileBigEndian : kAudioFileLittleEndian);
         setAudioEndianness(getHeaderEndianness());
         
         // Search for the format chunk and read first 16 bytes (ignored any
         // extended header info)
         
-        if (!(findChunk("fmt ", chunkSize)
-              && readChunk(chunk, 16, chunkSize)))
+        if (!(findChunk("fmt ", chunkSize) && readChunk(chunk, 16, chunkSize)))
         {
             setErrorBit(ERR_FILE_BAD_FORMAT);
             return;
@@ -579,8 +555,7 @@ namespace HISSTools
         
         // Check for supported formats
         
-        if (getU16(chunk, getHeaderEndianness()) != 0x0001
-            && getU16(chunk, getHeaderEndianness()) != 0x0003)
+        if (getU16(chunk, getHeaderEndianness()) != 0x0001 && getU16(chunk, getHeaderEndianness()) != 0x0003)
         {
             setErrorBit(ERR_WAVE_UNSUPPORTED_FORMAT);
             return;
@@ -588,10 +563,7 @@ namespace HISSTools
         
         // Retrieve relevant data
         
-        NumberFormat format
-        = getU16(chunk + 0, getHeaderEndianness()) == 0x0003
-        ? kAudioFileFloat
-        : kAudioFileInt;
+        NumberFormat format = getU16(chunk + 0, getHeaderEndianness()) == 0x0003 ? kAudioFileFloat : kAudioFileInt;
         setChannels(getU16(chunk + 2, getHeaderEndianness()));
         setSamplingRate(getU32(chunk + 4, getHeaderEndianness()));
         uint16_t bitDepth = getU16(chunk + 14, getHeaderEndianness());

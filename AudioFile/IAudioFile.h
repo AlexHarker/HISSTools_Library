@@ -50,8 +50,7 @@ namespace HISSTools
         void readInterleaved(double* output, FrameCount numFrames);
         void readInterleaved(float* output, FrameCount numFrames);
 
-        void readChannel(double* output, FrameCount numFrames,
-                         uint16_t channel);
+        void readChannel(double* output, FrameCount numFrames, uint16_t channel);
         void readChannel(float* output, FrameCount numFrames, uint16_t channel);
 
     private:

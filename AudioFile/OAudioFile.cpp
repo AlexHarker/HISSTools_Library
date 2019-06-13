@@ -21,14 +21,12 @@ namespace HISSTools
         close();
     }
 
-    OAudioFile::OAudioFile(const std::string& i, FileType type, PCMFormat format,
-                           uint16_t channels, double sr)
+    OAudioFile::OAudioFile(const std::string& i, FileType type, PCMFormat format, uint16_t channels, double sr)
     {
         open(i, type, format, channels, sr);
     }
 
-    OAudioFile::OAudioFile(const std::string& i, FileType type, PCMFormat format,
-                           uint16_t channels, double sr, Endianness e)
+    OAudioFile::OAudioFile(const std::string& i, FileType type, PCMFormat format, uint16_t channels, double sr, Endianness e)
     {
         open(i, type, format, channels, sr, e);
     }
@@ -38,15 +36,12 @@ namespace HISSTools
         close();
     }
 
-    void OAudioFile::open(const std::string& i, FileType type, PCMFormat format,
-                          uint16_t channels, double sr)
+    void OAudioFile::open(const std::string& i, FileType type, PCMFormat format, uint16_t channels, double sr)
     {
-        open(i, type, format, channels, sr,
-             type == kAudioFileWAVE ? kAudioFileLittleEndian : kAudioFileBigEndian);
+        open(i, type, format, channels, sr,type == kAudioFileWAVE ? kAudioFileLittleEndian : kAudioFileBigEndian);
     }
 
-    void OAudioFile::open(const std::string& i, FileType type, PCMFormat format,
-                          uint16_t channels, double sr, Endianness endianness)
+    void OAudioFile::open(const std::string& i, FileType type, PCMFormat format, uint16_t channels, double sr, Endianness endianness)
     {
         close();
         mFile.open(i.c_str(), std::ios_base::binary);
@@ -57,8 +52,7 @@ namespace HISSTools
         {
             setFileType(type == kAudioFileAIFF ? kAudioFileAIFC : type);
             setPCMFormat(format);
-            setHeaderEndianness(
-                getFileType() == kAudioFileWAVE ? endianness : kAudioFileBigEndian);
+            setHeaderEndianness(getFileType() == kAudioFileWAVE ? endianness : kAudioFileBigEndian);
             setAudioEndianness(endianness);
             setSamplingRate(sr);
             setChannels(channels);
@@ -92,8 +86,7 @@ namespace HISSTools
     OAudioFile::FrameCount OAudioFile::getPosition()
     {
         if (getPCMOffset())
-            return static_cast<FrameCount>((positionInternal() - getPCMOffset())
-                                           / getFrameByteCount());
+            return static_cast<FrameCount>((positionInternal() - getPCMOffset()) / getFrameByteCount());
 
         return 0;
     }
@@ -502,25 +495,18 @@ namespace HISSTools
             if (getFileType() == kAudioFileWAVE)
             {
                 success &= seekInternal(4);
-                success &= putU32(
-                    static_cast<uint32_t>(getHeaderSize() + paddedLength(dataBytes)),
-                    getHeaderEndianness());
+                success &= putU32(static_cast<uint32_t>(getHeaderSize() + paddedLength(dataBytes)), getHeaderEndianness());
                 success &= seekInternal(getPCMOffset() - 4);
-                success &= putU32(static_cast<uint32_t>(dataBytes),
-                                  getHeaderEndianness());
+                success &= putU32(static_cast<uint32_t>(dataBytes), getHeaderEndianness());
             }
             else
             {
                 success &= seekInternal(4);
-                success &= putU32(
-                    static_cast<uint32_t>(getHeaderSize() + paddedLength(dataBytes)),
-                    getHeaderEndianness());
+                success &= putU32(static_cast<uint32_t>(getHeaderSize() + paddedLength(dataBytes)), getHeaderEndianness());
                 success &= seekInternal(34);
-                success &= putU32(static_cast<uint32_t>(getFrames()),
-                                  getHeaderEndianness());
+                success &= putU32(static_cast<uint32_t>(getFrames()), getHeaderEndianness());
                 success &= seekInternal(getPCMOffset() - 12);
-                success &= putU32(static_cast<uint32_t>(dataBytes) + 8,
-                                  getHeaderEndianness());
+                success &= putU32(static_cast<uint32_t>(dataBytes) + 8, getHeaderEndianness());
             }
 
             // Return to end of data
@@ -576,8 +562,7 @@ namespace HISSTools
 
         input = std::min(std::max(input, -1.0), 1.0);
 
-        return static_cast<uint32_t>(
-            round(input * static_cast<double>(1 << (bitDepth - 1))));
+        return static_cast<uint32_t>(round(input * static_cast<double>(1 << (bitDepth - 1))));
     }
 
     template <class T>
@@ -594,8 +579,7 @@ namespace HISSTools
         
         // FIX - the slowest thing is seeking in the file, so that seems like a bad plan - it might be better to read in chunks overwrite locally and then write back the chunk
         
-        // Write zeros to channels if necessary (multichannel files written one
-        // channel at a time)
+        // Write zeros to channels if necessary (multichannel files written one channel at a time)
 
         if (channel >= 0 && getChannels() > 1)
             success &= resize(endFrame);
