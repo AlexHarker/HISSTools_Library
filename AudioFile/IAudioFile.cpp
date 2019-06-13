@@ -625,31 +625,31 @@ namespace HISSTools
             switch (getPCMFormat())
             {
                 case kAudioFileInt8:
-                    if (getFileType == kAudioFileWAVE)
+                    if (getFileType() == kAudioFileWAVE)
                     {
                         for (uintptr_t i = 0; i < loopSamples; i++, j += byteStep)
-                            u8ToOutput(output + i, *reinterpret_cast<uint8_t *>(mBuffer[j]));
+                            u8ToOutput(output + i, *(reinterpret_cast<uint8_t *>(mBuffer + j)));
                     }
                     else
                     {
                         for (uintptr_t i = 0; i < loopSamples; i++, j += byteStep)
-                            u32ToOutput(output + i, mBuffer[j] << 24);
+                            u32ToOutput<8>(output + i, mBuffer[j] << 24);
                     }
                     break;
 
                 case kAudioFileInt16:
                     for (uintptr_t i = 0; i < loopSamples; i++, j += byteStep)
-                        u32ToOutput(output + i, getU16(mBuffer + j, getAudioEndianness()) << 16);
+                        u32ToOutput<16>(output + i, getU16(mBuffer + j, getAudioEndianness()) << 16);
                     break;
 
                 case kAudioFileInt24:
                     for (uintptr_t i = 0; i < loopSamples; i++, j += byteStep)
-                        u32ToOutput(output + i, getU24(mBuffer + j, getAudioEndianness()) << 8);
+                        u32ToOutput<24>(output + i, getU24(mBuffer + j, getAudioEndianness()) << 8);
                     break;
 
             case kAudioFileInt32:
                 for (size_t i = 0; i < loopSamples; i++, j += byteStep)
-                    u32ToOutput(output + i, getU32(mBuffer + j, getAudioEndianness()));
+                    u32ToOutput<32>(output + i, getU32(mBuffer + j, getAudioEndianness()));
                 break;
 
             case kAudioFileFloat32:
