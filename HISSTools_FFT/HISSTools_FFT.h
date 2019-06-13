@@ -10,14 +10,12 @@
     The FFT is compatiable with the FFT routines provided by Apple's vDSP library and can be configured to use this fast FFT when available. */
 
 /**
- The USE_APPLE_FFT_IF_AVAILABLE preprocessor command instructs the HISSTools FFT to use the Apple FFT when available. Comment out this definition if you don't wish to use the Apple FFT when available. This option is enabled by default. You must link against the Accelerate framework to compile with this functionality under Mac OS.
+ The NO_NATIVE_FFT preprocessor command instructs the HISSTools FFT to use its own code even if the Apple FFT is available. You must link against the Accelerate framework if this is not defined under Mac OS. It is not a default setting
  */
-
-#define USE_APPLE_FFT_IF_AVAILABLE
 
 // Platform check for Apple FFT selection
 
-#if defined __APPLE__ && defined USE_APPLE_FFT_IF_AVAILABLE
+#if defined __APPLE__ && !defined NO_NATIVE_FFT
 #define USE_APPLE_FFT
 #endif
 
