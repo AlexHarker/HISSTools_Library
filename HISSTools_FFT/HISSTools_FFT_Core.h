@@ -18,7 +18,7 @@
 template <class T>
 struct Setup
 {
-    unsigned long max_fft_log2;
+    uintptr_t max_fft_log2;
     Split<T> tables[28];
 };
 
@@ -401,7 +401,7 @@ namespace hisstools_fft_impl{
         
         for (uintptr_t i = trig_table_offset; i <= max_fft_log2; i++)
         {
-            uintptr_t length = static_cast<uintptr_t>(1u << (i - 1u));
+            uintptr_t length = static_cast<uintptr_t>(1u) << (i - 1u);
             
             setup->tables[i - trig_table_offset].realp = allocate_aligned<T>(2 * length);
             setup->tables[i - trig_table_offset].imagp = setup->tables[i - trig_table_offset].realp + length;
@@ -775,11 +775,11 @@ namespace hisstools_fft_impl{
     {
         typedef SIMDVector<T, vec_size> Vector;
 
-        uintptr_t size = static_cast<uintptr_t>(2u << pass);
+        uintptr_t size = static_cast<uintptr_t>(2u) << pass;
         uintptr_t incr = size / (vec_size << 1);
         uintptr_t loop = size;
         uintptr_t offset = (length >> pass) / (vec_size << 1);
-        uintptr_t outerLoop = ((length >> 1) / size) / (static_cast<uintptr_t>(1u << pass));
+        uintptr_t outerLoop = ((length >> 1) / size) / (static_cast<uintptr_t>(1u) << pass);
         
         Vector *r1_ptr = reinterpret_cast<Vector *>(input->realp);
         Vector *i1_ptr = reinterpret_cast<Vector *>(input->imagp);
@@ -850,7 +850,7 @@ namespace hisstools_fft_impl{
     {
         typedef SIMDVector<T, vec_size> Vector;
 
-        uintptr_t size = static_cast<uintptr_t>(2u << pass);
+        uintptr_t size = static_cast<uintptr_t>(2u) << pass;
         uintptr_t incr = size / (vec_size << 1);
         uintptr_t loop = size;
         
@@ -901,7 +901,7 @@ namespace hisstools_fft_impl{
     template <bool ifft, class T>
     void pass_real_trig_table(Split<T> *input, Setup<T> *setup, uintptr_t fft_log2)
     {
-        uintptr_t length = static_cast<uintptr_t>(1u << (fft_log2 - 1u));
+        uintptr_t length = static_cast<uintptr_t>(1u) << (fft_log2 - 1u);
         uintptr_t lengthM1 = length - 1;
         
         T *r1_ptr = input->realp;
@@ -1231,7 +1231,7 @@ namespace hisstools_fft_impl{
         
         // Check input length is not longer than the FFT size and unzip an even number of samples
         
-        uintptr_t fft_size = static_cast<uintptr_t>(1u << log2n);
+        uintptr_t fft_size = static_cast<uintptr_t>(1u) << log2n;
         in_length = std::min(fft_size, in_length);
         unzip_complex(input, output, in_length >> 1);
         
@@ -1263,7 +1263,7 @@ namespace hisstools_fft_impl{
         const int A = max_vec_size <  4 ? max_vec_size :  4;
         const int B = max_vec_size <  8 ? max_vec_size :  8;
         const int C = max_vec_size < 16 ? max_vec_size : 16;
-        const uintptr_t length = static_cast<uintptr_t>(1u << fft_log2);
+        const uintptr_t length = static_cast<uintptr_t>(1u) << fft_log2;
         uintptr_t i;
         
         pass_1_2_reorder<T, A>(input, length);
