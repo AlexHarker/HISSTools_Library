@@ -71,7 +71,8 @@ private:
     uint64_t        mStore2;
 };
 
-template<class SETUP, class SPLIT, class T>void crash_test(int min_log2, int max_log2)
+template<class SETUP, class SPLIT, class T>
+void crash_test(int min_log2, int max_log2)
 {
     SETUP setup;
     SPLIT split;
@@ -103,7 +104,8 @@ template<class SETUP, class SPLIT, class T>void crash_test(int min_log2, int max
     hisstools_destroy_setup(setup);
 }
 
-template<class SETUP, class SPLIT, class T> void single_test(int size, void (*Fn)(SETUP, SPLIT *, uintptr_t))
+template<class SETUP, class SPLIT, class T>
+void single_test(int size, void (*Fn)(SETUP, SPLIT *, uintptr_t))
 {
     SETUP setup;
     SPLIT split;
@@ -117,29 +119,39 @@ template<class SETUP, class SPLIT, class T> void single_test(int size, void (*Fn
     timer.start();
     for (int i = 0; i < 10000; i++)
         Fn(setup, &split, size);
-    timer.stop("FFT Single Tests");
+    timer.stop(std::string("FFT Single Tests ").append(std::to_string (1 << size)));
 
     free(split.realp);
     free(split.imagp);
     hisstools_destroy_setup(setup);
 }
 
-template<class SETUP, class SPLIT, class T>void matched_size_test(int min_log2, int max_log2)
+template<class SETUP, class SPLIT, class T>
+void matched_size_test(int min_log2, int max_log2)
 {
+    std::cout << "---FFT---\n";
+    
     for (int i = min_log2; i < max_log2; i++)
         single_test<SETUP, SPLIT, T>(i, &hisstools_fft);
     
+    std::cout << "---iFFT---\n";
+
     for (int i = min_log2; i < max_log2; i++)
         single_test<SETUP, SPLIT, T>(i, &hisstools_ifft);
     
+    std::cout << "---Real FFT---\n";
+
     for (int i = min_log2; i < max_log2; i++)
         single_test<SETUP, SPLIT, T>(i, &hisstools_rfft);
     
+    std::cout << "---Real iFFT---\n";
+
     for (int i = min_log2; i < max_log2; i++)
-        single_test<SETUP, SPLIT, T>(i, &hisstools_ifft);
+        single_test<SETUP, SPLIT, T>(i, &hisstools_rifft);
 }
 
-template<class SPLIT, class T, class U>void zip_test(int min_log2, int max_log2)
+template<class SPLIT, class T, class U>
+void zip_test(int min_log2, int max_log2)
 {
     SPLIT split;
     
@@ -172,14 +184,29 @@ int main(int argc, const char * argv[])
     
     timer.start();
     
+    std::cout << "****** DOUBLE ******\n";
+
     crash_test<FFT_SETUP_D, FFT_SPLIT_COMPLEX_D, double>(0, 22);
+
+    std::cout << "****** FLOAT ******\n";
+
     crash_test<FFT_SETUP_F, FFT_SPLIT_COMPLEX_F, float>(0, 22);
     
+    std::cout << "****** DOUBLE ******\n";
+
     matched_size_test<FFT_SETUP_D, FFT_SPLIT_COMPLEX_D, double>(6, 14);
+    
+    std::cout << "****** FLOAT ******\n";
+
     matched_size_test<FFT_SETUP_F, FFT_SPLIT_COMPLEX_F, float>(6, 14);
     
-    zip_test<FFT_SPLIT_COMPLEX_D, double, double>(1, 22);
-    zip_test<FFT_SPLIT_COMPLEX_F, float, float>(1, 22);
+    std::cout << "****** DOUBLE ******\n";
+
+    zip_test<FFT_SPLIT_COMPLEX_D, double, double>(1, 24);
+    
+    std::cout << "****** FLOAT ******\n";
+
+    zip_test<FFT_SPLIT_COMPLEX_F, float, float>(1, 24);
     
     timer.stop("FFT Crash Tests Total");
     

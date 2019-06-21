@@ -9,7 +9,7 @@
 /* Begin PBXBuildFile section */
 		B82AAC2C1F61FC0C0015CDCF /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B82AAC2B1F61FC0C0015CDCF /* main.cpp */; };
 		B82AAC341F61FC1C0015CDCF /* HISSTools_FFT.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B82AAC321F61FC1C0015CDCF /* HISSTools_FFT.cpp */; };
-		B82AAC361F61FCF70015CDCF /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B82AAC351F61FCF70015CDCF /* Accelerate.framework */; };
+		B8378E1022BCC9FF004F8598 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B8378E0F22BCC9FF004F8598 /* Accelerate.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -29,8 +29,8 @@
 		B82AAC2B1F61FC0C0015CDCF /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		B82AAC321F61FC1C0015CDCF /* HISSTools_FFT.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = HISSTools_FFT.cpp; path = ../../HISSTools_FFT.cpp; sourceTree = "<group>"; };
 		B82AAC331F61FC1C0015CDCF /* HISSTools_FFT.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = HISSTools_FFT.h; path = ../../HISSTools_FFT.h; sourceTree = "<group>"; };
-		B82AAC351F61FCF70015CDCF /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = ../../../../../../../System/Library/Frameworks/Accelerate.framework; sourceTree = "<group>"; };
 		B82AAC371F6217970015CDCF /* HISSTools_FFT_Core.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = HISSTools_FFT_Core.h; path = ../../HISSTools_FFT_Core.h; sourceTree = "<group>"; };
+		B8378E0F22BCC9FF004F8598 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -38,7 +38,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B82AAC361F61FCF70015CDCF /* Accelerate.framework in Frameworks */,
+				B8378E1022BCC9FF004F8598 /* Accelerate.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -50,6 +50,7 @@
 			children = (
 				B82AAC2A1F61FC0C0015CDCF /* FFT Tester */,
 				B82AAC291F61FC0C0015CDCF /* Products */,
+				B8378E0E22BCC9FE004F8598 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -68,9 +69,16 @@
 				B82AAC321F61FC1C0015CDCF /* HISSTools_FFT.cpp */,
 				B82AAC371F6217970015CDCF /* HISSTools_FFT_Core.h */,
 				B82AAC2B1F61FC0C0015CDCF /* main.cpp */,
-				B82AAC351F61FCF70015CDCF /* Accelerate.framework */,
 			);
 			path = "FFT Tester";
+			sourceTree = "<group>";
+		};
+		B8378E0E22BCC9FE004F8598 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				B8378E0F22BCC9FF004F8598 /* Accelerate.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -215,6 +223,7 @@
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = "NO_NATIVE_FFT=1";
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
@@ -230,7 +239,7 @@
 		B82AAC301F61FC0C0015CDCF /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CLANG_CXX_LANGUAGE_STANDARD = "c++98";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_X86_VECTOR_INSTRUCTIONS = avx;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -239,7 +248,7 @@
 		B82AAC311F61FC0C0015CDCF /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CLANG_CXX_LANGUAGE_STANDARD = "c++98";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_X86_VECTOR_INSTRUCTIONS = avx;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
