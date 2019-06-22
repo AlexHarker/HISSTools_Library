@@ -45,7 +45,7 @@ public:
         mStart = mach_absolute_time();
     };
     
-    void stop(const std::string& msg)
+    void stop()
     {
         uint64_t end = mach_absolute_time();
         
@@ -53,10 +53,21 @@ public:
         mach_timebase_info(&info);
         
         uint64_t elapsed = ((end - mStart) * info.numer) / info.denom;
-        tabbedOut(msg + " Elapsed ", to_string_with_precision(elapsed / 1000000.0, 2), 35);
         
         mStore2 = mStore1;
-        mStore1 = elapsed;
+        mStore1 += elapsed;
+    }
+        
+    uint64_t finish(const std::string& msg)
+    {
+        tabbedOut(msg + " Elapsed ", to_string_with_precision(mStore1 / 1000000.0, 2), 35);
+        
+        uint64_t elapsed = mStore1;
+        
+        mStore2 = 0;
+        mStore1 = 0;
+        
+        return elapsed;
     };
     
     void relative(const std::string& msg)
@@ -71,8 +82,18 @@ private:
     uint64_t        mStore2;
 };
 
+template <class SPLIT>
+void fillSplit(SPLIT split, int max_log2)
+{
+    for (long i =0; i < (1 << max_log2); i++)
+    {
+        split.realp[i] = 1.0 - 2.0 * std::rand() / RAND_MAX;
+        split.imagp[i] = 1.0 - 2.0 * std::rand() / RAND_MAX;
+    }
+}
+
 template<class SETUP, class SPLIT, class T>
-void crash_test(int min_log2, int max_log2)
+uint64_t crash_test(int min_log2, int max_log2)
 {
     SETUP setup;
     SPLIT split;
@@ -83,75 +104,110 @@ void crash_test(int min_log2, int max_log2)
     hisstools_create_setup(&setup, max_log2);
 
     Timer timer;
-    timer.start();
 
     for (int i = min_log2; i < max_log2; i++)
+    {
+        fillSplit(split, i);
+        timer.start();
         hisstools_fft(setup, &split, i);
+        timer.stop();
+    }
+    
     
     for (int i = min_log2; i < max_log2; i++)
+    {
+        fillSplit(split, i);
+        timer.start();
         hisstools_ifft(setup, &split, i);
+        timer.stop();
+    }
     
     for (int i = min_log2; i < max_log2; i++)
+    {
+        fillSplit(split, i);
+        timer.start();
         hisstools_rfft(setup, &split, i);
+        timer.stop();
+    }
     
     for (int i = min_log2; i < max_log2; i++)
+    {
+        fillSplit(split, i);
+        timer.start();
         hisstools_rifft(setup, &split, i);
+        timer.stop();
+    }
     
-    timer.stop("FFT Multiple Tests");
+    uint64_t time = timer.finish("FFT Multiple Tests");
 
     free(split.realp);
     free(split.imagp);
     hisstools_destroy_setup(setup);
+    
+    return time;
 }
 
 template<class SETUP, class SPLIT, class T>
-void single_test(int size, void (*Fn)(SETUP, SPLIT *, uintptr_t))
+uint64_t single_test(int size, void (*Fn)(SETUP, SPLIT *, uintptr_t))
 {
     SETUP setup;
     SPLIT split;
     
     split.realp = (T *) malloc(sizeof(T) * 1 << size);
     split.imagp = (T *) malloc(sizeof(T) * 1 << size);
-    
+
     hisstools_create_setup(&setup, size);
     
     Timer timer;
-    timer.start();
+    
     for (int i = 0; i < 10000; i++)
+    {
+        fillSplit(split, size);
+        
+        timer.start();
         Fn(setup, &split, size);
-    timer.stop(std::string("FFT Single Tests ").append(std::to_string (1 << size)));
+        timer.stop();
+    }
+    
+    uint64_t time = timer.finish(std::string("FFT Single Tests ").append(std::to_string (1 << size)));
 
     free(split.realp);
     free(split.imagp);
     hisstools_destroy_setup(setup);
+    
+    return time;
 }
 
 template<class SETUP, class SPLIT, class T>
-void matched_size_test(int min_log2, int max_log2)
+uint64_t matched_size_test(int min_log2, int max_log2)
 {
+    uint64_t time = 0;
+    
     std::cout << "---FFT---\n";
     
     for (int i = min_log2; i < max_log2; i++)
-        single_test<SETUP, SPLIT, T>(i, &hisstools_fft);
+        time += single_test<SETUP, SPLIT, T>(i, &hisstools_fft);
     
     std::cout << "---iFFT---\n";
 
     for (int i = min_log2; i < max_log2; i++)
-        single_test<SETUP, SPLIT, T>(i, &hisstools_ifft);
+        time += single_test<SETUP, SPLIT, T>(i, &hisstools_ifft);
     
     std::cout << "---Real FFT---\n";
 
     for (int i = min_log2; i < max_log2; i++)
-        single_test<SETUP, SPLIT, T>(i, &hisstools_rfft);
+        time += single_test<SETUP, SPLIT, T>(i, &hisstools_rfft);
     
     std::cout << "---Real iFFT---\n";
 
     for (int i = min_log2; i < max_log2; i++)
-        single_test<SETUP, SPLIT, T>(i, &hisstools_rifft);
+        time += single_test<SETUP, SPLIT, T>(i, &hisstools_rifft);
+    
+    return time;
 }
 
 template<class SPLIT, class T, class U>
-void zip_test(int min_log2, int max_log2)
+uint64_t zip_test(int min_log2, int max_log2)
 {
     SPLIT split;
     
@@ -171,44 +227,45 @@ void zip_test(int min_log2, int max_log2)
     for (int i = min_log2; i < max_log2; i++)
         hisstools_unzip_zero(ptr, &split, 1 << i, i);
     
-    timer.stop("Zip Tests");
+    timer.stop();
+    uint64_t time = timer.finish("Zip Tests");
 
     free(split.realp);
     free(split.imagp);
+    
+    return time;
 }
 
 
 int main(int argc, const char * argv[])
 {
-    Timer timer;
-    
-    timer.start();
+    uint64_t time = 0;
     
     std::cout << "****** DOUBLE ******\n";
 
-    crash_test<FFT_SETUP_D, FFT_SPLIT_COMPLEX_D, double>(0, 22);
+    time += crash_test<FFT_SETUP_D, FFT_SPLIT_COMPLEX_D, double>(0, 22);
 
     std::cout << "****** FLOAT ******\n";
 
-    crash_test<FFT_SETUP_F, FFT_SPLIT_COMPLEX_F, float>(0, 22);
+    time += crash_test<FFT_SETUP_F, FFT_SPLIT_COMPLEX_F, float>(0, 22);
     
     std::cout << "****** DOUBLE ******\n";
 
-    matched_size_test<FFT_SETUP_D, FFT_SPLIT_COMPLEX_D, double>(6, 14);
+    time += matched_size_test<FFT_SETUP_D, FFT_SPLIT_COMPLEX_D, double>(6, 14);
     
     std::cout << "****** FLOAT ******\n";
 
-    matched_size_test<FFT_SETUP_F, FFT_SPLIT_COMPLEX_F, float>(6, 14);
+    time += matched_size_test<FFT_SETUP_F, FFT_SPLIT_COMPLEX_F, float>(6, 14);
     
     std::cout << "****** DOUBLE ******\n";
 
-    zip_test<FFT_SPLIT_COMPLEX_D, double, double>(1, 24);
+    time += zip_test<FFT_SPLIT_COMPLEX_D, double, double>(1, 24);
     
     std::cout << "****** FLOAT ******\n";
 
-    zip_test<FFT_SPLIT_COMPLEX_F, float, float>(1, 24);
+    time += zip_test<FFT_SPLIT_COMPLEX_F, float, float>(1, 24);
     
-    timer.stop("FFT Crash Tests Total");
+    tabbedOut("FFT Tests Total ", to_string_with_precision(time / 1000000.0, 2), 35);
     
     std::cout << "Finished Running\n";
     return 0;
