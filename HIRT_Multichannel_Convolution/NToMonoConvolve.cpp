@@ -33,7 +33,7 @@ ConvolveError HISSTools::NToMonoConvolve::reset(uint32_t inChan)
     return doChannel(&MonoConvolve::reset, inChan);
 }
 
-void HISSTools::NToMonoConvolve::process(const float **ins, float *out, float *temp, size_t numSamples, size_t activeInChans)
+void HISSTools::NToMonoConvolve::process(const float * const* ins, float *out, float *temp, size_t numSamples, size_t activeInChans)
 {
     // Zero output then convolve
     

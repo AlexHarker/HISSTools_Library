@@ -150,7 +150,7 @@ ConvolveError HISSTools::Convolver::set(uint32_t inChan, uint32_t outChan, const
 
 // DSP
 
-void HISSTools::Convolver::process(const float** ins, float** outs, size_t numIns, size_t numOuts, size_t numSamples)
+void HISSTools::Convolver::process(const float * const* ins, float** outs, size_t numIns, size_t numOuts, size_t numSamples)
 {
     auto memPointer = mTemporaryMemory.grow((mNumIns + 2) * numSamples);
     tempSetup(memPointer.get(), memPointer.getSize());
@@ -166,7 +166,7 @@ void HISSTools::Convolver::process(const float** ins, float** outs, size_t numIn
         mConvolvers[i]->process(mN2M ? ins : ins + i, outs[i], mTemp1, numSamples, numIns);
 }
 
-void HISSTools::Convolver::process(const double** ins, double** outs, size_t numIns, size_t numOuts, size_t numSamples)
+void HISSTools::Convolver::process(const double * const* ins, double** outs, size_t numIns, size_t numOuts, size_t numSamples)
 {
     auto memPointer = mTemporaryMemory.grow((mNumIns + 2) * numSamples);
     tempSetup(memPointer.get(), memPointer.getSize());

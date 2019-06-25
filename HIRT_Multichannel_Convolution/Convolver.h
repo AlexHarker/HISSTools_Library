@@ -45,10 +45,9 @@ namespace HISSTools
         ConvolveError set(uint32_t inChan, uint32_t outChan, const double* input, uintptr_t length, bool resize);
         
         // DSP
-        // FIX - consts
         
-        void process(const double** ins, double** outs, size_t numIns, size_t numOuts, size_t numSamples);
-        void process(const float** ins, float** outs, size_t numIns, size_t numOuts, size_t numSamples);
+        void process(const double * const* ins, double** outs, size_t numIns, size_t numOuts, size_t numSamples);
+        void process(const float * const*  ins, float** outs, size_t numIns, size_t numOuts, size_t numSamples);
         
     private:
         

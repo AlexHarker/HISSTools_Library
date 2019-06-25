@@ -20,7 +20,7 @@ namespace HISSTools
         ConvolveError set(uint32_t inChan, const float *input, uintptr_t impulse_length, bool resize);
         ConvolveError reset(uint32_t inChan);
         
-        void process(const float **ins, float *out, float *temp, size_t numSamples, size_t active_in_chans);
+        void process(const float * const* ins, float *out, float *temp, size_t numSamples, size_t active_in_chans);
         
     private:
         
