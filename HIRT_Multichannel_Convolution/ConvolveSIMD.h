@@ -12,12 +12,9 @@ template <class T, class U, int vec_size> struct SIMDVector
     U mVal;
 };
 
-#if defined (__arm__)
+#if defined __arm__ || defined __arm64__
 
 #include <arm_neon.h>
-
-#define ALIGNED_MALLOC(x) aligned_alloc(16, x);
-#define ALIGNED_FREE free
 
 struct ARMFloat : public SIMDVector<float, float32x4_t, 4>
 {
@@ -56,14 +53,8 @@ typedef ARMFloat FloatVector;
 
 #ifdef __APPLE__
 #include <Accelerate/Accelerate.h>
-#define ALIGNED_MALLOC malloc
-#define ALIGNED_FREE free
 #else
 #include <emmintrin.h>
-#include <malloc.h>
-#include <sse_mathfun.h>
-#define ALIGNED_MALLOC(x)  _aligned_malloc(x, 16)
-#define ALIGNED_FREE(x)  _aligned_free(x)
 #endif
 
 struct SSEFloat : public SIMDVector<float, __m128, 4>
@@ -100,3 +91,16 @@ struct SSEFloat : public SIMDVector<float, __m128, 4>
 typedef SSEFloat FloatVector;
 
 #endif
+
+#ifdef __APPLE__
+#define ALIGNED_MALLOC malloc
+#define ALIGNED_FREE free
+#elif defined _WIN32 || defined _WIN64
+#include <malloc.h>
+#define ALIGNED_MALLOC(x)  _aligned_malloc(x, 16)
+#define ALIGNED_FREE(x)  _aligned_free(x)
+#else
+#define ALIGNED_MALLOC(x) aligned_alloc(16, x);
+#define ALIGNED_FREE free
+#endif
+

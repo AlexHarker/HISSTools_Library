@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <functional>
 
-#ifdef __arm__
+#if defined __arm__ || defined __arm64
 #include <arm_neon.h>
 #else
 #ifndef __APPLE__
