@@ -37,9 +37,14 @@ namespace HISSTools
         if (!i.empty())
         {
             mFile.open(i.c_str(), std::ios_base::binary);
-            parseHeader();
-            mBuffer = new char[WORK_LOOP_SIZE * getFrameByteCount()];
-            seek();
+            if (mFile.is_open())
+            {
+                parseHeader();
+                mBuffer = new char[WORK_LOOP_SIZE * getFrameByteCount()];
+                seek();
+            }
+            else
+                setErrorBit(ERR_FILE_COULDNT_OPEN);
         }
     }
 
