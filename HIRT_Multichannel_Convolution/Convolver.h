@@ -35,7 +35,7 @@ namespace HISSTools
         // DSP Engine Reset
         
         void reset();
-        ConvolveError reset(uint32_t in_chan, uint32_t out_chan);
+        ConvolveError reset(uint32_t inChan, uint32_t outChan);
         
         // Resize and set IR
         
@@ -51,7 +51,7 @@ namespace HISSTools
         
     private:
         
-        void tempSetup(void* memPointer, uintptr_t maxFrameSize);
+        void tempSetup(float* memPointer, uintptr_t maxFrameSize);
         
         // Data
         

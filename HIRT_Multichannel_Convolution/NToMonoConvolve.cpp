@@ -40,5 +40,5 @@ void HISSTools::NToMonoConvolve::process(const float * const* ins, float *out, f
     memset(out, 0, sizeof(float) * numSamples);
 	
 	for (uint32_t i = 0; i < mNumInChans && i < activeInChans ; i++)
-		mConvolvers[i].process(ins[i], temp, out, numSamples);
+		mConvolvers[i].process(ins[i], temp, out, numSamples, true);
 }
