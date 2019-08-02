@@ -274,7 +274,7 @@ struct SIMDType<float, 1>
     SIMDType(const float* a) { mVal = *a; }
     
     SIMDType(const SIMDType<double, 1>& a) : mVal(static_cast<float>(a.mVal)) {}
-
+    
     void store(float *a) const { *a = mVal; }
     
     friend SIMDType operator + (const SIMDType& a, const SIMDType& b) { return a.mVal + b.mVal; }
@@ -621,7 +621,7 @@ struct SIMDType<double, 8> : public SIMDVector<double, __m512d, 8>
     SIMDType(__m512d a) : SIMDVector(a) {}
     
     SIMDType(const SIMDType<float, 8> &a) { mVal = _mm512_cvtps_pd(a.mVal); }
-
+    
     void store(double *a) const { _mm512_storeu_pd(a, mVal); }
     
     friend SIMDType operator + (const SIMDType &a, const SIMDType &b) { return _mm512_add_pd(a.mVal, b.mVal); }

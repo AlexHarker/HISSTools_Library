@@ -61,7 +61,7 @@ template <class T, class U, class V, class Table, typename Interp> struct interp
         
         pos_type fract_array[T::size];
         out_type array[T::size * 4];
-
+        
         for (int i = 0; i < T::size; i++)
         {
             V position = *positions++;
@@ -175,3 +175,4 @@ void table_read(Table fetcher, T *out, const U *positions, intptr_t n_samps, T m
 }
 
 #endif /* TableReader_h */
+
