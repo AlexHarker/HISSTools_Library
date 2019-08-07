@@ -57,23 +57,28 @@ namespace hisstools_fft_impl{
     template<> struct SIMDLimits<float>     { static const int max_size = 4; };
 
 #endif
+    
     // Aligned Allocation and Platform CPU Detection
 
 
 #ifndef __WIN32__
   
     #ifdef __APPLE__
+    
         template <class T> T *allocate_aligned(size_t size)
         {
             return static_cast<T *>(malloc(size * sizeof(T)));
         }
+    
     #elif defined(__linux__)
+    
         template <class T> T *allocate_aligned(size_t size)
         {
             void *mem;
             posix_memalign(&mem, SIMDLimits<T>::max_size * sizeof(T), size * sizeof(T));
             return static_cast<T *>(mem);
         }
+    
     #elif defined(__arm__)
     
     #include <memory.h>
