@@ -113,7 +113,7 @@ namespace hisstools_fft_impl{
 #endif
     
     template <class T>
-    bool isAligned(const T *ptr) { return !(reinterpret_cast<uintptr_t>(ptr) % 16); }
+    bool is_aligned(const T *ptr) { return !(reinterpret_cast<uintptr_t>(ptr) % 16); }
     
     // Offset for Table
     
@@ -1193,7 +1193,7 @@ namespace hisstools_fft_impl{
     {
         const int v_size = SIMDLimits<T>::max_size;
         
-        if (isAligned(input) && isAligned(output->realp) && isAligned(output->imagp))
+        if (is_aligned(input) && is_aligned(output->realp) && is_aligned(output->imagp))
         {
             uintptr_t v_length = (half_length / v_size) * v_size;
             unzip_impl<T, v_size>(input, output->realp, output->imagp, v_length);
@@ -1223,7 +1223,7 @@ namespace hisstools_fft_impl{
     {
         const int v_size = SIMDLimits<T>::max_size;
         
-        if (isAligned(output) && isAligned(input->realp) && isAligned(input->imagp))
+        if (is_aligned(output) && is_aligned(input->realp) && is_aligned(input->imagp))
         {
             uintptr_t v_length = (half_length / v_size) * v_size;
             zip_impl<T, v_size>(input->realp, input->imagp, output, v_length);
@@ -1307,7 +1307,7 @@ namespace hisstools_fft_impl{
     {
         if (fft_log2 >= 4)
         {
-            if (!isAligned(input->realp) || !isAligned(input->imagp))
+            if (!is_aligned(input->realp) || !is_aligned(input->imagp))
                 fft_passes<T, 1>(input, setup, fft_log2);
             else
                 fft_passes<T, SIMDLimits<T>::max_size>(input, setup, fft_log2);
