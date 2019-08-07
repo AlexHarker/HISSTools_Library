@@ -4,13 +4,13 @@
 #include <functional>
 
 #if defined __arm__ || defined __arm64
-    #include <arm_neon.h>
+#include <arm_neon.h>
 #else
-    #ifdef __WIN32__
-    #include <intrin.h>
-    #endif
-    #include <emmintrin.h>
-    #include <immintrin.h>
+#ifdef __WIN32__
+#include <intrin.h>
+#endif
+#include <emmintrin.h>
+#include <immintrin.h>
 #endif
 
 // Microsoft Visual Studio doesn't ever define __SSE__ so if necessary we derive it from other defines
