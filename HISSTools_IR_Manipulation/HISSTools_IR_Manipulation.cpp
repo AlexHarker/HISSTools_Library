@@ -1,6 +1,10 @@
 
 #include "HISSTools_IR_Manipulation.h"
 
+#include <algorithm>
+#include <cmath>
+
+
 template <typename T>
 struct BaseType
 {};
@@ -89,7 +93,6 @@ void ir_spike(FFT_SPLIT_COMPLEX_D *out, uintptr_t fft_size, double spike_positio
     ir_real_operation(out, fft_size, spike(spike_position, fft_size));
 }
 
-
 void ir_delay(FFT_SPLIT_COMPLEX_D *out, FFT_SPLIT_COMPLEX_D *in, uintptr_t fft_size, double delay)
 {
     struct delay_calc
@@ -138,126 +141,66 @@ void ir_time_reverse(FFT_SPLIT_COMPLEX_D *out, FFT_SPLIT_COMPLEX_D *in, uintptr_
     ir_real_operation(out, in, fft_size, conjugate());
 }
 
-
-
-void minimum_phase_components(FFT_SPLIT_COMPLEX_D *out, FFT_SPLIT_COMPLEX_D *in, uintptr_t fft_size)
+void minimum_phase_components(FFT_SETUP_D setup, FFT_SPLIT_COMPLEX_D *out, FFT_SPLIT_COMPLEX_D *in, uintptr_t fft_size)
 {
+    // FIX - what is this value?
     
-}
-
-
-/*
-void minimum_phase_components(Spectrum *out, Spectrum *in)
-{
-    double *r_out, *i_out, *r_in1, *i_in1;
-    uintptr_t FFTSize, FFTSizelog2, i;
-    
-    double scale;
-    double minPower = dbToPow(-3000.0);
-    double power1;
-    double power2;
-    
-    getSpectrum(in, &r_in1, &i_in1);
-    getSpectrum(out, &r_out, &i_out);
-    
-    if (FFTSize > mMaxFFTSize)
-        return false;
-    
-    FFTSizelog2 = log2(FFTSize);
-    scale = 1.0 / FFTSize;
-    
-    //////////////////////////////////////////
-     if (format == Spectrum::kSpectrumComplex)
-     {
-     // Take Log of Power Spectrum
-     
-     for    (i = 0; i < FFTSize; i++)
-     {
-     power1 = calcPower(r_in1[i], i_in1[i]);
-     r_out[i] = 0.5 * log((power1 < minPower) ? minPower : power1);
-     i_out[i] = 0.0;
-     }
-     
-     // Do Complex iFFT
-     
-     hisstools_ifft_d(mFFTSetup, out->getSpectrum(), FFTSizelog2);
-     
-     // Double Causal Values / Zero Non-Casual Values / Scale All Remaining
-     
-     for (i = 1; i < (FFTSize >> 1); i++)
-     {
-     r_out[i] += r_out[i];
-     i_out[i] += i_out[i];
-     }
-     for (i = (FFTSize >> 1) + 1; i < FFTSize; i++)
-     {
-     r_out[i] = 0.;
-     i_out[i] = 0.;
-     }
-     for (i = 0; i < (FFTSize >> 1) + 1; i++)
-     {
-     r_out[i] *= scale;
-     i_out[i] *= scale;
-     }
-     
-     // Forward Complex FFT
-     
-     hisstools_fft_d(mFFTSetup, out->getSpectrum(), FFTSizelog2);
-     }
- //////////////////////////////////////////
-
-    
-    // FIX - scaling is incorrect here (compensate for 2x each forward real)
+    uintptr_t fft_size_log2;
     
     // Take Log of Power Spectrum
     
-    power1 = calcPower(r_in1[0]);
-    power2 = calcPower(i_in1[0]);
-    r_out[0] = 0.5 * log((power1 < minPower) ? minPower : power1);
-    i_out[0] = 0.5 * log((power2 < minPower) ? minPower : power2);
-    
-    for    (i = 1; i < (FFTSize >> 1); i++)
+    struct log_power
     {
-        power1 = calcPower(r_in1[i], i_in1[i]);
-        
-        r_out[i] = 0.5 * log((power1 < minPower) ? minPower : power1);
-        i_out[i] = 0.0;
-    }
+        void operator()(double *r_out, double *i_out, double r_in, double i_in, uintptr_t i)
+        {
+            static double min_power = std::pow(10.0, -300.0 / 10.0);
+            double power = r_in * r_in + i_in * i_in;
+            
+            // FIX - scaling - 0.25 is for the real FFT effect
+            *r_out = 0.5 * log(0.25 * std::max(power, min_power));
+            *i_out = 0.0;
+        }
+    };
     
+    ir_real_operation(out, out, fft_size, log_power());
+
     // Do Real iFFT
     
-    hisstools_rifft_d(mFFTSetup, out->getSpectrum(), FFTSizelog2);
+    hisstools_rifft(setup, out, fft_size_log2);
     
-    // Compensate for real forward FFT gain first
+    // Double Causal Values / Zero Non-Casual Values / Scale All Remaining
     
-    scale *= 0.5;
+    // N.B. - doubling is implicit because the real FFT will double the result
+    //      - (0.5 multiples needed where no doubling should take place)
     
-    // Double Causal Values / Zero Non-Casual Values / Scale All Values
+    double scale = 1.0 / fft_size;
     
-    r_out[0] *= scale;
-    i_out[0] = (i_out[0] + i_out[0]) * scale;
+    out->realp[0] *= 0.5 * scale;
+    out->imagp[0] *= scale;
     
-    for (i = 1; i < (FFTSize >> 2); i++)
+    for (uintptr_t i = 1; i < (fft_size >> 2); i++)
     {
-        r_out[i] = (r_out[i] + r_out[i]) * scale;
-        i_out[i] = (i_out[i] + i_out[i]) * scale;
-    }
-    r_out[(FFTSize >> 2) + 0] *= scale;
-    i_out[(FFTSize >> 2) + 0] = 0.0;
-    for (i = (FFTSize >> 2) + 1; i < (FFTSize >> 1); i++)
-    {
-        r_out[i] = 0.0;
-        i_out[i] = 0.0;
+        out->realp[i] *= scale;
+        out->imagp[i] *= scale;
     }
     
-    // Forward Real FFT
+    out->realp[fft_size >> 2] *= 0.5 * scale;
+    out->imagp[fft_size >> 2] = 0.0;
     
-    hisstools_rfft_d(mFFTSetup, out->getSpectrum(), FFTSizelog2);
+    for (unsigned long i = (fft_size >> 2) + 1; i < (fft_size >> 1); i++)
+    {
+        out->realp[i] = 0.0;
+        out->imagp[i] = 0.0;
+    }
+    
+    // Forward Real FFT (here there is a scaling issue to consider)
+    
+    hisstools_rfft(setup, out, fft_size_log2);
 }
-*/
-void convert_to_minimum_phase(FFT_SPLIT_COMPLEX_D *out, FFT_SPLIT_COMPLEX_D *in, uintptr_t fft_size)
+
+void convert_to_minimum_phase(FFT_SETUP_D setup, FFT_SPLIT_COMPLEX_D *out, FFT_SPLIT_COMPLEX_D *in, uintptr_t fft_size)
 {
-    minimum_phase_components(out, in, fft_size);
+    minimum_phase_components(setup, out, in, fft_size);
     
     struct complex_exponential
     {
@@ -274,9 +217,9 @@ void convert_to_minimum_phase(FFT_SPLIT_COMPLEX_D *out, FFT_SPLIT_COMPLEX_D *in,
     ir_real_operation(out, out, fft_size, complex_exponential());
 }
 
-void convert_to_mixed_phase(FFT_SPLIT_COMPLEX_D *out, FFT_SPLIT_COMPLEX_D *in, uintptr_t fft_size, double phase, bool zero_center)
+void convert_to_mixed_phase(FFT_SETUP_D setup, FFT_SPLIT_COMPLEX_D *out, FFT_SPLIT_COMPLEX_D *in, uintptr_t fft_size, double phase, bool zero_center)
 {
-    minimum_phase_components(out, in, fft_size);
+    minimum_phase_components(setup, out, in, fft_size);
 
     phase = phase < 0 ? 0.0 : phase;
     phase = phase > 1 ? 1.0 : phase;
@@ -291,13 +234,14 @@ void convert_to_mixed_phase(FFT_SPLIT_COMPLEX_D *out, FFT_SPLIT_COMPLEX_D *in, u
             min_factor = 1.0 - (2.0 * phase);
             lin_factor = zero_center ? 0.0 : (phase <= 0.5 ? -(2 * M_PI * phase) : (-2.0 * M_PI * (phase - 1.0 / fft_size)));
         }
+        
         void operator()(double *r_out, double *i_out, double r_in, double i_in, uintptr_t i)
         {
             const double amp = std::exp(r_in);
             const double interp_phase = lin_factor * i + min_factor * i_in;
             
-            r_out[i] = amp * cos(interp_phase);
-            i_out[i] = amp * sin(interp_phase);
+            r_out[i] = amp * std::cos(interp_phase);
+            i_out[i] = amp * std::sin(interp_phase);
         }
         
         double min_factor;
@@ -321,11 +265,11 @@ void convert_to_zero_phase(FFT_SPLIT_COMPLEX_D *out, FFT_SPLIT_COMPLEX_D *in, ui
     ir_real_operation(out, in, fft_size, amplitude());
 }
 
-void ir_phase(FFT_SPLIT_COMPLEX_D *out, FFT_SPLIT_COMPLEX_D *in, uintptr_t fft_size, double phase, bool zero_center)
+void ir_phase(FFT_SETUP_D setup, FFT_SPLIT_COMPLEX_D *out, FFT_SPLIT_COMPLEX_D *in, uintptr_t fft_size, double phase, bool zero_center)
 {
     if (phase == 0.0)
     {
-        convert_to_minimum_phase(out, in, fft_size);
+        convert_to_minimum_phase(setup, out, in, fft_size);
     }
     else if (phase == 0.5)
     {
@@ -335,14 +279,13 @@ void ir_phase(FFT_SPLIT_COMPLEX_D *out, FFT_SPLIT_COMPLEX_D *in, uintptr_t fft_s
     }
     else if (phase == 1.0)
     {
-        convert_to_minimum_phase(out, in, fft_size);
+        convert_to_minimum_phase(setup, out, in, fft_size);
         ir_time_reverse(out, out, fft_size);
         if (!zero_center)
             ir_delay(out, out, fft_size, -1.0);
     }
     else
     {
-        convert_to_mixed_phase(out, in, fft_size, phase, zero_center);
+        convert_to_mixed_phase(setup, out, in, fft_size, phase, zero_center);
     }
 }
-
