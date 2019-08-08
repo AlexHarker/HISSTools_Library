@@ -6,8 +6,7 @@
 
 
 template <typename T>
-struct BaseType
-{};
+struct BaseType {};
 
 template <>
 struct BaseType <FFT_SPLIT_COMPLEX_D> { using type = double; };
@@ -26,13 +25,13 @@ void ir_real_operation(T *out, uintptr_t fft_size, Op op)
     
     // DC and Nyquist
     
-    op(r_out + 0, &temp, 0);
-    op(i_out + 0, &temp, fft_size >> 1);
+    op(r_out[0], temp, 0);
+    op(i_out[0], temp, fft_size >> 1);
     
     // Other bins
     
     for (uintptr_t i = 1; i < (fft_size >> 1); i++)
-        op(r_out + i, i_out + i, i);
+        op(r_out[i], i_out[i], i);
 }
 
 template <typename T, typename Op>
@@ -48,13 +47,13 @@ void ir_real_operation(T *out, const T *in, uintptr_t fft_size, Op op)
 
     // DC and Nyquist
     
-    op(r_out + 0, &temp1, r_in[0], temp1, 0);
-    op(i_out + 0, &temp2, i_in[0], temp2, fft_size >> 1);
+    op(r_out[0], temp1, r_in[0], temp1, 0);
+    op(i_out[0], temp2, i_in[0], temp2, fft_size >> 1);
     
     // Other bins
     
     for (uintptr_t i = 1; i < (fft_size >> 1); i++)
-        op(r_out + i, i_out + i, r_in[i], i_in[i], i);
+        op(r_out[i], i_out[i], r_in[i], i_in[i], i);
 }
 
 // Functors
@@ -62,77 +61,76 @@ void ir_real_operation(T *out, const T *in, uintptr_t fft_size, Op op)
 template <typename T>
 struct copy
 {
-    void operator()(T *r_out, T *i_out, T r_in, T i_in, uintptr_t i)
+    void operator()(T& r_out, T& i_out, T r_in, T i_in, uintptr_t i)
     {
-        *r_out = r_in;
-        *i_out = i_in;
+        r_out = r_in;
+        i_out = i_in;
     }
 };
 
 template <typename T>
 struct amplitude
 {
-    void operator()(T *r_out, T *i_out, T r_in, T i_in, uintptr_t i)
+    void operator()(T& r_out, T& i_out, T r_in, T i_in, uintptr_t i)
     {
-        *r_out = std::sqrt(r_in * r_in + i_in * i_in);
-        *i_out = 0.0;
+        r_out = std::sqrt(r_in * r_in + i_in * i_in);
+        i_out = 0.0;
     }
 };
 
 template <typename T>
 struct conjugate
 {
-    void operator()(T *r_out, T *i_out, T r_in, T i_in, uintptr_t i)
+    void operator()(T& r_out, T& i_out, T r_in, T i_in, uintptr_t i)
     {
-        *r_out =  r_in;
-        *i_out = -i_in;
+        r_out =  r_in;
+        i_out = -i_in;
     }
 };
 
 struct log_power
 {
-    void operator()(double *r_out, double *i_out, double r_in, double i_in, uintptr_t i)
+    void operator()(double& r_out, double& i_out, double r_in, double i_in, uintptr_t i)
     {
         static double min_power = std::pow(10.0, -300.0 / 10.0);
-        double power = r_in * r_in + i_in * i_in;
         
-        // FIX - scaling - 0.25 is for the real FFT effect
-        *r_out = 0.5 * log(0.25 * std::max(power, min_power));
-        *i_out = 0.0;
+        r_out = 0.5 * log(std::max(r_in * r_in + i_in * i_in, min_power));
+        i_out = 0.0;
     }
 };
 
 struct complex_exponential
 {
-    void operator()(double *r_out, double *i_out, double r_in, double i_in, uintptr_t i)
+    void operator()(double& r_out, double& i_out, double r_in, double i_in, uintptr_t i)
     {
         using complex = std::complex<double>;
         const complex c = std::exp(complex(r_in, i_in));
         
-        *r_out = std::real(c);
-        *i_out = std::imag(c);
+        r_out = std::real(c);
+        i_out = std::imag(c);
     }
 };
 
 struct phase_interpolate
 {
-    
-    // N.B. - induce a delay of -1 sample for anything over linear end avoid wraparound end the first sample
-    
     phase_interpolate(double phase, double fft_size, bool zero_center)
     {
+        // N.B. - induce a delay of -1 sample for anything over linear to avoid wraparound
+        
+        const double delay_factor = (phase <= 0.5) ? 0.0 : 1.0 / fft_size;
+        
         phase = std::max(0.0, std::min(1.0, phase));
         min_factor = 1.0 - (2.0 * phase);
-        lin_factor = zero_center ? 0.0 : (phase <= 0.5 ? -(2 * M_PI * phase) : (-2.0 * M_PI * (phase - 1.0 / fft_size)));
+        lin_factor = zero_center ? 0.0 : (-2.0 * M_PI * (phase - delay_factor));
     }
     
-    void operator()(double *r_out, double *i_out, double r_in, double i_in, uintptr_t i)
+    void operator()(double& r_out, double& i_out, double r_in, double i_in, uintptr_t i)
     {
         const double amp = std::exp(r_in);
         const double interp_phase = lin_factor * i + min_factor * i_in;
         
-        r_out[i] = amp * std::cos(interp_phase);
-        i_out[i] = amp * std::sin(interp_phase);
+        r_out = amp * std::cos(interp_phase);
+        i_out = amp * std::sin(interp_phase);
     }
     
     double min_factor;
@@ -142,16 +140,16 @@ struct phase_interpolate
 template <typename T>
 struct spike
 {
-    spike(double spike_position, double fft_size)
+    spike(double position, double fft_size)
     {
-        spike_constant = ((long double) (2.0 * M_PI)) *  -spike_position / fft_size;
+        spike_constant = ((long double) (2.0 * M_PI)) *  -position / fft_size;
     }
     
-    void operator()(T *r_out, T *i_out, uintptr_t i)
+    void operator()(T& r_out, T& i_out, uintptr_t i)
     {
-        long double phase = spike_constant * i;
-        *r_out = static_cast<T>(std::cos(phase));
-        *i_out = static_cast<T>(std::sin(phase));
+        const long double phase = spike_constant * i;
+        r_out = static_cast<T>(std::cos(phase));
+        i_out = static_cast<T>(std::sin(phase));
     }
     
     long double spike_constant;
@@ -162,15 +160,15 @@ struct delay_calc : private spike<T>
 {
     delay_calc(double delay, double fft_size) : spike<T>(delay, fft_size) {}
     
-    void operator()(T *r_out, T *i_out, T r_in, T i_in, uintptr_t i)
+    void operator()(T& r_out, T& i_out, T r_in, T i_in, uintptr_t i)
     {
         using complex = std::complex<T>;
         
-        long double phase = spike<T>::spike_constant * i;
-        complex c = complex(r_in, i_in) * complex(std::cos(phase), std::sin(phase));
+        const long double phase = spike<T>::spike_constant * i;
+        const complex c = complex(r_in, i_in) * complex(std::cos(phase), std::sin(phase));
         
-        r_out[i] = std::real(c);
-        i_out[i] = std::imag(c);
+        r_out = std::real(c);
+        i_out = std::imag(c);
     }
 };
 
