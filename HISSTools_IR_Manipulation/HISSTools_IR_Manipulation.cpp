@@ -3,7 +3,7 @@
 
 #include <algorithm>
 #include <cmath>
-
+#include <complex>
 
 template <typename T>
 struct BaseType {};
@@ -56,6 +56,13 @@ void ir_real_operation(T *out, const T *in, uintptr_t fft_size, Op op)
         op(r_out[i], i_out[i], r_in[i], i_in[i], i);
 }
 
+template <class T>
+void store(T& r_out, T& i_out, T r_in, T i_in)
+{
+    r_out = r_in;
+    i_out = i_in;
+}
+
 // Functors
 
 template <typename T>
@@ -63,8 +70,7 @@ struct copy
 {
     void operator()(T& r_out, T& i_out, T r_in, T i_in, uintptr_t i)
     {
-        r_out = r_in;
-        i_out = i_in;
+        store(r_out, i_out, r_in, i_in);
     }
 };
 
@@ -73,8 +79,16 @@ struct amplitude
 {
     void operator()(T& r_out, T& i_out, T r_in, T i_in, uintptr_t i)
     {
-        r_out = std::sqrt(r_in * r_in + i_in * i_in);
-        i_out = 0.0;
+        store(r_out, i_out, std::sqrt(r_in * r_in + i_in * i_in), T(0));
+    }
+};
+
+template <typename T>
+struct amplitude_flip
+{
+    void operator()(T& r_out, T& i_out, T r_in, T i_in, uintptr_t i)
+    {
+        store(r_out, i_out, std::sqrt(r_in * r_in + i_in * i_in) * (i & 0x1 ? T(-1) : T(1)), T(0));
     }
 };
 
@@ -83,34 +97,41 @@ struct conjugate
 {
     void operator()(T& r_out, T& i_out, T r_in, T i_in, uintptr_t i)
     {
-        r_out =  r_in;
-        i_out = -i_in;
+        store(r_out, i_out, r_in, -i_in);
     }
 };
 
+template <typename T>
 struct log_power
 {
-    void operator()(double& r_out, double& i_out, double r_in, double i_in, uintptr_t i)
+    void operator()(T& r_out, T& i_out, T r_in, T i_in, uintptr_t i)
     {
-        static double min_power = std::pow(10.0, -300.0 / 10.0);
-        
-        r_out = 0.5 * log(std::max(r_in * r_in + i_in * i_in, min_power));
-        i_out = 0.0;
+        static T min_power = std::pow(10.0, -300.0 / 10.0);
+        store(r_out, i_out, T(0.5) * log(std::max(r_in * r_in + i_in * i_in, min_power)), T(0));
     }
 };
 
+template <typename T>
 struct complex_exponential
 {
-    void operator()(double& r_out, double& i_out, double r_in, double i_in, uintptr_t i)
+    void operator()(T& r_out, T& i_out, T r_in, T i_in, uintptr_t i)
     {
-        using complex = std::complex<double>;
-        const complex c = std::exp(complex(r_in, i_in));
-        
-        r_out = std::real(c);
-        i_out = std::imag(c);
+        const std::complex<T> c = std::exp(std::complex<T>(r_in, i_in));
+        store(r_out, i_out, std::real(c), std::imag(c));
     }
 };
 
+template <typename T>
+struct complex_exponential_conjugate
+{
+    void operator()(T& r_out, T& i_out, T r_in, T i_in, uintptr_t i)
+    {
+        const std::complex<T> c = std::exp(std::complex<T>(r_in, i_in));
+        store(r_out, i_out, std::real(c), -std::imag(c));
+    }
+};
+
+template <typename T>
 struct phase_interpolate
 {
     phase_interpolate(double phase, double fft_size, bool zero_center)
@@ -124,13 +145,11 @@ struct phase_interpolate
         lin_factor = zero_center ? 0.0 : (-2.0 * M_PI * (phase - delay_factor));
     }
     
-    void operator()(double& r_out, double& i_out, double r_in, double i_in, uintptr_t i)
+    void operator()(T& r_out, T& i_out, T r_in, T i_in, uintptr_t i)
     {
         const double amp = std::exp(r_in);
-        const double interp_phase = lin_factor * i + min_factor * i_in;
-        
-        r_out = amp * std::cos(interp_phase);
-        i_out = amp * std::sin(interp_phase);
+        const double phase = lin_factor * i + min_factor * i_in;
+        store(r_out, i_out, T(amp * std::cos(phase)), T(amp * std::sin(phase)));
     }
     
     double min_factor;
@@ -148,8 +167,8 @@ struct spike
     void operator()(T& r_out, T& i_out, uintptr_t i)
     {
         const long double phase = spike_constant * i;
-        r_out = static_cast<T>(std::cos(phase));
-        i_out = static_cast<T>(std::sin(phase));
+        
+        store(r_out, i_out, static_cast<T>(std::cos(phase)), static_cast<T>(std::sin(phase)));
     }
     
     long double spike_constant;
@@ -167,69 +186,37 @@ struct delay_calc : private spike<T>
         const long double phase = spike<T>::spike_constant * i;
         const complex c = complex(r_in, i_in) * complex(std::cos(phase), std::sin(phase));
         
-        r_out = std::real(c);
-        i_out = std::imag(c);
+        store(r_out, i_out, std::real(c), std::imag(c));
     }
 };
 
-// Functions
-
-void ir_copy(FFT_SPLIT_COMPLEX_F *out, FFT_SPLIT_COMPLEX_F *in, uintptr_t fft_size)
-{
-    ir_real_operation(out, in, fft_size, copy<float>());
-}
-
-void ir_copy(FFT_SPLIT_COMPLEX_D *out, FFT_SPLIT_COMPLEX_D *in, uintptr_t fft_size)
-{
-    ir_real_operation(out, in, fft_size, copy<double>());
-}
-
-void ir_spike(FFT_SPLIT_COMPLEX_F *out, uintptr_t fft_size, double spike_position)
-{
-    ir_real_operation(out, fft_size, spike<float>(spike_position, fft_size));
-}
-
-void ir_spike(FFT_SPLIT_COMPLEX_D *out, uintptr_t fft_size, double spike_position)
-{
-    ir_real_operation(out, fft_size, spike<double>(spike_position, fft_size));
-}
-
-void ir_delay(FFT_SPLIT_COMPLEX_F *out, FFT_SPLIT_COMPLEX_F *in, uintptr_t fft_size, double delay)
+template <typename T>
+void ir_delay_impl(T *out, const T *in, uintptr_t fft_size, double delay)
 {
     if (delay != 0.0)
-        ir_real_operation(out, in, fft_size, delay_calc<float>(delay, fft_size));
+        ir_real_operation(out, in, fft_size, delay_calc<typename BaseType<T>::type>(delay, fft_size));
     else if (in != out)
         ir_copy(out, in, fft_size);
 }
 
-void ir_delay(FFT_SPLIT_COMPLEX_D *out, FFT_SPLIT_COMPLEX_D *in, uintptr_t fft_size, double delay)
+template <class SETUP, class SPLIT>
+void minimum_phase_components(SETUP setup, SPLIT *out, SPLIT *in, uintptr_t fft_size)
 {
-    if (delay != 0.0)
-        ir_real_operation(out, in, fft_size, delay_calc<double>(delay, fft_size));
-    else if (in != out)
-        ir_copy(out, in, fft_size);
-}
-
-void ir_time_reverse(FFT_SPLIT_COMPLEX_F *out, FFT_SPLIT_COMPLEX_F *in, uintptr_t fft_size)
-{
-    ir_real_operation(out, in, fft_size, conjugate<float>());
-}
-
-void ir_time_reverse(FFT_SPLIT_COMPLEX_D *out, FFT_SPLIT_COMPLEX_D *in, uintptr_t fft_size)
-{
-    ir_real_operation(out, in, fft_size, conjugate<double>());
-}
-
-void minimum_phase_components(FFT_SETUP_D setup, FFT_SPLIT_COMPLEX_D *out, FFT_SPLIT_COMPLEX_D *in, uintptr_t fft_size)
-{
+    using T = typename BaseType<SPLIT>::type;
+    
     // FIX - what is this value?
     
-    uintptr_t fft_size_log2;
+    uintptr_t fft_size_log2 = 0;
+    
+    for (uintptr_t i = fft_size; i; i >>= 1)
+        fft_size_log2++;
+    
+    fft_size_log2--;
     
     // Take Log of Power Spectrum
     
-    ir_real_operation(out, out, fft_size, log_power());
-
+    ir_real_operation(out, out, fft_size, log_power<T>());
+    
     // Do Real iFFT
     
     hisstools_rifft(setup, out, fft_size_log2);
@@ -264,32 +251,79 @@ void minimum_phase_components(FFT_SETUP_D setup, FFT_SPLIT_COMPLEX_D *out, FFT_S
     hisstools_rfft(setup, out, fft_size_log2);
 }
 
-void ir_phase(FFT_SETUP_D setup, FFT_SPLIT_COMPLEX_D *out, FFT_SPLIT_COMPLEX_D *in, uintptr_t fft_size, double phase, bool zero_center)
+template <class SETUP, class SPLIT>
+void ir_phase_impl(SETUP setup, SPLIT *out, SPLIT *in, uintptr_t fft_size, double phase, bool zero_center)
 {
+    using T = typename BaseType<SPLIT>::type;
+    
     if (phase == 0.5)
     {
-        ir_real_operation(out, in, fft_size, amplitude<double>());
-        if (!zero_center)
-            ir_delay(out, out, fft_size, fft_size >> 1);
+        if (zero_center)
+            ir_real_operation(out, in, fft_size, amplitude<T>());
+        else
+            ir_real_operation(out, in, fft_size, amplitude_flip<T>());
     }
     else
     {
         minimum_phase_components(setup, out, in, fft_size);
-
-        if (phase == 0.0 || phase == 1.0)
-        {
-            ir_real_operation(out, out, fft_size, complex_exponential());
-            
-            if (phase == 1.0)
-            {
-                ir_time_reverse(out, out, fft_size);
-                if (!zero_center)
-                    ir_delay(out, out, fft_size, -1.0);
-            }
-        }
+        
+        if (phase == 1.0 && zero_center)
+            ir_real_operation(out, out, fft_size, complex_exponential_conjugate<T>());
+        else if (phase == 0.0)
+            ir_real_operation(out, out, fft_size, complex_exponential<T>());
         else
-        {
-            ir_real_operation(out, out, fft_size, phase_interpolate(phase, fft_size, zero_center));
-        }
+            ir_real_operation(out, out, fft_size, phase_interpolate<T>(phase, fft_size, zero_center));
     }
+}
+
+// Concrete function calls
+
+void ir_copy(FFT_SPLIT_COMPLEX_F *out, const FFT_SPLIT_COMPLEX_F *in, uintptr_t fft_size)
+{
+    ir_real_operation(out, in, fft_size, copy<float>());
+}
+
+void ir_copy(FFT_SPLIT_COMPLEX_D *out, const FFT_SPLIT_COMPLEX_D *in, uintptr_t fft_size)
+{
+    ir_real_operation(out, in, fft_size, copy<double>());
+}
+
+void ir_spike(FFT_SPLIT_COMPLEX_F *out, uintptr_t fft_size, double spike_position)
+{
+    ir_real_operation(out, fft_size, spike<float>(spike_position, fft_size));
+}
+
+void ir_spike(FFT_SPLIT_COMPLEX_D *out, uintptr_t fft_size, double spike_position)
+{
+    ir_real_operation(out, fft_size, spike<double>(spike_position, fft_size));
+}
+
+void ir_delay(FFT_SPLIT_COMPLEX_F *out, const FFT_SPLIT_COMPLEX_F *in, uintptr_t fft_size, double delay)
+{
+    ir_delay_impl(out, in, fft_size, delay);
+}
+
+void ir_delay(FFT_SPLIT_COMPLEX_D *out, const FFT_SPLIT_COMPLEX_D *in, uintptr_t fft_size, double delay)
+{
+    ir_delay_impl(out, in, fft_size, delay);
+}
+
+void ir_time_reverse(FFT_SPLIT_COMPLEX_F *out, const FFT_SPLIT_COMPLEX_F *in, uintptr_t fft_size)
+{
+    ir_real_operation(out, in, fft_size, conjugate<float>());
+}
+
+void ir_time_reverse(FFT_SPLIT_COMPLEX_D *out, const FFT_SPLIT_COMPLEX_D *in, uintptr_t fft_size)
+{
+    ir_real_operation(out, in, fft_size, conjugate<double>());
+}
+
+void ir_phase(FFT_SETUP_F setup, FFT_SPLIT_COMPLEX_F *out, FFT_SPLIT_COMPLEX_F *in, uintptr_t fft_size, double phase, bool zero_center)
+{
+    ir_phase_impl(setup, out, in, fft_size, phase, zero_center);
+}
+
+void ir_phase(FFT_SETUP_D setup, FFT_SPLIT_COMPLEX_D *out, FFT_SPLIT_COMPLEX_D *in, uintptr_t fft_size, double phase, bool zero_center)
+{
+    ir_phase_impl(setup, out, in, fft_size, phase, zero_center);
 }
