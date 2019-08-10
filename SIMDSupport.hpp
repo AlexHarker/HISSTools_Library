@@ -3,9 +3,9 @@
 #define SIMDSUPPORT
 
 #include <cmath>
+#include <cstdint>
 #include <emmintrin.h>
 #include <immintrin.h>
-#include <stdint.h>
 
 #ifdef __APPLE__
 
