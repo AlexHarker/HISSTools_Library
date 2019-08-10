@@ -6,6 +6,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
+#include <limits>
 
 #include "SIMDSupport.hpp"
 
@@ -23,9 +24,9 @@ T filter_kernel(const T *kernel, double position)
 }
 
 template <typename T>
-T make_filter(T *filter, const T *kernel, uintptr_t kernel_length, uintptr_t half_width)
+T make_filter(T *filter, const T *kernel, uintptr_t kernel_length, uintptr_t half_width, bool non_zero_end)
 {
-    const double width_normalise_factor = 1.0 / (4.0 * half_width);
+    const double width_normalise_factor = 1.0 / std::max(uintptr_t(1), half_width - (non_zero_end ? 1 : 0));
     T filter_sum = 0.0;
     
     for (uintptr_t j = 0; j < half_width; j++)
@@ -66,6 +67,18 @@ void kernel_smooth(T *out, const T *in, const T *kernel, uintptr_t length, uintp
     T *filter = allocator.template alloc<T>(filter_size);
     T *temp = allocator.template alloc<T>(length + filter_size * 2);
     
+    bool non_zero_end = true;
+    
+    if (kernel_length)
+    {
+        const T max_value = *std::max_element(kernel, kernel + kernel_length);
+        const T test_value = kernel[kernel_length - 1] / max_value;
+        const T epsilon = std::numeric_limits<T>::epsilon();
+        
+        if (test_value < epsilon)
+            non_zero_end = false;
+    }
+    
     // Copy data
     
     switch (mode)
@@ -94,7 +107,7 @@ void kernel_smooth(T *out, const T *in, const T *kernel, uintptr_t length, uintp
     for (uintptr_t i = 0, j = 0; i < length; i = j)
     {
         uintptr_t half_width = static_cast<uintptr_t>(std::round((width_lo + i * width_mul) * 0.5));
-        const T filter_normalise = make_filter(filter, kernel, kernel_length, half_width);
+        const T filter_normalise = make_filter(filter, kernel, kernel_length, half_width, non_zero_end);
                 
         for (j = i; (j < length) && half_width == std::round((width_lo + j * width_mul) * 0.5); j++);
         
