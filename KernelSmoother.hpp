@@ -54,8 +54,8 @@ void kernel_smooth(T *out, const T *in, const T *kernel, uintptr_t length, uintp
 {
     const int N = SIMDLimits<T>::max_size;
 
-    width_lo = std::min(static_cast<double>(length), std::max(0.0, width_lo));
-    width_hi = std::min(static_cast<double>(length), std::max(0.0, width_hi));
+    width_lo = std::min(static_cast<double>(length), std::max(1.0, width_lo));
+    width_hi = std::min(static_cast<double>(length), std::max(1.0, width_hi));
     
     double width_mul = (width_hi - width_lo) / (length - 1);
     
@@ -82,27 +82,27 @@ void kernel_smooth(T *out, const T *in, const T *kernel, uintptr_t length, uintp
     
     temp[0] = 0.0;
     std::reverse_copy(in + 1, in + length, temp + 1);
-    std::copy_n(in, length, temp + length);
-    std::reverse_copy(in, in + length - 1, temp + length);
+    std::copy(in, in + length, temp + length);
+    std::reverse_copy(in, in + length - 1, temp + length * 2);
     temp[length * 3 - 1] = 0.0;
     
     const double *data = temp + length;
     
     for (uintptr_t i = 0, j = 0; i < length; i = j)
     {
-        uintptr_t half_width = static_cast<uintptr_t>(std::round(width_lo + i * width_mul * 0.5));
+        uintptr_t half_width = static_cast<uintptr_t>(std::round((width_lo + i * width_mul) * 0.5));
         const T filter_normalise = make_filter(filter, kernel, kernel_length, half_width);
-        
-        for (j = i; (j < length) && half_width == std::round(width_lo + j * width_mul * 0.5); j++);
+                
+        for (j = i; (j < length) && half_width == std::round((width_lo + j * width_mul) * 0.5); j++);
         
         uintptr_t n = j - i;
         uintptr_t k = 0;
         
         for (; k + (N - 1) < n; k += N)
-            apply_filter<N>(out + i + k, data, filter, half_width, filter_normalise);
+            apply_filter<N>(out + i + k, data + i + k, filter, half_width, filter_normalise);
         
         for (; k < n; k++)
-            apply_filter<1>(out + i + k, data, filter, half_width, filter_normalise);
+            apply_filter<1>(out + i + k, data + i + k, filter, half_width, filter_normalise);
     }
     /*
     for (uintptr_t i = 0; i < length; i++)
