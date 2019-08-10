@@ -9,6 +9,8 @@
 
 #include "SIMDSupport.hpp"
 
+enum SmoothMode { kSmoothZeroPad, kSmoothWrap, kSmoothFold };
+
 template <typename T>
 T filter_kernel(const T *kernel, double position)
 {
@@ -50,7 +52,7 @@ void apply_filter(T *out, const T *data, const T *filter, uintptr_t half_width, 
 }
 
 template <typename T, typename Allocator>
-void kernel_smooth(T *out, const T *in, const T *kernel, uintptr_t length, uintptr_t kernel_length, double width_lo, double width_hi, Allocator allocator)
+void kernel_smooth(T *out, const T *in, const T *kernel, uintptr_t length, uintptr_t kernel_length, double width_lo, double width_hi, SmoothMode mode, Allocator allocator)
 {
     const int N = SIMDLimits<T>::max_size;
 
@@ -62,31 +64,32 @@ void kernel_smooth(T *out, const T *in, const T *kernel, uintptr_t length, uintp
     uintptr_t filter_size = std::ceil(std::max(width_lo, width_hi) * 0.5);
     
     T *filter = allocator.template alloc<T>(filter_size);
-    T *temp = allocator.template alloc<T>(length * 3);
+    T *temp = allocator.template alloc<T>(length + filter_size * 2);
     
-    // Zero pad
-    /*
-     std::fill_n(temp.begin(), length, 0.0);
-     std::copy_n(in, length, temp.begin() + length);
-     std::fill_n(temp.begin() + length * 2, length, 0.0);
-     */
+    // Copy data
     
-    // Wrap
-    /*
-     std::copy_n(in, length, temp.begin())
-     std::copy_n(in, length, temp.begin() + length);
-     std::copy_n(in, length, temp.begin() + length * 2)
-     */
+    switch (mode)
+    {
+        case kSmoothZeroPad:
+            std::fill_n(temp, filter_size, 0.0);
+            std::copy_n(in, length, temp + filter_size);
+            std::fill_n(temp + filter_size + length, filter_size, 0.0);
+            break;
     
-    // Fold
+        case kSmoothWrap:
+            std::copy_n(in + length - filter_size, filter_size, temp);
+            std::copy_n(in, length, temp + filter_size);
+            std::copy_n(in, filter_size, temp + filter_size + length);
+            break;
+            
+        case kSmoothFold:
+            std::reverse_copy(in + 1, in + 1 + filter_size, temp);
+            std::copy(in, in + length, temp + filter_size);
+            std::reverse_copy(in, in + filter_size, temp + filter_size + length);
+            break;
+    }
     
-    temp[0] = 0.0;
-    std::reverse_copy(in + 1, in + length, temp + 1);
-    std::copy(in, in + length, temp + length);
-    std::reverse_copy(in, in + length - 1, temp + length * 2);
-    temp[length * 3 - 1] = 0.0;
-    
-    const double *data = temp + length;
+    const double *data = temp + filter_size;
     
     for (uintptr_t i = 0, j = 0; i < length; i = j)
     {
@@ -138,8 +141,8 @@ struct malloc_allocator
 };
 
 template <typename T>
-void kernel_smooth(T *out, const T *in, const T *kernel, uintptr_t length, uintptr_t kernel_length, double width_lo, double width_hi)
+void kernel_smooth(T *out, const T *in, const T *kernel, uintptr_t length, uintptr_t kernel_length, double width_lo, double width_hi, SmoothMode mode)
 {
-    kernel_smooth(out, in, kernel, length, kernel_length, width_lo, width_hi, malloc_allocator());
+    kernel_smooth(out, in, kernel, length, kernel_length, width_lo, width_hi, mode, malloc_allocator());
 }
 #endif
