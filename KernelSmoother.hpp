@@ -26,13 +26,21 @@ T filter_kernel(const T *kernel, double position)
 template <typename T>
 T make_filter(T *filter, const T *kernel, uintptr_t kernel_length, uintptr_t half_width, bool non_zero_end)
 {
-    const double width_normalise_factor = 1.0 / std::max(uintptr_t(1), half_width - (non_zero_end ? 1 : 0));
+    const double width_normalise = 1.0 / std::max(uintptr_t(1), half_width - (non_zero_end ? 1 : 0));
     T filter_sum = 0.0;
     
-    for (uintptr_t j = 0; j < half_width; j++)
+    uintptr_t loop_size = non_zero_end ? half_width - 1 : half_width;
+
+    for (uintptr_t j = 0; j < loop_size; j++)
     {
-        filter[j] = filter_kernel(kernel, j * (kernel_length - 1) * width_normalise_factor);
+        filter[j] = filter_kernel(kernel, j * (kernel_length - 1) * width_normalise);
         filter_sum += filter[j];
+    }
+    
+    if (non_zero_end)
+    {
+        filter[half_width - 1] = kernel[kernel_length - 1];
+        filter_sum += filter[half_width - 1];
     }
     
     return T(1) / (filter_sum * T(2) - filter[0]);
@@ -62,6 +70,11 @@ void kernel_smooth(T *out, const T *in, const T *kernel, uintptr_t length, uintp
     
     double width_mul = (width_hi - width_lo) / (length - 1);
     
+    auto half_width_calc = [&](uintptr_t a)
+    {
+        return static_cast<uintptr_t>(std::round((width_lo + a * width_mul) * 0.5));
+    };
+                                                                
     uintptr_t filter_size = std::ceil(std::max(width_lo, width_hi) * 0.5);
     
     T *filter = allocator.template alloc<T>(filter_size);
@@ -106,10 +119,10 @@ void kernel_smooth(T *out, const T *in, const T *kernel, uintptr_t length, uintp
     
     for (uintptr_t i = 0, j = 0; i < length; i = j)
     {
-        uintptr_t half_width = static_cast<uintptr_t>(std::round((width_lo + i * width_mul) * 0.5));
+        uintptr_t half_width = static_cast<uintptr_t>(half_width_calc(i));
         const T filter_normalise = make_filter(filter, kernel, kernel_length, half_width, non_zero_end);
                 
-        for (j = i; (j < length) && half_width == std::round((width_lo + j * width_mul) * 0.5); j++);
+        for (j = i; (j < length) && half_width == half_width_calc(j); j++);
         
         uintptr_t n = j - i;
         uintptr_t k = 0;
@@ -123,8 +136,9 @@ void kernel_smooth(T *out, const T *in, const T *kernel, uintptr_t length, uintp
     /*
     for (uintptr_t i = 0; i < length; i++)
     {
+     // FIX - not safe
         double width = width_lo + i * width_mul;
-        double width_normalise_factor = 1.0 / (2.0 * width);
+        double width_normalise = 2.0 / width;
         uintptr_t half_width = width * 0.5;
         
         T filter_sum = kernel[0];
@@ -132,7 +146,7 @@ void kernel_smooth(T *out, const T *in, const T *kernel, uintptr_t length, uintp
         
         for (uintptr_t j = 1; j < half_width; j++)
         {
-            T filter = filter_kernel(kernel, j * (kernel_length - 1) * width_normalise_factor);
+            T filter = filter_kernel(kernel, j * (kernel_length - 1) * width_normalise);
             filter_val += filter * (data[i - j] + data[i + j]);
             filter_sum += filter + filter;
         }
