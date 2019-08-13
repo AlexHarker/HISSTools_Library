@@ -9,33 +9,29 @@
 #include <cmath>
 #include <complex>
 
-template <typename T>
-struct FFTTypes
-{
-    using Split = void;
-    using Setup = void;
-};
-
-template<>
-struct FFTTypes<float>
-{
-    using Split = FFT_SPLIT_COMPLEX_F;
-    using Setup = FFT_SETUP_F;
-};
-
-template<>
-struct FFTTypes<double>
-{
-    using Split = FFT_SPLIT_COMPLEX_D;
-    using Setup = FFT_SETUP_D;
-};
-
 namespace impl
 {
-    template<int N, typename T, typename Op>
-    void simd_operation(typename FFTTypes<T>::Split *out, typename FFTTypes<T>::Split *in1, typename FFTTypes<T>::Split *in2, uintptr_t fft_size, double scale, Op op)
+    template <typename T>
+    struct Infer {};
+    
+    template <>
+    struct Infer<FFT_SPLIT_COMPLEX_D>
     {
-        using VecType = SIMDType<T, N>;
+        using Setup = FFT_SETUP_D;
+        using Type = double;
+    };
+    
+    template <>
+    struct Infer<FFT_SPLIT_COMPLEX_F>
+    {
+        using Setup = FFT_SETUP_F;
+        using Type = float;
+    };
+    
+    template<int N, typename Split, typename Op>
+    void simd_operation(Split *out, Split *in1, Split *in2, uintptr_t fft_size, double scale, Op op)
+    {
+        using VecType = SIMDType<typename Infer<Split>::Type, N>;
         
         const VecType *r_in1 = reinterpret_cast<const VecType *>(in1->realp);
         const VecType *i_in1 = reinterpret_cast<const VecType *>(in1->imagp);
@@ -50,10 +46,10 @@ namespace impl
             op(r_out[i], i_out[i], r_in1[i], i_in1[i], r_in2[i], i_in2[i], v_scale, i);
     }
     
-    template<typename T, typename Op>
-    void complex_operation(typename FFTTypes<T>::Split *out, typename FFTTypes<T>::Split *in1, typename FFTTypes<T>::Split *in2, uintptr_t fft_size, T scale, Op op)
+    template<typename Split, typename Op>
+    void complex_operation(Split *out, Split *in1, Split *in2, uintptr_t fft_size, typename Infer<Split>::Type scale, Op op)
     {
-        const int N = SIMDLimits<T>::max_size;
+        const int N = SIMDLimits<typename Infer<Split>::Type>::max_size;
         constexpr int M = N / 2 ? N / 2: 1;
         
         if (fft_size == 1 || fft_size < M)
@@ -64,9 +60,11 @@ namespace impl
             simd_operation<N>(out, in1, in2, fft_size, scale, op);
     }
     
-    template<typename T, typename Op>
-    void real_operation(typename FFTTypes<T>::Split *out, typename FFTTypes<T>::Split *in1, typename FFTTypes<T>::Split *in2, uintptr_t fft_size, T scale, Op op)
+    template<typename Split, typename Op>
+    void real_operation(Split *out, Split *in1, Split *in2, uintptr_t fft_size, typename Infer<Split>::type scale, Op op)
     {
+        using T = typename Infer<Split>::Type;
+
         T temp1(0);
         T temp2(0);
         T dc_value;
@@ -77,7 +75,7 @@ namespace impl
         op(dc_value, temp1, in1->realp[0], temp1, in2->realp[0], temp1, scale, 0);
         op(nq_value, temp2, in1->imagp[0], temp1, in2->imagp[0], temp1, scale, fft_size >> 1);
         
-        ir_complex_operation(out, in1, in2, fft_size >> 1, scale, op);
+        complex_operation(out, in1, in2, fft_size >> 1, scale, op);
         
         // Set DC and Nyquist bins
         
@@ -85,9 +83,11 @@ namespace impl
         out->imagp[0] = nq_value * scale;
     }
     
-    template <typename T, typename Op>
-    void real_operation(typename FFTTypes<T>::Split *out, const typename FFTTypes<T>::Split *in, uintptr_t fft_size, Op op)
+    template <typename Split, typename Op>
+    void real_operation(Split *out, const Split *in, uintptr_t fft_size, Op op)
     {
+        using T = typename Infer<Split>::Type;
+
         const T *r_in = in->realp;
         const T *i_in = in->imagp;
         T *r_out = out->realp;
@@ -107,9 +107,11 @@ namespace impl
             op(r_out[i], i_out[i], r_in[i], i_in[i], i);
     }
     
-    template <typename T, typename Op>
-    void real_operation(typename FFTTypes<T>::Split *out, uintptr_t fft_size, Op op)
+    template <typename Split, typename Op>
+    void real_operation(Split *out, uintptr_t fft_size, Op op)
     {
+        using T = typename Infer<Split>::type;
+        
         T *r_out = out->realp;
         T *i_out = out->imagp;
         
@@ -280,9 +282,14 @@ namespace impl
         }
     };
     
-    template <typename T>
-    void minimum_phase_components(typename FFTTypes<T>::Setup setup, typename FFTTypes<T>::Split *out, typename FFTTypes<T>::Split *in, uintptr_t fft_size)
+    template <typename Split>
+    void minimum_phase_components(typename Infer<Split>::Setup setup, Split *out, Split *in, uintptr_t fft_size)
     {
+        using T = typename Infer<Split>::Type;
+        
+        T *r_out = out->realp;
+        T *i_out = out->imagp;
+        
         // FIX - what is this value?
         
         uintptr_t fft_size_log2 = 0;
@@ -294,7 +301,7 @@ namespace impl
         
         // Take Log of Power Spectrum
         
-        real_operation(out, out, fft_size, log_power());
+        real_operation(out, in, fft_size, log_power());
         
         // Do Real iFFT
         
@@ -307,22 +314,22 @@ namespace impl
         
         double scale = 1.0 / fft_size;
         
-        out->realp[0] *= 0.5 * scale;
-        out->imagp[0] *= scale;
+        r_out[0] *= 0.5 * scale;
+        i_out[0] *= scale;
         
         for (uintptr_t i = 1; i < (fft_size >> 2); i++)
         {
-            out->realp[i] *= scale;
-            out->imagp[i] *= scale;
+            r_out[i] *= scale;
+            i_out[i] *= scale;
         }
         
-        out->realp[fft_size >> 2] *= 0.5 * scale;
-        out->imagp[fft_size >> 2] = 0.0;
+        r_out[fft_size >> 2] *= 0.5 * scale;
+        i_out[fft_size >> 2] = 0.0;
         
         for (unsigned long i = (fft_size >> 2) + 1; i < (fft_size >> 1); i++)
         {
-            out->realp[i] = 0.0;
-            out->imagp[i] = 0.0;
+            r_out[i] = 0.0;
+            i_out[i] = 0.0;
         }
         
         // Forward Real FFT (here there is a scaling issue to consider)
@@ -331,22 +338,45 @@ namespace impl
     }
 }
 
-// Concrete function calls
+// Types
 
 template <typename T>
-void ir_copy(typename FFTTypes<T>::Split *out, const typename FFTTypes<T>::Split *in, uintptr_t fft_size)
+struct FFTTypes
+{
+    using Split = void;
+    using Setup = void;
+};
+
+template<>
+struct FFTTypes<float>
+{
+    using Split = FFT_SPLIT_COMPLEX_F;
+    using Setup = FFT_SETUP_F;
+};
+
+template<>
+struct FFTTypes<double>
+{
+    using Split = FFT_SPLIT_COMPLEX_D;
+    using Setup = FFT_SETUP_D;
+};
+
+// Function calls
+
+template <typename Split>
+void ir_copy(Split *out, const Split *in, uintptr_t fft_size)
 {
     impl::real_operation(out, in, fft_size, impl::copy());
 }
 
-template <typename T>
-void ir_spike(typename FFTTypes<T>::Split *out, uintptr_t fft_size, double spike_position)
+template <typename Split>
+void ir_spike(Split *out, uintptr_t fft_size, double spike_position)
 {
     impl::real_operation(out, fft_size, impl::spike(spike_position, fft_size));
 }
 
-template <typename T>
-void ir_delay(typename FFTTypes<T>::Split *out, const typename FFTTypes<T>::Split *in, uintptr_t fft_size, double delay)
+template <typename Split>
+void ir_delay(Split *out, const Split *in, uintptr_t fft_size, double delay)
 {
     if (delay != 0.0)
         impl::real_operation(out, in, fft_size, impl::delay_calc(delay, fft_size));
@@ -354,14 +384,14 @@ void ir_delay(typename FFTTypes<T>::Split *out, const typename FFTTypes<T>::Spli
         ir_copy(out, in, fft_size);
 }
 
-template <typename T>
-void ir_time_reverse(typename FFTTypes<T>::Split *out, const typename FFTTypes<T>::Split *in, uintptr_t fft_size)
+template <typename Split>
+void ir_time_reverse(Split *out, const Split *in, uintptr_t fft_size)
 {
     impl::real_operation(out, in, fft_size, impl::conjugate());
 }
 
-template <typename T>
-void ir_phase(typename FFTTypes<T>::Setup setup, typename FFTTypes<T>::Split *out, typename FFTTypes<T>::Split *in, uintptr_t fft_size, double phase, bool zero_center)
+template <typename Setup, typename Split>
+void ir_phase(Setup setup, Split *out, Split *in, uintptr_t fft_size, double phase, bool zero_center)
 {
     if (phase == 0.5)
     {
@@ -372,7 +402,7 @@ void ir_phase(typename FFTTypes<T>::Setup setup, typename FFTTypes<T>::Split *ou
     }
     else
     {
-        minimum_phase_components(setup, out, in, fft_size);
+        impl::minimum_phase_components(setup, out, in, fft_size);
         
         if (phase == 1.0 && zero_center)
             impl::real_operation(out, out, fft_size, impl::complex_exponential_conjugate());
@@ -383,26 +413,26 @@ void ir_phase(typename FFTTypes<T>::Setup setup, typename FFTTypes<T>::Split *ou
     }
 }
 
-template <typename T>
-void ir_convolve_complex(typename FFTTypes<T>::Split *out, typename FFTTypes<T>::Split *in1, typename FFTTypes<T>::Split *in2, uintptr_t fft_size, double scale)
+template <typename Split, typename T>
+void ir_convolve_complex(Split *out, Split *in1, Split *in2, uintptr_t fft_size, T scale)
 {
     impl::complex_operation(out, in1, in2, fft_size, scale, impl::convolve());
 }
 
-template <typename T>
-void ir_convolve_real(typename FFTTypes<T>::Split *out, typename FFTTypes<T>::Split *in1, typename FFTTypes<T>::Split *in2, uintptr_t fft_size, double scale)
+template <typename Split, typename T>
+void ir_convolve_real(Split *out, Split *in1, Split *in2, uintptr_t fft_size, T scale)
 {
     impl::real_operation(out, in1, in2, fft_size, scale, impl::convolve());
 }
 
-template <typename T>
-void ir_correlate_complex(typename FFTTypes<T>::Split *out, typename FFTTypes<T>::Split *in1, typename FFTTypes<T>::Split *in2, uintptr_t fft_size, double scale)
+template <typename Split, typename T>
+void ir_correlate_complex(Split *out, Split *in1, Split *in2, uintptr_t fft_size, T scale)
 {
     impl::complex_operation(out, in1, in2, fft_size, scale, impl::correlate());
 }
 
-template <typename T>
-void ir_correlate_real(typename FFTTypes<T>::Split *out, typename FFTTypes<T>::Split *in1, typename FFTTypes<T>::Split *in2, uintptr_t fft_size, double scale)
+template <typename Split, typename T>
+void ir_correlate_real(Split *out, Split *in1, Split *in2, uintptr_t fft_size, T scale)
 {
     impl::real_operation(out, in1, in2, fft_size, scale, impl::correlate());
 }
