@@ -61,7 +61,7 @@ namespace impl
     }
     
     template<typename Split, typename Op>
-    void real_operation(Split *out, Split *in1, Split *in2, uintptr_t fft_size, typename Infer<Split>::type scale, Op op)
+    void real_operation(Split *out, Split *in1, Split *in2, uintptr_t fft_size, typename Infer<Split>::Type scale, Op op)
     {
         using T = typename Infer<Split>::Type;
 
@@ -110,7 +110,7 @@ namespace impl
     template <typename Split, typename Op>
     void real_operation(Split *out, uintptr_t fft_size, Op op)
     {
-        using T = typename Infer<Split>::type;
+        using T = typename Infer<Split>::Type;
         
         T *r_out = out->realp;
         T *i_out = out->imagp;
