@@ -215,18 +215,28 @@ private:
                 (*this)++;
         }
         
+        const T *operator ++()
+        {
+            std::swap(++p1, p2);
+            return p1;
+        }
+        
         const T *operator ++(int)
         {
-            const T *p = p1;
-            std::swap(++p1, p2);
-            return p;
+            std::swap(p1, p2);
+            return p2++;
+        }
+        
+        const T *operator --()
+        {
+            std::swap(p1, --p2);
+            return p1;
         }
         
         const T *operator --(int)
         {
-            const T *p = p1;
             std::swap(p1, --p2);
-            return p;
+            return p2;
         }
         
     private:
@@ -306,7 +316,7 @@ private:
         zipped_pointer p(spectrum, offset);
         
         for (uintptr_t i = 0; i < size; i++)
-            output[oOffset + i] += *p--;
+            output[oOffset + i] += *--p;
     }
     
     // Arranges for convolution and correlation
