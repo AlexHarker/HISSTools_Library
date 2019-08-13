@@ -27,9 +27,9 @@
 /* Begin PBXFileReference section */
 		B82AAC281F61FC0C0015CDCF /* FFT Tester */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "FFT Tester"; sourceTree = BUILT_PRODUCTS_DIR; };
 		B82AAC2B1F61FC0C0015CDCF /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
-		B82AAC321F61FC1C0015CDCF /* HISSTools_FFT.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = HISSTools_FFT.cpp; path = ../../HISSTools_FFT.cpp; sourceTree = "<group>"; };
-		B82AAC331F61FC1C0015CDCF /* HISSTools_FFT.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = HISSTools_FFT.h; path = ../../HISSTools_FFT.h; sourceTree = "<group>"; };
-		B82AAC371F6217970015CDCF /* HISSTools_FFT_Core.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = HISSTools_FFT_Core.h; path = ../../HISSTools_FFT_Core.h; sourceTree = "<group>"; };
+		B82AAC321F61FC1C0015CDCF /* HISSTools_FFT.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = HISSTools_FFT.cpp; path = ../../../HISSTools_FFT/HISSTools_FFT.cpp; sourceTree = "<group>"; };
+		B82AAC331F61FC1C0015CDCF /* HISSTools_FFT.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = HISSTools_FFT.h; path = ../../../HISSTools_FFT/HISSTools_FFT.h; sourceTree = "<group>"; };
+		B82AAC371F6217970015CDCF /* HISSTools_FFT_Core.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = HISSTools_FFT_Core.h; path = ../../../HISSTools_FFT/HISSTools_FFT_Core.h; sourceTree = "<group>"; };
 		B8378E0F22BCC9FF004F8598 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -223,7 +223,7 @@
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_PREPROCESSOR_DEFINITIONS = "NO_NATIVE_FFT=1";
+				GCC_PREPROCESSOR_DEFINITIONS = "";
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
 				GCC_WARN_UNDECLARED_SELECTOR = YES;
@@ -241,6 +241,10 @@
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_X86_VECTOR_INSTRUCTIONS = avx;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"NO_NATIVE_FFT=1",
+					"$(inherited)",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -250,6 +254,10 @@
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
 				CLANG_X86_VECTOR_INSTRUCTIONS = avx;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"NO_NATIVE_FFT=1",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
