@@ -79,8 +79,8 @@ namespace impl
         
         // Set DC and Nyquist bins
         
-        out->realp[0] = dc_value * scale;
-        out->imagp[0] = nq_value * scale;
+        out->realp[0] = dc_value;
+        out->imagp[0] = nq_value;
     }
     
     template <typename Split, typename Op>
