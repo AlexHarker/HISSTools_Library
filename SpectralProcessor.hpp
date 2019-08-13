@@ -206,44 +206,6 @@ private:
         Split m_spectra[N];
     };
     
-    struct zipped_pointer
-    {
-        zipped_pointer(const Split spectrum, uintptr_t offset)
-        : p1(spectrum.realp + (offset >> 1)), p2(spectrum.imagp + (offset >> 1))
-        {
-            if (offset & 1U)
-                (*this)++;
-        }
-        
-        const T *operator ++()
-        {
-            std::swap(++p1, p2);
-            return p1;
-        }
-        
-        const T *operator ++(int)
-        {
-            std::swap(p1, p2);
-            return p2++;
-        }
-        
-        const T *operator --()
-        {
-            std::swap(p1, --p2);
-            return p1;
-        }
-        
-        const T *operator --(int)
-        {
-            std::swap(p1, --p2);
-            return p2;
-        }
-        
-    private:
-        
-        const T *p1, *p2;
-    };
-    
     struct binary_sizes
     {
         binary_sizes(uintptr_t size1, uintptr_t size2)
@@ -297,7 +259,7 @@ private:
     
     static void copy(T *output, const Split& spectrum, uintptr_t oOffset, uintptr_t offset, uintptr_t size)
     {
-        zipped_pointer p(spectrum, offset);
+        zipped_pointer<T> p(spectrum, offset);
 
         for (uintptr_t i = 0; i < size; i++)
             output[oOffset + i] = *p++;
@@ -305,7 +267,7 @@ private:
     
     static void wrap(T *output, const Split& spectrum, uintptr_t oOffset, uintptr_t offset, uintptr_t size)
     {
-        zipped_pointer p(spectrum, offset);
+        zipped_pointer<T> p(spectrum, offset);
         
         for (uintptr_t i = 0; i < size; i++)
             output[oOffset + i] += *p++;
@@ -313,7 +275,7 @@ private:
     
     static void fold(T *output, const Split& spectrum, uintptr_t oOffset, uintptr_t offset, uintptr_t size)
     {
-        zipped_pointer p(spectrum, offset);
+        zipped_pointer<T> p(spectrum, offset);
         
         for (uintptr_t i = 0; i < size; i++)
             output[oOffset + i] += *--p;
