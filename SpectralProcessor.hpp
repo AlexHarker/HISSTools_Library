@@ -242,6 +242,7 @@ private:
         uintptr_t linear() const        { return m_size1 + m_size2 - 1; }
         uintptr_t min() const           { return std::min(m_size1, m_size2); }
         uintptr_t max() const           { return std::max(m_size1, m_size2); }
+        uintptr_t min_m1() const        { return min() - 1; }
         uintptr_t fft() const           { return 1 << m_fft_size_log2; }
         uintptr_t fft_log2() const      { return m_fft_size_log2; }
         
@@ -314,8 +315,8 @@ private:
     static void arrange_convolve(U output, Split spectrum, const binary_sizes& sizes, EdgeMode mode)
     {
         uintptr_t folded = sizes.min() / 2;
-        uintptr_t wrapped1 = (sizes.min() - 1) / 2;
-        uintptr_t wrapped2 = (sizes.min() - 1) - wrapped1;
+        uintptr_t wrapped1 = sizes.min_m1() / 2;
+        uintptr_t wrapped2 = sizes.min_m1() - wrapped1;
         
         switch (mode)
         {
@@ -325,7 +326,7 @@ private:
 
             case kEdgeWrap:
                 copy(output, spectrum, 0, 0, sizes.max());
-                wrap(output, spectrum, 0, sizes.max(), sizes.linear() - sizes.max());
+                wrap(output, spectrum, 0, sizes.max(), sizes.min_m1());
                 break;
         
             case kEdgeWrapCentre:
@@ -335,7 +336,7 @@ private:
                 break;
                 
             case kEdgeFold:
-                copy(output, spectrum, 0, (sizes.min() - 1) / 2, sizes.max());
+                copy(output, spectrum, 0, sizes.min_m1() / 2, sizes.max());
                 fold(output, spectrum, 0, folded, folded);
                 fold(output, spectrum, sizes.max() - folded, sizes.linear(), folded);
                 break;
@@ -346,25 +347,26 @@ private:
     static void arrange_correlate(U output, Split spectrum, const binary_sizes& sizes, EdgeMode mode)
     {
         uintptr_t offset = sizes.min() / 2;
-        uintptr_t wrapped = sizes.min() - offset - 1;
+        uintptr_t wrapped = sizes.min_m1() - offset;
+        uintptr_t fft_minus_min_m1 = sizes.fft() - sizes.min_m1();
         
         switch (mode)
         {
             case kEdgeLinear:
                 copy(output, spectrum, 0, 0, sizes.max());
-                copy(output, spectrum, sizes.max(), sizes.fft() + 1 - sizes.min(), sizes.min() - 1);
+                copy(output, spectrum, sizes.max(), fft_minus_min_m1, sizes.min_m1());
                 break;
                 
             case kEdgeWrap:
                 copy(output, spectrum, 0, 0, sizes.max());
-                wrap(output, spectrum, sizes.linear() + 1 - (2 * sizes.min()), sizes.fft() + 1 - sizes.min(), sizes.min() - 1);
+                wrap(output, spectrum, sizes.max() - sizes.min_m1(), fft_minus_min_m1, sizes.min_m1());
                 break;
                 
             case kEdgeWrapCentre:
                 copy(output, spectrum, 0, sizes.fft() - offset, offset);
                 copy(output, spectrum, offset, 0, sizes.max() - offset);
                 wrap(output, spectrum, 0, sizes.max() - offset, offset);
-                wrap(output, spectrum, sizes.max() - wrapped, sizes.fft() + 1 - sizes.min(), wrapped);
+                wrap(output, spectrum, sizes.max() - wrapped, fft_minus_min_m1, wrapped);
                 break;
             
             case kEdgeFold:
