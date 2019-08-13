@@ -391,7 +391,7 @@ void ir_time_reverse(Split *out, const Split *in, uintptr_t fft_size)
 }
 
 template <typename Setup, typename Split>
-void ir_phase(Setup setup, Split *out, Split *in, uintptr_t fft_size, double phase, bool zero_center)
+void ir_phase(Setup setup, Split *out, Split *in, uintptr_t fft_size, double phase, bool zero_center = false)
 {
     if (phase == 0.5)
     {
