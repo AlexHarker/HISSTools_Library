@@ -479,7 +479,7 @@ private:
             rfft(buffers.m_spectra[0], in1.m_ptr, in1.m_size, sizes.fft_log2());
             rfft(buffers.m_spectra[1], in2.m_ptr, in2.m_size, sizes.fft_log2());
             
-            Op(&buffers.m_spectra[0], &buffers.m_spectra[0], &buffers.m_spectra[1], sizes.fft() >> 1, 0.25 / (T) sizes.fft());
+            Op(&buffers.m_spectra[0], &buffers.m_spectra[0], &buffers.m_spectra[1], sizes.fft(), 0.25 / (T) sizes.fft());
             
             rifft(buffers.m_spectra[0], sizes.fft_log2());
             
