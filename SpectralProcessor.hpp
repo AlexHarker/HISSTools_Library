@@ -190,8 +190,8 @@ private:
             
             for (int i = 0; i < N; i++)
             {
-                m_spectra[i].realp = ptr + (N * 2 * size);
-                m_spectra[i].imagp = ptr + ((N * 2 + 1) * size);
+                m_spectra[i].realp = ptr + (i * 2 * size);
+                m_spectra[i].imagp = ptr + ((i * 2 + 1) * size);
             }
         }
         
