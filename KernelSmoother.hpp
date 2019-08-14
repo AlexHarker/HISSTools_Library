@@ -12,8 +12,6 @@
 #include "SIMDSupport.hpp"
 #include "SpectralProcessor.hpp"
 
-enum SmoothMode { kSmoothZeroPad, kSmoothWrap, kSmoothFold };
-
 template <typename T, typename Allocator = aligned_allocator, bool auto_resize_fft = false>
 class kernel_smoother : private spectral_processor<T, Allocator>
 {
@@ -26,11 +24,15 @@ class kernel_smoother : private spectral_processor<T, Allocator>
     
 public:
     
+    enum SmoothMode { kSmoothZeroPad, kSmoothWrap, kSmoothFold };
+    
     kernel_smoother() : spectral_processor<T, Allocator>(aligned_allocator())
     {
-        processor::set_max_fft_size(65536 * 8);
+        set_max_fft_size(1 << 18);
     }
 
+    void set_max_fft_size(uintptr_t size) { processor::set_max_fft_size(size); }
+    
     void smooth(T *out, const T *in, const T *kernel, uintptr_t length, uintptr_t kernel_length, double width_lo, double width_hi, SmoothMode mode)
     {
         Allocator& allocator = processor::m_allocator;
@@ -52,12 +54,17 @@ public:
         uintptr_t max_per_filter = (2.0 / width_mul) + 1.5;
         uintptr_t data_width = max_per_filter + (filter_size - 1) * 2;
         
-        binary_sizes sizes (filter_full, data_width);
+        binary_sizes sizes(filter_full, data_width);
         
-        T *ptr = allocator.template allocate<T>(sizes.fft() * 2 + filter_full + length + filter_size * 2);
-        Split io { ptr, ptr + sizes.fft() / 2};
-        Split st { ptr + sizes.fft(), ptr + 3 * sizes.fft() / 2};
-        T *filter = ptr + sizes.fft() * 2 + filter_size - 1;
+        if (auto_resize_fft && processor::max_fft_size() < sizes.fft())
+            set_max_fft_size(sizes.fft());
+        
+        uintptr_t fft_size = processor::max_fft_size() >= sizes.fft() ? sizes.fft() : 0;
+        
+        T *ptr = allocator.template allocate<T>(fft_size * 2 + filter_full + length + filter_size * 2);
+        Split io { ptr, ptr + fft_size / 2};
+        Split st { ptr + fft_size, ptr + 3 * fft_size / 2};
+        T *filter = ptr + fft_size * 2 + filter_size - 1;
         T *temp = filter + filter_size;
         
         bool non_zero_end = true;
@@ -109,7 +116,7 @@ public:
             uintptr_t k = 0;
             uintptr_t m = std::min(optimal_fft / 2, n);
                 
-            m = use_fft(n, half_width) ? m : 0;
+            m = use_fft(n, half_width, fft_size) ? m : 0;
 
             for (; k + (m - 1) < n; k += m)
                 apply_filter_fft(out + i + k, data + i + k, filter, io, st, half_width, n, filter_normalise);
@@ -146,9 +153,9 @@ public:
     
 private:
     
-    bool use_fft(uintptr_t n, uintptr_t half_width)
+    bool use_fft(uintptr_t n, uintptr_t half_width, uintptr_t fft_size)
     {
-        return n > 2 && half_width > 2 && (32 * n > half_width);
+        return fft_size && n > 2 && half_width > 2 && (32 * n > half_width);
     }
     
     T filter_kernel(const T *kernel, double position)
