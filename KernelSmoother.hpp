@@ -215,7 +215,7 @@ private:
         VecType filter_val = SIMDType<double, N>(data) * filter[0];
         
         for (uintptr_t j = 1; j < half_width; j++)
-            filter_val += filter[j] * (VecType(data -j) + VecType(data + j));
+            filter_val += filter[j] * (VecType(data - j) + VecType(data + j));
         
         filter_val *= gain;
         filter_val.store(out);
