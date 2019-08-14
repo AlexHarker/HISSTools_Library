@@ -80,7 +80,7 @@ public:
         
         T *ptr = allocator.template allocate<T>(fft_size * 2 + filter_full + length + filter_size * 2);
         Split io { ptr, ptr + (fft_size >> 1) };
-        Split st { io.realp + fft_size, io.realp + fft_size };
+        Split st { io.realp + fft_size, io.imagp + fft_size };
         T *filter = ptr + (fft_size << 1) + filter_size - 1;
         T *temp = filter + filter_size;
         
