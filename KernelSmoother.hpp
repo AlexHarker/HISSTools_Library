@@ -231,7 +231,7 @@ private:
         
         // Mirror the filter
         
-        for (uintptr_t i = 1; i < half_width; i++)
+        for (intptr_t i = 1; i < (intptr_t) half_width; i++)
             filter[-i] = filter[i];
         
         // Process
