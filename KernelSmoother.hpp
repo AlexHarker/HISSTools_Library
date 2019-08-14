@@ -115,7 +115,7 @@ public:
             case kSmoothFold:
                 std::reverse_copy(in + 1, in + 1 + filter_size, temp);
                 std::copy(in, in + length, temp + filter_size);
-                std::reverse_copy(in, in + filter_size, temp + filter_size + length);
+                std::reverse_copy(in + length - (filter_size + 1), in + length - 1, temp + filter_size + length);
                 break;
         }
         
