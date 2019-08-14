@@ -12,6 +12,8 @@ namespace impl
     typedef void (*free_function)(void *);
 };
 
+// Atemplate for wrapping functions as an allocator
+
 template<impl::allocate_function alloc, impl::free_function dealloc>
 struct function_allocator
 {
@@ -23,5 +25,17 @@ struct function_allocator
 };
 
 using malloc_allocator = function_allocator<malloc, free>;
+
+// Aligned allocator
+
+struct aligned_allocator
+{
+    
+    template <typename T>
+    T* allocate(size_t size) { return allocate_aligned<T>(size); }
+    
+    template <typename T>
+    void deallocate(T *ptr) { deallocate_aligned(ptr); }
+};
 
 #endif
