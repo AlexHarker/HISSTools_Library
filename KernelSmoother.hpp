@@ -136,7 +136,7 @@ public:
             m = use_fft(n, half_width, fft_size) ? m : 0;
 
             for (; k + (m - 1) < n; k += m)
-                apply_filter_fft(out + i + k, data + i + k, filter, io, st, half_width, n, filter_normalise);
+                apply_filter_fft(out + i + k, data + i + k, filter, io, st, half_width, m, filter_normalise);
                 
             for (; k + (N - 1) < n; k += N)
                 apply_filter<N>(out + i + k, data + i + k, filter, half_width, filter_normalise);
