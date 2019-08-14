@@ -128,10 +128,10 @@ public:
             
             for (j = i; (j < length) && half_width == half_width_calc(j); j++);
             
-            uintptr_t optimal_fft = 1 << processor::calc_fft_size_log2(half_width * 4);
+            //uintptr_t optimal_fft = 1 << processor::calc_fft_size_log2(half_width * 4);
             uintptr_t n = j - i;
             uintptr_t k = 0;
-            uintptr_t m = std::min(optimal_fft / 2, n);
+            uintptr_t m = n;//std::min(optimal_fft / 2, n);
                 
             m = use_fft(n, half_width, fft_size) ? m : 0;
 
