@@ -1,11 +1,11 @@
 
-#ifndef SIMDSUPPORT
-#define SIMDSUPPORT
+#ifndef SIMDSUPPORT_HPP
+#define SIMDSUPPORT_HPP
 
 #include <cmath>
+#include <cstdint>
 #include <emmintrin.h>
 #include <immintrin.h>
-#include <stdint.h>
 
 #ifdef __APPLE__
 
