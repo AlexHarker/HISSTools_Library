@@ -1,11 +1,11 @@
 
 #pragma once
 
-#include "ConvolveErrors.h"
-
 #include "../HISSTools_FFT/HISSTools_FFT.h"
 
-#include <stdint.h>
+#include "ConvolveErrors.h"
+
+#include <cstdint>
 
 namespace HISSTools
 {
