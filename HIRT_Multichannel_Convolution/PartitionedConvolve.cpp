@@ -242,8 +242,6 @@ ConvolveError HISSTools::PartitionedConvolve::set(const float *input, uintptr_t 
         
         // Do fft straight into position
         
-        //hisstools_unzip(bufferTemp1, &bufferTemp2, mFFTSizeLog2);
-        //hisstools_rfft(mFFTSetup, &bufferTemp2, mFFTSizeLog2);
         hisstools_rfft(mFFTSetup, bufferTemp1, &bufferTemp2, FFTSize, mFFTSizeLog2);
         offsetSplitPointer(bufferTemp2, bufferTemp2, FFTSizeHalved);
     }
