@@ -110,14 +110,12 @@ namespace HISSTools
         writeAudio(input, numFrames);
     }
 
-    void OAudioFile::writeChannel(const double* input, FrameCount numFrames,
-                                  uint16_t channel)
+    void OAudioFile::writeChannel(const double* input, FrameCount numFrames, uint16_t channel)
     {
         writeAudio(input, numFrames, channel);
     }
 
-    void OAudioFile::writeChannel(const float* input, FrameCount numFrames,
-                                  uint16_t channel)
+    void OAudioFile::writeChannel(const float* input, FrameCount numFrames, uint16_t channel)
     {
         writeAudio(input, numFrames, channel);
     }
@@ -258,7 +256,7 @@ namespace HISSTools
 
     bool OAudioFile::putChunk(const char* tag, uint32_t size)
     {
-        return writeInternal(tag, 4) & putU32(size, getHeaderEndianness());
+        return writeInternal(tag, 4) && putU32(size, getHeaderEndianness());
     }
 
     bool OAudioFile::putTag(const char* tag)
@@ -593,7 +591,6 @@ namespace HISSTools
         ByteCount offset = (channel < 0) ? 0 : channel * byteDepth;
         ByteCount byteStep = (channel < 0) ? 0 : getFrameByteCount() - (byteDepth + offset);
         FrameCount endFrame = getPosition() + numFrames;
-        //ByteCount counter = positionInternal();
         
         // FIX - the slowest thing is seeking in the file, so that seems like a bad plan - it might be better to read in chunks overwrite locally and then write back the chunk
         
@@ -606,89 +603,73 @@ namespace HISSTools
 
         switch (getPCMFormat())
         {
-        case kAudioFileInt8:
-            if (getFileType() == kAudioFileWAVE)
-            {
+            case kAudioFileInt8:
+                if (getFileType() == kAudioFileWAVE)
+                {
+                    for (uintptr_t i = 0; i < inputSamples; i++)
+                    {
+                        seekRelativeInternal(offset);
+                        putU08(inputToU8(input[i]));
+                        seekRelativeInternal(byteStep);
+                    }
+                }
+                else
+                {
+                    for (uintptr_t i = 0; i < inputSamples; i++)
+                    {
+                        seekRelativeInternal(offset);
+                        putU08(inputToU32(input[i], 8));
+                        seekRelativeInternal(byteStep);
+                    }
+                }
+                break;
+
+            case kAudioFileInt16:
                 for (uintptr_t i = 0; i < inputSamples; i++)
                 {
                     seekRelativeInternal(offset);
-                    putU08(inputToU8(input[i]));
+                    putU16(inputToU32(input[i], 16), getAudioEndianness());
                     seekRelativeInternal(byteStep);
                 }
-            }
-            else
-            {
+                break;
+
+            case kAudioFileInt24:
                 for (uintptr_t i = 0; i < inputSamples; i++)
                 {
                     seekRelativeInternal(offset);
-                    putU08(inputToU32(input[i], 8));
+                    putU24(inputToU32(input[i], 24), getAudioEndianness());
                     seekRelativeInternal(byteStep);
                 }
-            }
-            break;
+                break;
 
-        case kAudioFileInt16:
-            for (uintptr_t i = 0; i < inputSamples; i++)
-            {
-                seekRelativeInternal(offset);
-                putU16(inputToU32(input[i], 16), getAudioEndianness());
-                seekRelativeInternal(byteStep);
-            }
-            break;
+            case kAudioFileInt32:
+                for (uintptr_t i = 0; i < inputSamples; i++)
+                {
+                    seekRelativeInternal(offset);
+                    putU32(inputToU32(input[i], 32), getAudioEndianness());
+                    seekRelativeInternal(byteStep);
+                }
+                break;
 
-        case kAudioFileInt24:
-            for (uintptr_t i = 0; i < inputSamples; i++)
-            {
-                seekRelativeInternal(offset);
-                putU24(inputToU32(input[i], 24), getAudioEndianness());
-                seekRelativeInternal(byteStep);
-            }
-            break;
+            case kAudioFileFloat32:
+                for (uintptr_t i = 0; i < inputSamples; i++)
+                {
+                    seekRelativeInternal(offset);
+                    float value = input[i];
+                    putU32(*reinterpret_cast<uint32_t*>(&value), getAudioEndianness());
+                    seekRelativeInternal(byteStep);
+                }
+                break;
 
-        case kAudioFileInt32:
-            for (uintptr_t i = 0; i < inputSamples; i++)
-            {
-                /*counter += offset;
-                seekInternal(counter);
-                putU32(inputToU32(input[i], 32), getAudioEndianness());
-                counter += 4;
-                counter += byteStep;
-                seekInternal(counter);*/
-
-                seekRelativeInternal(offset);
-                putU32(inputToU32(input[i], 32), getAudioEndianness());
-                seekRelativeInternal(byteStep);
-            }
-            break;
-
-        case kAudioFileFloat32:
-            for (uintptr_t i = 0; i < inputSamples; i++)
-            {
-                /*counter += offset;
-                seekInternal(counter);
-                float value = input[i];
-                putU32(*reinterpret_cast<uint32_t*>(&value), getAudioEndianness());
-                counter += 4;
-                counter += byteStep;
-                seekInternal(counter);
-                */
-                
-                seekRelativeInternal(offset);
-                float value = input[i];
-                putU32(*reinterpret_cast<uint32_t*>(&value), getAudioEndianness());
-                seekRelativeInternal(byteStep);
-            }
-            break;
-
-        case kAudioFileFloat64:
-            for (uintptr_t i = 0; i < inputSamples; i++)
-            {
-                seekRelativeInternal(offset);
-                double value = input[i];
-                putU64(*reinterpret_cast<uint64_t*>(&value), getAudioEndianness());
-                seekRelativeInternal(byteStep);
-            }
-            break;
+            case kAudioFileFloat64:
+                for (uintptr_t i = 0; i < inputSamples; i++)
+                {
+                    seekRelativeInternal(offset);
+                    double value = input[i];
+                    putU64(*reinterpret_cast<uint64_t*>(&value), getAudioEndianness());
+                    seekRelativeInternal(byteStep);
+                }
+                break;
         }
 
         // Update number of frames
