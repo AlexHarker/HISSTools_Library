@@ -264,8 +264,6 @@ namespace HISSTools
         return writeInternal(tag, 4);
     }
 
-// FIX - REPLACE
-
     uint32_t doubleToUInt32(double x)
     {
         return ((uint32_t)(((int32_t)(x - 2147483648.0)) + 2147483647L) + 1);
