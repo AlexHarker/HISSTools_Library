@@ -256,7 +256,12 @@ namespace HISSTools
 
     bool OAudioFile::putChunk(const char* tag, uint32_t size)
     {
-        return writeInternal(tag, 4) && putU32(size, getHeaderEndianness());
+        bool success = true;
+        
+        success &= writeInternal(tag, 4);
+        success &= putU32(size, getHeaderEndianness());
+        
+        return success;
     }
 
     bool OAudioFile::putTag(const char* tag)
