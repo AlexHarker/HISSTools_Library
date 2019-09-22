@@ -266,9 +266,12 @@ namespace HISSTools
 
 // FIX - REPLACE
 
-#define FloatToUnsigned(f) ((uint32_t)(((int32_t)(f - 2147483648.0)) + 2147483647L) + 1)
+    uint32_t doubleToUInt32(double x)
+    {
+        return ((uint32_t)(((int32_t)(x - 2147483648.0)) + 2147483647L) + 1);
+    }
 
-    void _af_convert_to_ieee_extended(double num, unsigned char* bytes)
+    void doubleToExtended(double num, unsigned char* bytes)
     {
         int sign;
         int expon;
@@ -311,10 +314,10 @@ namespace HISSTools
                 expon |= sign;
                 fMant = ldexp(fMant, 32);
                 fsMant = floor(fMant);
-                hiMant = FloatToUnsigned(fsMant);
+                hiMant = doubleToUInt32(fsMant);
                 fMant = ldexp(fMant - fsMant, 32);
                 fsMant = floor(fMant);
-                loMant = FloatToUnsigned(fsMant);
+                loMant = doubleToUInt32(fsMant);
             }
         }
 
@@ -330,12 +333,11 @@ namespace HISSTools
         bytes[9] = loMant;
     }
 
-
     bool OAudioFile::putExtended(double value)
     {
         unsigned char bytes[10];
 
-        _af_convert_to_ieee_extended(value, bytes);
+        doubleToExtended(value, bytes);
 
         return writeInternal(reinterpret_cast<const char*>(bytes), 10);
     }
@@ -389,8 +391,7 @@ namespace HISSTools
 
     const char* OAudioFile::getCompressionTag()
     {
-        // FIX - doesn't deal with little endian... (return type)?
-        // "sowt"
+        // FIX - doesn't deal with little endian... (return type)? "sowt"
         
         switch (getPCMFormat())
         {
@@ -408,9 +409,7 @@ namespace HISSTools
 
     const char* OAudioFile::getCompressionString()
     {
-        
-        // FIX - doesn't deal with little endian... (return type)?
-        // "little endian"
+        // FIX - doesn't deal with little endian... (return type)? "little endian"
         
         switch (getPCMFormat())
         {
