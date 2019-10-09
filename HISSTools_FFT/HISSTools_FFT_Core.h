@@ -4,15 +4,15 @@
 #include <functional>
 
 #if defined(__arm__) || defined(__arm64)
-#include <arm_neon.h>
-#include <memory.h>
-#else
-#if defined(_WIN32)
-#include <malloc.h>
-#include <intrin.h>
-#endif
-#include <emmintrin.h>
-#include <immintrin.h>
+# include <arm_neon.h>
+# include <memory.h>
+#elif defined(__APPLE__) || defined(__LINUX__) || defined(_WIN32)
+# if defined(_WIN32)
+#   include <malloc.h>
+#   include <intrin.h>
+# endif
+# include <emmintrin.h>
+# include <immintrin.h>
 #endif
 
 // Microsoft Visual Studio doesn't ever define __SSE__ so if necessary we derive it from other defines
@@ -80,6 +80,16 @@ namespace hisstools_fft_impl{
         return static_cast<T *>(mem);
     }
     
+
+#elif defined(__EMSCRIPTEN__)
+    template <class T>
+    T *allocate_aligned(size_t size)
+    {
+        void *mem;
+        posix_memalign(&mem, 16, size * sizeof(T));
+        return static_cast<T *>(mem);
+    }
+
 #elif defined(__arm__) || defined(__arm64__)
     
     template <class T>
