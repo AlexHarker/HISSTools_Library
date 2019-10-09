@@ -80,7 +80,6 @@ namespace hisstools_fft_impl{
         return static_cast<T *>(mem);
     }
 
-
 #elif defined(__EMSCRIPTEN__)
 
     template <class T>
