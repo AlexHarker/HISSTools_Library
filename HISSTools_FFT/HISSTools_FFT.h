@@ -351,7 +351,7 @@ void hisstools_unzip(const float *input, FFT_SPLIT_COMPLEX_F *output, uintptr_t 
 	@param	output		A pointer to the real double-precision output.
 	@param	log2n		The log base 2 of the FFT size.
 	
-	@remark             Subnsequent to running a real FFT the data must be zipped from a complex split structue into a contiguous memory location for final output. This function performs the zipping.
+	@remark             Subsequent to running a real FFT the data must be zipped from a complex split structue into a contiguous memory location for final output. This function performs the zipping.
  */
 
 void hisstools_zip(const FFT_SPLIT_COMPLEX_D *input, double *output, uintptr_t log2n);
@@ -363,7 +363,7 @@ void hisstools_zip(const FFT_SPLIT_COMPLEX_D *input, double *output, uintptr_t l
 	@param	output		A pointer to the real single-precision output.
 	@param	log2n		The log base 2 of the FFT size.
 	
-	@remark             Subnsequent to running a real FFT the data must be zipped from a complex split structue into a contiguous memory location for final output. This function performs the zipping.
+	@remark             Subsequent to running a real FFT the data must be zipped from a complex split structue into a contiguous memory location for final output. This function performs the zipping.
  */
 
 void hisstools_zip(const FFT_SPLIT_COMPLEX_F *input, float *output, uintptr_t log2n);
