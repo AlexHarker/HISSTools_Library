@@ -47,8 +47,8 @@ typedef struct DSPSplitComplex FFT_SPLIT_COMPLEX_F;
 
 #else
 
-struct DoubleSplit : public Split<double> {};
-struct FloatSplit : public Split<float> {};
+typedef Split<double> DoubleSplit;
+typedef Split<float> FloatSplit;
 
 /**
     FFT_SETUP_D is an opaque setup structure for a double-precision FFT.
@@ -66,12 +66,12 @@ typedef struct FloatSetup *FFT_SETUP_F;
     FFT_SPLIT_COMPLEX_D is a Structure for storing a double-precision complex array in split form.
  */
 
-typedef struct DoubleSplit FFT_SPLIT_COMPLEX_D;
+typedef DoubleSplit FFT_SPLIT_COMPLEX_D;
 
 /**
     FFT_SPLIT_COMPLEX_F is a Structure for storing a single-precision complex array in split form.
  */
-typedef struct FloatSplit FFT_SPLIT_COMPLEX_F;
+typedef FloatSplit FFT_SPLIT_COMPLEX_F;
 
 #endif
 
