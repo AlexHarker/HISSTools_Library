@@ -207,6 +207,57 @@ uint64_t matched_size_test(int min_log2, int max_log2)
 }
 
 template<class SPLIT, class T, class U>
+bool zip_correctness_test(int min_log2, int max_log2)
+{
+    SPLIT split;
+    
+    U *ptr = (U *) malloc(sizeof(U) * 1 << max_log2);
+    split.realp = (T *) malloc(sizeof(T) * 1 << (max_log2 - 1));
+    split.imagp = (T *) malloc(sizeof(T) * 1 << (max_log2 - 1));
+    
+    for (int i = min_log2; i < max_log2; i++)
+    {
+        for (int j = 0; j < (1 << i); j++)
+            ptr[j] = j;
+        
+        hisstools_unzip(ptr, &split, i);
+        
+        for (int j = 0 ; j < (1 << (i - 1)); j++)
+        {
+            if (split.realp[j] != (j << 1))
+            {
+                std::cout << "zip error\n";
+                return true;
+            }
+            if (i > 1 && split.imagp[j] != (j << 1) + 1)
+            {
+                std::cout << "zip error\n";
+                return true;
+            }
+        }
+        
+        hisstools_zip(&split, ptr, i);
+        
+        for (int j = 0 ; j < (1 << (i - 1)); j++)
+        {
+            if (ptr[j] != j)
+            {
+                std::cout << "unzip error\n";
+                return true;
+            }
+        }
+    }
+    
+    free(ptr);
+    free(split.realp);
+    free(split.imagp);
+    
+    std::cout << "FFT Zip Tests Successful\n";
+    
+    return false;
+}
+
+template<class SPLIT, class T, class U>
 uint64_t zip_test(int min_log2, int max_log2)
 {
     SPLIT split;
@@ -219,17 +270,18 @@ uint64_t zip_test(int min_log2, int max_log2)
     timer.start();
     
     for (int i = min_log2; i < max_log2; i++)
-        hisstools_zip(&split, ptr, i);
-    
-    for (int i = min_log2; i < max_log2; i++)
         hisstools_unzip(ptr, &split, i);
     
     for (int i = min_log2; i < max_log2; i++)
         hisstools_unzip_zero(ptr, &split, 1 << i, i);
     
+    for (int i = min_log2; i < max_log2; i++)
+        hisstools_zip(&split, ptr, i);
+    
     timer.stop();
     uint64_t time = timer.finish("Zip Tests");
 
+    free(ptr);
     free(split.realp);
     free(split.imagp);
     
@@ -240,6 +292,22 @@ uint64_t zip_test(int min_log2, int max_log2)
 int main(int argc, const char * argv[])
 {
     uint64_t time = 0;
+    
+    std::cout << "****** DOUBLE ******\n";
+    
+    if (zip_correctness_test<FFT_SPLIT_COMPLEX_D, double, double>(1, 24))
+    {
+        std::cout << "Errors - did not complete tests\n";
+        return -1;
+    }
+    
+    std::cout << "****** FLOAT ******\n";
+    
+    if (zip_correctness_test<FFT_SPLIT_COMPLEX_F, float, float>(1, 24))
+    {
+            std::cout << "Errors - did not complete tests\n";
+            return -1;
+    }
     
     std::cout << "****** DOUBLE ******\n";
 
