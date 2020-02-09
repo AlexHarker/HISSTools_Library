@@ -156,19 +156,15 @@ public:
     
     static uintptr_t calc_fft_size_log2(uintptr_t size)
     {
-        uintptr_t bit_shift = size;
-        uintptr_t bit_count = 0;
+        uintptr_t count = 0;
         
-        while (bit_shift)
-        {
-            bit_shift >>= uintptr_t(1);
-            bit_count++;
-        }
+        while (size >> count)
+            count++;
         
-        if (bit_count && size == uintptr_t(1) << (bit_count - 1U))
-            return bit_count - uintptr_t(1);
+        if (count && size == uintptr_t(1) << (count - 1U))
+            return count - uintptr_t(1);
         else
-            return bit_count;
+            return count;
     }
     
     // Scale Vector
