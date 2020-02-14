@@ -6,7 +6,7 @@
 #if defined(__arm__) || defined(__arm64)
 #include <arm_neon.h>
 #include <memory.h>
-#else
+#elif defined(__APPLE__) || defined(__LINUX__) || defined(_WIN32)
 #if defined(_WIN32)
 #include <malloc.h>
 #include <intrin.h>
@@ -79,7 +79,17 @@ namespace hisstools_fft_impl{
         posix_memalign(&mem, SIMDLimits<T>::max_size * sizeof(T), size * sizeof(T));
         return static_cast<T *>(mem);
     }
-    
+
+#elif defined(__EMSCRIPTEN__)
+
+    template <class T>
+    T *allocate_aligned(size_t size)
+    {
+        void *mem;
+        posix_memalign(&mem, 16, size * sizeof(T));
+        return static_cast<T *>(mem);
+    }
+
 #elif defined(__arm__) || defined(__arm64__)
     
     template <class T>
