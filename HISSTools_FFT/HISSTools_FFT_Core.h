@@ -1,5 +1,6 @@
 
 #include <cmath>
+#include <cstring> //memcpy
 #include <algorithm>
 #include <functional>
 
@@ -364,7 +365,7 @@ namespace hisstools_fft_impl{
         
         Vector4x() {}
         Vector4x(const Vector4x *ptr) { *this = *ptr; }
-        Vector4x(const T *array) { *this = *reinterpret_cast<const Vector4x *>(array); }
+        Vector4x(const T *array) { memcpy(mData, array, sizeof(ArrayType) * array_size); }
         
         // This template allows a static loop
         
