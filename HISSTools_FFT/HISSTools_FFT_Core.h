@@ -6,7 +6,7 @@
 #if defined(__arm__) || defined(__arm64)
 #include <arm_neon.h>
 #include <memory.h>
-#elif defined(__APPLE__) || defined(__LINUX__) || defined(_WIN32)
+#elif defined(__APPLE__) || defined(__linux__) || defined(_WIN32)
 #if defined(_WIN32)
 #include <malloc.h>
 #include <intrin.h>
