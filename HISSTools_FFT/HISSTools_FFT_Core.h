@@ -1,6 +1,7 @@
 
 #include <cmath>
 #include <cstring> //memcpy
+#include <cstdlib>
 #include <algorithm>
 #include <functional>
 
@@ -61,24 +62,20 @@ namespace hisstools_fft_impl{
 
 #endif
     
+    static const int alignment_size = SIMDLimits<float>::max_size * sizeof(float);
+    
 // Aligned Allocation
 
-#if defined(__APPLE__)
+#if defined(__APPLE__) || defined (__linux__)
     
     template <class T>
     T *allocate_aligned(size_t size)
     {
-        return static_cast<T *>(malloc(size * sizeof(T)));
-    }
-    
-#elif defined(__linux__)
-    
-    template <class T>
-    T *allocate_aligned(size_t size)
-    {
-        void *mem;
-        posix_memalign(&mem, SIMDLimits<T>::max_size * sizeof(T), size * sizeof(T));
-        return static_cast<T *>(mem);
+        void *mem = nullptr;
+        if (!posix_memalign(&mem, alignment_size, size * sizeof(T)))
+            return static_cast<T *>(mem);
+        else
+            return nullptr;
     }
 
 #elif defined(__EMSCRIPTEN__)
@@ -87,7 +84,7 @@ namespace hisstools_fft_impl{
     T *allocate_aligned(size_t size)
     {
         void *mem;
-        posix_memalign(&mem, 16, size * sizeof(T));
+        posix_memalign(&mem, alignment_size, size * sizeof(T));
         return static_cast<T *>(mem);
     }
 
@@ -96,7 +93,7 @@ namespace hisstools_fft_impl{
     template <class T>
     T *allocate_aligned(size_t size)
     {
-        return static_cast<T *>(aligned_alloc(16, size * sizeof(T)));
+        return static_cast<T *>(aligned_alloc(alignment_size, size * sizeof(T)));
     }
     
 #elif defined(_WIN32)
@@ -104,7 +101,7 @@ namespace hisstools_fft_impl{
     template <class T>
     T *allocate_aligned(size_t size)
     {
-        return static_cast<T *>(_aligned_malloc(size * sizeof(T), 16));
+        return static_cast<T *>(_aligned_malloc(size * sizeof(T), alignment_size));
     }
     
 #endif
@@ -124,7 +121,7 @@ namespace hisstools_fft_impl{
 #endif
     
     template <class T>
-    bool is_aligned(const T *ptr) { return !(reinterpret_cast<uintptr_t>(ptr) % 16); }
+    bool is_aligned(const T *ptr) { return !(reinterpret_cast<uintptr_t>(ptr) % alignment_size); }
     
     // Offset for Table
     
