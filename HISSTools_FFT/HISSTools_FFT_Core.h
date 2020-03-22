@@ -1,12 +1,13 @@
 
 #include <cmath>
+#include <cstring> //memcpy
 #include <algorithm>
 #include <functional>
 
 #if defined(__arm__) || defined(__arm64)
 #include <arm_neon.h>
 #include <memory.h>
-#elif defined(__APPLE__) || defined(__LINUX__) || defined(_WIN32)
+#elif defined(__APPLE__) || defined(__linux__) || defined(_WIN32)
 #if defined(_WIN32)
 #include <malloc.h>
 #include <intrin.h>
@@ -364,7 +365,7 @@ namespace hisstools_fft_impl{
         
         Vector4x() {}
         Vector4x(const Vector4x *ptr) { *this = *ptr; }
-        Vector4x(const T *array) { *this = *reinterpret_cast<const Vector4x *>(array); }
+        Vector4x(const T *array) { memcpy(mData, array, sizeof(ArrayType) * array_size); }
         
         // This template allows a static loop
         
@@ -426,7 +427,7 @@ namespace hisstools_fft_impl{
     template <class T>
     Setup<T> *create_setup(uintptr_t max_fft_log2)
     {
-        Setup<T> *setup = allocate_aligned<Setup<T>>(1);
+        Setup<T> *setup = new(Setup<T>);
         
         // Set Max FFT Size
         
@@ -469,7 +470,7 @@ namespace hisstools_fft_impl{
             for (uintptr_t i = trig_table_offset; i <= setup->max_fft_log2; i++)
                 deallocate_aligned(setup->tables[i - trig_table_offset].realp);
             
-            deallocate_aligned(setup);
+            delete(setup);
         }
     }
     
