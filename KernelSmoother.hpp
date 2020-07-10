@@ -25,25 +25,25 @@ class kernel_smoother : private spectral_processor<T, Allocator>
     using EdgeMode = typename processor::EdgeMode;
     
     template <bool B>
-    using enable_if_t = typename std::enable_if<B>::type;
+    using enable_if_t = typename std::enable_if<B, int>::type;
     
 public:
     
     enum SmoothMode { kSmoothZeroPad, kSmoothWrap, kSmoothFold };
     
-    template <typename U = Allocator, typename = enable_if_t<std::is_default_constructible<U>::value>>
+    template <typename U = Allocator, enable_if_t<std::is_default_constructible<U>::value> = 0>
     kernel_smoother()
     {
         set_max_fft_size(1 << 18);
     }
     
-    template <typename U = Allocator, typename = enable_if_t<std::is_copy_constructible<U>::value>>
+    template <typename U = Allocator, enable_if_t<std::is_copy_constructible<U>::value> = 0>
     kernel_smoother(const Allocator& allocator) : spectral_processor<T, Allocator>(allocator)
     {
         set_max_fft_size(1 << 18);
     }
     
-    template <typename U = Allocator, typename = enable_if_t<std::is_move_constructible<U>::value>>
+    template <typename U = Allocator, enable_if_t<std::is_move_constructible<U>::value> = 0>
     kernel_smoother(Allocator&& allocator) : spectral_processor<T, Allocator>(allocator)
     {
         set_max_fft_size(1 << 18);
