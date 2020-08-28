@@ -48,7 +48,7 @@
 		B82AAC1F1F61FC0C0015CDCF = {
 			isa = PBXGroup;
 			children = (
-				B82AAC2A1F61FC0C0015CDCF /* FFT Tester */,
+				B82AAC2A1F61FC0C0015CDCF /* FFT_Tester */,
 				B82AAC291F61FC0C0015CDCF /* Products */,
 				B8378E0E22BCC9FE004F8598 /* Frameworks */,
 			);
@@ -62,7 +62,7 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		B82AAC2A1F61FC0C0015CDCF /* FFT Tester */ = {
+		B82AAC2A1F61FC0C0015CDCF /* FFT_Tester */ = {
 			isa = PBXGroup;
 			children = (
 				B82AAC331F61FC1C0015CDCF /* HISSTools_FFT.h */,
@@ -70,7 +70,7 @@
 				B82AAC371F6217970015CDCF /* HISSTools_FFT_Core.h */,
 				B82AAC2B1F61FC0C0015CDCF /* main.cpp */,
 			);
-			path = "FFT Tester";
+			path = FFT_Tester;
 			sourceTree = "<group>";
 		};
 		B8378E0E22BCC9FE004F8598 /* Frameworks */ = {
@@ -84,9 +84,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		B82AAC271F61FC0C0015CDCF /* FFT Tester */ = {
+		B82AAC271F61FC0C0015CDCF /* FFT_Tester */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = B82AAC2F1F61FC0C0015CDCF /* Build configuration list for PBXNativeTarget "FFT Tester" */;
+			buildConfigurationList = B82AAC2F1F61FC0C0015CDCF /* Build configuration list for PBXNativeTarget "FFT_Tester" */;
 			buildPhases = (
 				B82AAC241F61FC0C0015CDCF /* Sources */,
 				B82AAC251F61FC0C0015CDCF /* Frameworks */,
@@ -96,7 +96,7 @@
 			);
 			dependencies = (
 			);
-			name = "FFT Tester";
+			name = FFT_Tester;
 			productName = "FFT Tester";
 			productReference = B82AAC281F61FC0C0015CDCF /* FFT Tester */;
 			productType = "com.apple.product-type.tool";
@@ -116,7 +116,7 @@
 					};
 				};
 			};
-			buildConfigurationList = B82AAC231F61FC0C0015CDCF /* Build configuration list for PBXProject "FFT Tester" */;
+			buildConfigurationList = B82AAC231F61FC0C0015CDCF /* Build configuration list for PBXProject "FFT_Tester" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
@@ -128,7 +128,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				B82AAC271F61FC0C0015CDCF /* FFT Tester */,
+				B82AAC271F61FC0C0015CDCF /* FFT_Tester */,
 			);
 		};
 /* End PBXProject section */
@@ -265,7 +265,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		B82AAC231F61FC0C0015CDCF /* Build configuration list for PBXProject "FFT Tester" */ = {
+		B82AAC231F61FC0C0015CDCF /* Build configuration list for PBXProject "FFT_Tester" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				B82AAC2D1F61FC0C0015CDCF /* Debug */,
@@ -274,7 +274,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		B82AAC2F1F61FC0C0015CDCF /* Build configuration list for PBXNativeTarget "FFT Tester" */ = {
+		B82AAC2F1F61FC0C0015CDCF /* Build configuration list for PBXNativeTarget "FFT_Tester" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				B82AAC301F61FC0C0015CDCF /* Debug */,

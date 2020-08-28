@@ -38,7 +38,7 @@ class Timer
     
 public:
     
-    Timer() : mStart(0), mStore1(0), mStore2(0) {}
+    Timer() : mStart(0), mStore(0) {}
     
     void start()
     {
@@ -54,32 +54,24 @@ public:
         
         uint64_t elapsed = ((end - mStart) * info.numer) / info.denom;
         
-        mStore2 = mStore1;
-        mStore1 += elapsed;
+        mStore += elapsed;
     }
         
     uint64_t finish(const std::string& msg)
     {
-        tabbedOut(msg + " Elapsed ", to_string_with_precision(mStore1 / 1000000.0, 2), 35);
+        tabbedOut(msg + " Elapsed ", to_string_with_precision(mStore / 1000000.0, 2), 35);
         
         uint64_t elapsed = mStore1;
         
-        mStore2 = 0;
-        mStore1 = 0;
+        mStore = 0;
         
         return elapsed;
     };
     
-    void relative(const std::string& msg)
-    {
-        tabbedOut(msg + " Comparison ", to_string_with_precision(((double) mStore1 / (double) mStore2), 2), 35);
-    }
-    
 private:
     
     uint64_t        mStart;
-    uint64_t        mStore1;
-    uint64_t        mStore2;
+    uint64_t        mStore;
 };
 
 template <class SPLIT>
