@@ -8,13 +8,6 @@
 #include <limits>
 #include <vector>
 
-#define WINDOW_PI			3.14159265358979323846
-#define WINDOW_TWOPI		6.28318530717958647692
-#define WINDOW_THREEPI		9.42477796076937971538
-#define WINDOW_FOURPI		12.56637061435817295384
-#define WINDOW_FIVEPI       15.707963267947966
-#define WINDOW_SIXPI		18.84955592153875943076
-
 template <class T, class Ref>
 class WindowFunctions
 {
@@ -158,7 +151,7 @@ struct window_functions
 
     static inline double cosine(uint32_t i, uint32_t N)
     {
-        return sin(WINDOW_PI * normalise(i, N));
+        return sin(pi() * normalise(i, N));
     }
     
     static inline double parzen(uint32_t i, uint32_t N)
@@ -220,6 +213,13 @@ struct window_functions
         double x = 2.0 * normalise(i, N) - 1.0;
         return izero((1.0 - x * x) * alpha * alpha) * b_recip;
     }
+    
+    static inline double tukey(uint32_t i, uint32_t N, double alpha)
+    {
+        // FIX - look at normalisation here...
+        double x = trapezoid(i, N, alpha * 0.5, 1.0 - (alpha * 0.5));
+        return 0.5 - 0.5 * cos(x * pi());
+    }
 };
 
 template <class T>
@@ -232,6 +232,13 @@ template <class T>
 void window_triangle(T window, uint32_t N, uint32_t size)
 {
     window_generate<window_functions::triangle>(window, N, size);
+}
+
+template <class T>
+void window_trapezoid(T window, uint32_t N, uint32_t size, double a, double b)
+{
+    for (uint32_t i = 0; i < size; i++)
+        window[i] = window_functions::trapezoid(i, N, a, b);
 }
 
 template <class T>
@@ -254,62 +261,6 @@ void window_cosine(T window, uint32_t N, uint32_t size)
 
 /////////////////////////
 
-
-template <class T>
-void window_kaiser(T window, uint32_t windowSize, uint32_t generateSize)
-{
-    double alpha_bessel_recip;
-    double new_term;
-    double x_sq;
-    double b_func;
-    double temp;
-    long j;
-    
-    // First find bessel function of alpha
-    
-    x_sq = 46.24;
-    new_term = 0.25 * x_sq;
-    b_func = 1.0;
-    j = 2;
-    
-    // Gives maximum accuracy
-    
-    while (new_term)
-    {
-        b_func += new_term;
-        alpha_bessel_recip = (1.0 / (4.0 * (double) j * (double) j));
-        new_term = new_term * x_sq * (1.0 / (4.0 * (double) j * (double) j));
-        j++;
-    }
-    
-    alpha_bessel_recip = 1 / b_func;
-    
-    // Now create kaiser window
-    
-    // FIX - might not work 100%
-    
-    for (uint32_t i = 0; i < generateSize; i++)
-    {
-        temp = ((2.0 * (double) i) - ((double) windowSize - 1.0));
-        temp = temp / windowSize;
-        temp *= temp;
-        x_sq = (1 - temp) * 46.24;
-        new_term = 0.25 * x_sq;
-        b_func = 1;
-        j = 2;
-        
-        // Gives maximum accuracy
-        
-        while (new_term)
-        {
-            b_func += new_term;
-            new_term = new_term * x_sq * (1.0 / (4.0 * (double) j * (double) j));
-            j++;
-        }
-        window[i] = b_func * alpha_bessel_recip;
-    }
-}
-
 template <class T>
 void window_kaiser(T window, uint32_t N, uint32_t size, double alpha)
 {
@@ -320,11 +271,13 @@ void window_kaiser(T window, uint32_t N, uint32_t size, double alpha)
 }
 
 template <class T>
-void window_trapezoid(T window, uint32_t N, uint32_t size, double a, double b)
+void window_tukey(T window, uint32_t N, uint32_t size, double alpha)
 {
     for (uint32_t i = 0; i < size; i++)
-        window[i] = window_functions::trapezoid(i, N, a, b);
+        window[i] = window_functions::tukey(i, N, alpha);
 }
+
+/////////////////////////
 
 
 template <class T>
@@ -334,6 +287,14 @@ void window_cosine_sum(T window, uint32_t N, uint32_t size, const window_functio
         window[i] = window_functions::cosine_sum(i, N, p);
     //window_generate<window_functions::cosine_sum>(window, N, size, p);
 }
+
+
+#define WINDOW_PI            3.14159265358979323846
+#define WINDOW_TWOPI        6.28318530717958647692
+#define WINDOW_THREEPI        9.42477796076937971538
+#define WINDOW_FOURPI        12.56637061435817295384
+#define WINDOW_FIVEPI       15.707963267947966
+#define WINDOW_SIXPI        18.84955592153875943076
 
 template <class T>
 void window_cosine_sum2(T window, uint32_t N, uint32_t size, const window_functions::params& p)
