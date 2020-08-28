@@ -201,7 +201,7 @@ struct window_functions
     
     static inline double kaiser(uint32_t i, uint32_t N, double alpha, double b_recip)
     {
-        double x = normalise(i, N) - (N * 0.5);
+        double x = 2.0 * normalise(i, N) - 1.0;
         return izero((1.0 - x * x) * alpha * alpha) * b_recip;
     }
 };
