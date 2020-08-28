@@ -133,6 +133,22 @@ struct window_functions
     {
         return 1.0 - fabs(normalise(i, N) * 2.0 - 1.0);
     }
+    
+    static inline double trapezoid(uint32_t i, uint32_t N, double a, double b)
+    {
+        if (b < a)
+            std::swap(a, b);
+        
+        const double x = normalise(i, N);
+        
+        if (x <= a)
+            return x / a;
+        
+        if (x >= b)
+            return 1.0 - ((x - b) / (1.0 - b));
+        
+        return 1.0;
+    }
 
     static inline double welch(uint32_t i, uint32_t N)
     {
@@ -302,6 +318,14 @@ void window_kaiser(T window, uint32_t N, uint32_t size, double alpha)
     for (uint32_t i = 0; i < size; i++)
         window[i] = window_functions::kaiser(i, N, alpha, b_recip);
 }
+
+template <class T>
+void window_trapezoid(T window, uint32_t N, uint32_t size, double a, double b)
+{
+    for (uint32_t i = 0; i < size; i++)
+        window[i] = window_functions::trapezoid(i, N, a, b);
+}
+
 
 template <class T>
 void window_cosine_sum(T window, uint32_t N, uint32_t size, const window_functions::params& p)
