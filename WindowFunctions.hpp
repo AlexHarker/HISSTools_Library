@@ -49,32 +49,27 @@ static inline double normalise(uint32_t x, uint32_t N)
     return static_cast<double>(x) / static_cast<double>(N);
 }
 
-template <double Func(uint32_t, uint32_t), class T>
-void window_generate(T window, uint32_t N, uint32_t size)
-{
-    for (uint32_t i = 0; i < size; i++)
-        window[i] = Func(i, N);
-}
-
-struct window_functions
+namespace window_functions
 {
     struct params
     {
-        double c0 = 0.0;
-        double c1 = 0.0;
-        double c2 = 0.0;
-        double c3 = 0.0;
-        double c4 = 0.0;
-        double c5 = 0.0;
-        double c6 = 0.0;
+        params(double pwr = 1.0, double A0 = 0.0, double A1 = 0.0, double A2 = 0.0, double A3 = 0.0, double A4 = 0.0)
+        : a0(A0), a1(A1), a2(A2), a3(A3), a4(A4), power(pwr) {}
+        
+        double a0;
+        double a1;
+        double a2;
+        double a3;
+        double a4;
+        
+        double power;
     };
     
     static constexpr double pi()    { return M_PI; }
-    static constexpr double pi_2()  { return M_PI * 2.0; }
-    static constexpr double pi_3()  { return M_PI * 3.0; }
-    static constexpr double pi_4()  { return M_PI * 4.0; }
-    static constexpr double pi_5()  { return M_PI * 5.0; }
-    static constexpr double pi_6()  { return M_PI * 6.0; }
+    static constexpr double pi2()  { return M_PI * 2.0; }
+    static constexpr double pi4()  { return M_PI * 4.0; }
+    static constexpr double pi6()  { return M_PI * 6.0; }
+    static constexpr double pi8()  { return M_PI * 8.0; }
     
     struct constant
     {
@@ -85,9 +80,9 @@ struct window_functions
         const double value;
     };
     
-    struct cos_x
+    struct cosx
     {
-        cos_x(double c, double mul)
+        cosx(double c, double mul)
         : coefficient(c), multiplier(mul) {}
         
         inline double operator()(double x)
@@ -112,23 +107,26 @@ struct window_functions
     }
     
     template <typename ...Ts>
-    static inline double summed(uint32_t i, uint32_t N, Ts... ops)
+    static inline double sum(uint32_t i, uint32_t N, Ts... ops)
     {
         return sum(normalise(i, N), ops...);
     }
     
-    static inline double rect(uint32_t i, uint32_t N)
+    static inline double rect(uint32_t i, uint32_t N, const params& p)
     {
         return 1.0;
     }
     
-    static inline double triangle(uint32_t i, uint32_t N)
+    static inline double triangle(uint32_t i, uint32_t N, const params& p)
     {
         return 1.0 - fabs(normalise(i, N) * 2.0 - 1.0);
     }
     
-    static inline double trapezoid(uint32_t i, uint32_t N, double a, double b)
+    static inline double trapezoid(uint32_t i, uint32_t N, const params& p)
     {
+        double a = p.a0;
+        double b = p.a1;
+        
         if (b < a)
             std::swap(a, b);
         
@@ -143,25 +141,25 @@ struct window_functions
         return 1.0;
     }
 
-    static inline double welch(uint32_t i, uint32_t N)
+    static inline double welch(uint32_t i, uint32_t N, const params& p)
     {
         const double x = 2.0 * normalise(i, N) - 1.0;
         return 1.0 - x * x;
     }
 
-    static inline double cosine(uint32_t i, uint32_t N)
+    static inline double cosine(uint32_t i, uint32_t N, const params& p)
     {
         return sin(pi() * normalise(i, N));
     }
     
-    static inline double parzen(uint32_t i, uint32_t N)
+    static inline double parzen(uint32_t i, uint32_t N, const params& p)
     {
+        // FIX - check scaling
         const double N2 = static_cast<double>(N) * 0.5;
-        const double L2 = static_cast<double>(N + 1) * 0.5;
         
         auto w0 = [&](double x)
         {
-            x = fabs(x) / L2;
+            x = fabs(x) / N2;
             
             if (x > 0.5)
             {
@@ -175,20 +173,36 @@ struct window_functions
         return w0(static_cast<double>(i) - N2);
     }
     
-    static inline double hann(uint32_t i, uint32_t N)
+    static inline double cosine_sum_K1(uint32_t i, uint32_t N, const params& p)
     {
-        return summed(i, N, constant(0.5), cos_x(-0.5, pi_2()));
+        return sum(i, N, constant(p.a0), cosx(1.0 - p.a0, pi2()));
+    }
+    
+    static inline double hann(uint32_t i, uint32_t N, const params& p)
+    {
+        return cosine_sum_K1(i, N, 0.5);
+    }
+    
+    static inline double hamming(uint32_t i, uint32_t N, const params& p)
+    {
+        // FIX - review
+        //alpha is 0.54 or 25/46 or 0.543478260869565
+        // see equiripple notes on wikipedia
+        return cosine_sum_K1(i, N, 0.54);
+    }
+    
+    static inline double blackman(uint32_t i, uint32_t N, const params& p)
+    {
+        return sum(i, N, constant(0.42), cosx(-0.5, pi2()), cosx(0.08, pi4()));
     }
     
     static inline double cosine_sum(uint32_t i, uint32_t N, const params& p)
     {
-        return summed(i, N, constant(p.c0),
-                      cos_x(p.c1, pi()),
-                      cos_x(p.c2, pi_2()),
-                      cos_x(p.c3, pi_3()),
-                      cos_x(p.c4, pi_4()),
-                      cos_x(p.c5, pi_5()),
-                      cos_x(p.c6, pi_6()));
+        return sum(i, N, constant(p.a0),
+                   cosx(-p.a1, pi2()),
+                   cosx(p.a2, pi4()),
+                   cosx(-p.a3, pi6()),
+                   cosx(-p.a4, pi8()));
     }
 
     static inline double izero(double x2)
@@ -208,84 +222,105 @@ struct window_functions
         return bessel;
     }
     
-    static inline double kaiser(uint32_t i, uint32_t N, double alpha, double b_recip)
+    static inline double kaiser(uint32_t i, uint32_t N,  const params& p)
     {
         double x = 2.0 * normalise(i, N) - 1.0;
-        return izero((1.0 - x * x) * alpha * alpha) * b_recip;
+        return izero((1.0 - x * x) * p.a0 * p.a0) * p.a1;
     }
     
-    static inline double tukey(uint32_t i, uint32_t N, double alpha)
+    static inline double tukey(uint32_t i, uint32_t N, const params& p)
     {
         // FIX - look at normalisation here...
-        double x = trapezoid(i, N, alpha * 0.5, 1.0 - (alpha * 0.5));
-        return 0.5 - 0.5 * cos(x * pi());
+        return 0.5 - 0.5 * cos(trapezoid(i, N, p) * pi());
     }
-};
-
-template <class T>
-void window_rect(T window, uint32_t N, uint32_t size)
-{
-    window_generate<window_functions::rect>(window, N, size);
-}
-
-template <class T>
-void window_triangle(T window, uint32_t N, uint32_t size)
-{
-    window_generate<window_functions::triangle>(window, N, size);
-}
-
-template <class T>
-void window_trapezoid(T window, uint32_t N, uint32_t size, double a, double b)
-{
-    for (uint32_t i = 0; i < size; i++)
-        window[i] = window_functions::trapezoid(i, N, a, b);
-}
-
-template <class T>
-void window_welch(T window, uint32_t N, uint32_t size)
-{
-    window_generate<window_functions::welch>(window, N, size);
-}
-
-template <class T>
-void window_parzen(T window, uint32_t N, uint32_t size)
-{
-    window_generate<window_functions::parzen>(window, N, size);
-}
-
-template <class T>
-void window_cosine(T window, uint32_t N, uint32_t size)
-{
-    window_generate<window_functions::cosine>(window, N, size);
-}
-
-/////////////////////////
-
-template <class T>
-void window_kaiser(T window, uint32_t N, uint32_t size, double alpha)
-{
-    double b_recip = 1.0 / window_functions::izero(alpha * alpha);
     
-    for (uint32_t i = 0; i < size; i++)
-        window[i] = window_functions::kaiser(i, N, alpha, b_recip);
-}
-
-template <class T>
-void window_tukey(T window, uint32_t N, uint32_t size, double alpha)
-{
-    for (uint32_t i = 0; i < size; i++)
-        window[i] = window_functions::tukey(i, N, alpha);
-}
-
-/////////////////////////
-
-
-template <class T>
-void window_cosine_sum(T window, uint32_t N, uint32_t size, const window_functions::params& p)
-{
-    for (uint32_t i = 0; i < size; i++)
-        window[i] = window_functions::cosine_sum(i, N, p);
-    //window_generate<window_functions::cosine_sum>(window, N, size, p);
+    // Abstract generator
+    
+    template <double Func(uint32_t, uint32_t, const params& p), class T>
+    void window_generate(T window, uint32_t N, uint32_t size, const params& p)
+    {
+        // FIX - Do power function - specialise for sqrt / integer powers / 1?
+        for (uint32_t i = 0; i < size; i++)
+            window[i] = Func(i, N, p);
+    }
+    
+    // Specific generators
+    
+    template <class T>
+    void window_rect(T window, uint32_t N, uint32_t size, const params& p)
+    {
+        window_generate<window_functions::rect>(window, N, size, p);
+    }
+    
+    template <class T>
+    void window_triangle(T window, uint32_t N, uint32_t size, const params& p)
+    {
+        window_generate<window_functions::triangle>(window, N, size, p);
+    }
+    
+    template <class T>
+    void window_trapezoid(T window, uint32_t N, uint32_t size, const params& p)
+    {
+        window_generate<window_functions::trapezoid>(window, N, size, p);
+    }
+    
+    template <class T>
+    void window_welch(T window, uint32_t N, uint32_t size, const params& p)
+    {
+        window_generate<window_functions::welch>(window, N, size, p);
+    }
+    
+    template <class T>
+    void window_parzen(T window, uint32_t N, uint32_t size, const params& p)
+    {
+        window_generate<window_functions::parzen>(window, N, size, p);
+    }
+    
+    template <class T>
+    void window_cosine(T window, uint32_t N, uint32_t size, const params& p)
+    {
+        window_generate<window_functions::cosine>(window, N, size, p);
+    }
+    
+    template <class T>
+    void window_hann(T window, uint32_t N, uint32_t size, const params& p)
+    {
+        window_generate<window_functions::hann>(window, N, size, p);
+    }
+    
+    template <class T>
+    void window_hamming(T window, uint32_t N, uint32_t size, const params& p)
+    {
+        window_generate<window_functions::hamming>(window, N, size, p);
+    }
+    
+    template <class T>
+    void window_blackman(T window, uint32_t N, uint32_t size, const params& p)
+    {
+        window_generate<window_functions::blackman>(window, N, size, p);
+    }
+    
+    template <class T>
+    void window_cosine_sum(T window, uint32_t N, uint32_t size, const params& p)
+    {
+        window_generate<window_functions::cosine_sum>(window, N, size, p);
+    }
+    
+    template <class T>
+    void window_kaiser(T window, uint32_t N, uint32_t size, const params& p)
+    {
+        params p1(p.power, p.a0, 1.0 / izero(p.a0 * p.a0));
+        
+        window_generate<window_functions::tukey>(window, N, size, p1);
+    }
+    
+    template <class T>
+    void window_tukey(T window, uint32_t N, uint32_t size, const params& p)
+    {
+        params p1(p.power, p.a0 * 0.5, 1.0 - (p.a0 * 0.5));
+        
+        window_generate<window_functions::tukey>(window, N, size, p1);
+    }
 }
 
 
@@ -296,88 +331,37 @@ void window_cosine_sum(T window, uint32_t N, uint32_t size, const window_functio
 #define WINDOW_FIVEPI       15.707963267947966
 #define WINDOW_SIXPI        18.84955592153875943076
 
-template <class T>
-void window_cosine_sum2(T window, uint32_t N, uint32_t size, const window_functions::params& p)
-{
-    for (uint32_t i = 0; i < size; i++)
-    {
-        const double x = normalise(i, N);
-        window[i] = p.c0
-        //+ p.c1 * cos(x * WINDOW_PI)
-        + p.c2 * cos(x * WINDOW_TWOPI)
-        //+ p.c3 * cos(x * WINDOW_THREEPI)
-        //+ p.c4 * cos(x * WINDOW_FOURPI)
-        //+ p.c5 * cos(x * WINDOW_FIVEPI)
-        //+ p.c6 * cos(x * WINDOW_SIXPI)
-        ;
-    }
-}
+// HOW TO REPRESENT ALL OF THESE?
 
 template <class T>
-void window_hann2(T window, uint32_t N, uint32_t size)
+void window_exact_blackman(T window, uint32_t windowSize, uint32_t generateSize)
 {
-    for (uint32_t i = 0; i < size; i++)
-    {
-        const double x = normalise(i, N);
-        window[i] = 0.5 - 0.5 * cos(x * WINDOW_TWOPI);
-    }
-}
-
-template <class T>
-void window_hann(T window, uint32_t N, uint32_t size)
-{
-    // c0 is 0.5
-    // c2 is -0.5
-    
-    window_generate<window_functions::hann>(window, N, size);
-}
-
-template <class T>
-void window_hamming(T window, uint32_t N, uint32_t size)
-{
-    // c0 is 0.54 or 25/46 or 0.543478260869565
-    // c2 is -(1.0 - c0) or -0.46 or -21/46 -0.456521739130435
-    // see equiripple notes on wikipedia
-    
-	for (uint32_t i = 0; i < size; i++)
-		window[i] = 0.54347826 - (0.45652174 * cos(WINDOW_TWOPI * normalise(i, N)));
-}
-
-template <class T>
-void window_blackman(T window, uint32_t windowSize, uint32_t generateSize)
-{
-	for (uint32_t i = 0; i < generateSize; i++)
+    for (uint32_t i = 0; i < generateSize; i++)
 		window[i] = 0.42659071 - (0.49656062 * cos(WINDOW_TWOPI * normalise(i, windowSize))) + (0.07684867 * cos(WINDOW_FOURPI * normalise(i, windowSize)));
 }
 
 template <class T>
-void window_blackman_62(T window, uint32_t windowSize, uint32_t generateSize)
+void window_blackman_harris_61(T window, uint32_t windowSize, uint32_t generateSize)
 {
 	for (uint32_t i = 0; i < generateSize; i++)
-		window[i] = (0.44859f - 0.49364f * cos(WINDOW_TWOPI * normalise(i, windowSize)) + 0.05677f * cos(WINDOW_FOURPI * normalise(i, windowSize)));
+		window[i] = (0.44959 - 0.49364 * cos(WINDOW_TWOPI * normalise(i, windowSize)) + 0.05677 * cos(WINDOW_FOURPI * normalise(i, windowSize)));
 }
 
 template <class T>
-void window_blackman_70(T window, uint32_t windowSize, uint32_t generateSize)
+void window_blackman_harris_67(T window, uint32_t windowSize, uint32_t generateSize)
 {
 	for (uint32_t i = 0; i < generateSize; i++)
-		window[i] = (0.42323f - 0.49755f * cos(WINDOW_TWOPI * normalise(i, windowSize)) + 0.07922f * cos(WINDOW_FOURPI * normalise(i, windowSize)));
+		window[i] = (0.42323 - 0.49755 * cos(WINDOW_TWOPI * normalise(i, windowSize)) + 0.07922 * cos(WINDOW_FOURPI * normalise(i, windowSize)));
 }
 
 template <class T>
-void window_blackman_74(T window, uint32_t windowSize, uint32_t generateSize)
+void window_blackman_harris_74(T window, uint32_t windowSize, uint32_t generateSize)
 {
 	for (uint32_t i = 0; i < generateSize; i++)
-		window[i] = (0.402217f - 0.49703f * cos(WINDOW_TWOPI * normalise(i, windowSize)) + 0.09892f * cos(WINDOW_FOURPI * normalise(i, windowSize)) - 0.00188 * cos(WINDOW_THREEPI * normalise(i, windowSize)));
+		window[i] = (0.402217f - 0.49703f * cos(WINDOW_TWOPI * normalise(i, windowSize)) + 0.09892f * cos(WINDOW_FOURPI * normalise(i, windowSize)) - 0.00188 * cos(WINDOW_SIXPI * normalise(i, windowSize)));
 }
 
-template <class T>
-void window_blackman_92(T window, uint32_t windowSize, uint32_t generateSize)
-{
-	for (uint32_t i = 0; i < generateSize; i++)
-		window[i] = (0.35875f - 0.48829f * cos(WINDOW_TWOPI * normalise(i, windowSize)) + 0.14128f * cos(WINDOW_FOURPI * normalise(i, windowSize)) - 0.01168 * cos(WINDOW_THREEPI * normalise(i, windowSize)));
-}
-
+// 92dB
 template <class T>
 void window_blackman_harris(T window, uint32_t windowSize, uint32_t generateSize)
 {
@@ -443,7 +427,7 @@ void window_msinetaper6(T window, uint32_t windowSize, uint32_t generateSize)
 {
 	window_multisine_tapers(window, windowSize, generateSize, 6);
 }
-
+/*
 template <class T>
 class IndexedWindowFunctions : public WindowFunctions <T, uint32_t>
 {
@@ -472,6 +456,7 @@ public:
         WindowFunctions<T, uint16_t>::add(kWindowKaiser, window_kaiser);
     }
 };
+*/
 
 #endif
 

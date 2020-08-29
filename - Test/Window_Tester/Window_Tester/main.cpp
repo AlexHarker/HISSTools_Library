@@ -1,6 +1,7 @@
 
 #include <mach/mach.h>
 #include <mach/mach_time.h>
+#include <algorithm>
 #include <iostream>
 #include <sstream>
 #include <iomanip>
@@ -80,36 +81,70 @@ private:
     uint64_t        mStore2;
 };
 
+template <typename FuncType>
+void check_window(const char* wind, FuncType f, const window_functions::params &p)
+{
+    const static int size = 32768;
+    double window[size];
+    
+    f(window, size, size, p);
+    
+    auto it = std::max_element(window, window + size);
+    auto n = it - window;
+    bool symmetry = true;
+    
+    for (int i = ((size >> 1) + 1); i < size; i++)
+    {
+        if (window[i] != window[size - i])
+        {
+            //std::cout << "failed " << i << " " << window[i] << " " << window[size - i] << "\n";
+            symmetry = false;
+            break;
+        }
+    }
+        
+    std::cout << "** test " << wind << " window\n";
+    std::cout << "element zero " << window[0] << "\n";
+    std::cout << "middle element " << window[size >> 1] << "\n";
+    std::cout << "max element " << *it << " [" << n << "]\n";
+    std::cout << "symmetry " << symmetry << "\n";
+}
+
 int main(int argc, const char * argv[])
 {
     const static int size = 32768;
     const static int iter = 1024;
     double window[size];
+
+    using namespace window_functions;
     
-    window_functions::params p;
+    params ep;
+    params tp(1.0, 0.1, 0.9);
+    params typ(1.0, 0.1);
+    params p(1.0, 0.5, 0.5);
     
-    p.c0 = 0.5;
-    p.c1 = 10.;
-    p.c2 = -0.5;
-    p.c3 = 10.;
-    p.c4 = 10.;
-    p.c5 = 10.;
-    p.c6 = 10.;
-    
+    check_window<decltype(&window_parzen<double*>)>("parzen", &window_parzen<double*>, ep);
+    check_window<decltype(&window_welch<double*>)>("welch", &window_welch<double*>, ep);
+    check_window<decltype(&window_cosine<double*>)>("cosine", &window_cosine<double*>, ep);
+    check_window<decltype(&window_hann<double*>)>("hann", &window_hann<double*>, ep);
+    check_window<decltype(&window_triangle<double*>)>("triangle", &window_triangle<double*>, ep);
+    check_window<decltype(&window_trapezoid<double*>)>("trapezoid", &window_trapezoid<double*>, tp);
+    check_window<decltype(&window_tukey<double*>)>("tukey", &window_tukey<double*>, typ);
+
     for (int i = 0; i < iter; i++)
-        window_cosine(window, size, size);
+        window_cosine(window, size, size, params());
     
     Timer timer;
     
     timer.start();
     for (int i = 0; i < iter; i++)
-        window_hann(window, size, size);
+        window_cosine_sum(window, size, size, p);
     timer.stop();
     timer.finish("Branch Speed Test");
     
     timer.start();
     for (int i = 0; i < iter; i++)
-        window_parzen(window, size, size);
+        window_cosine_sum(window, size, size, p);
     timer.stop();
     timer.finish("Non-branch Speed Test");
     
