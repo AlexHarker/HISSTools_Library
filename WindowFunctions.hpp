@@ -138,7 +138,7 @@ namespace window_functions
         return 1.0 - x * x;
     }
 
-    inline double cosine(uint32_t i, uint32_t N, const params& p)
+    inline double sine(uint32_t i, uint32_t N, const params& p)
     {
         return sin(pi() * normalise(i, N));
     }
@@ -162,11 +162,6 @@ namespace window_functions
         };
         
         return w0(static_cast<double>(i) - N2);
-    }
-    
-    inline double cosine_sum_K1(uint32_t i, uint32_t N, const params& p)
-    {
-        return sum(i, N, constant(p.a0), cosx(1.0 - p.a0, pi2()));
     }
     
     inline double hann(uint32_t i, uint32_t N, const params& p)
@@ -210,6 +205,11 @@ namespace window_functions
     inline double blackman_harris_92dB(uint32_t i, uint32_t N, const params& p)
     {
         return sum(i, N, constant(0.35875), cosx(-0.48829, pi2()), cosx(0.14128, pi4()), cosx(-0.01168, pi6()));
+    }
+    
+    inline double cosine_sum_K1(uint32_t i, uint32_t N, const params& p)
+    {
+        return sum(i, N, constant(p.a0), cosx(1.0 - p.a0, pi2()));
     }
     
     inline double cosine_sum(uint32_t i, uint32_t N, const params& p)
@@ -333,9 +333,9 @@ namespace window_functions
     }
     
     template <class T>
-    void window_cosine(T window, uint32_t N, uint32_t size, const params& p)
+    void window_sine(T window, uint32_t N, uint32_t size, const params& p)
     {
-        generate<window_functions::cosine>(window, N, size, p);
+        generate<window_functions::sine>(window, N, size, p);
     }
     
     template <class T>
