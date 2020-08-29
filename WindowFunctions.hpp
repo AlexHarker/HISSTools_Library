@@ -303,7 +303,7 @@ namespace window_functions
     // Abstract generator
     
     template <double Func(uint32_t, uint32_t, const params& p), class T>
-    void generate(T window, uint32_t N, uint32_t size, const params& p)
+    void inline generate(T window, uint32_t N, uint32_t size, const params& p)
     {
         auto sq = [&](double x) { return x * x; };
         auto cb = [&](double x) { return x * x * x; };
@@ -501,6 +501,20 @@ namespace window_functions
 
         generate<window_functions::tukey>(window, N, size, p1);
     }
+    
+    template <class T, void ...funcs(T, uint32_t, uint32_t, const window_functions::params&)>
+    struct indexed_generator
+    {
+        using window_func = void(T, uint32_t, uint32_t, const params&);
+        
+        void operator()(size_t type, T window, uint32_t N, uint32_t size, const params& p)
+        {
+            return functions[type](window, N, size, p);
+        }
+        
+        window_func *functions[sizeof...(funcs)] = { funcs... };
+    };
+
 }
 
 // FIX - below
@@ -573,6 +587,7 @@ void window_msinetaper6(T window, uint32_t windowSize, uint32_t generateSize)
 	window_multisine_tapers(window, windowSize, generateSize, 6);
 }
 */
+
 template <class T, class Ref>
 class WindowFunctions
 {
@@ -608,37 +623,6 @@ private:
     
     std::vector<Function> mFunctions;
 };
-
-/*
-template <class T>
-class IndexedWindowFunctions : public WindowFunctions <T, uint32_t>
-{
-public:
-    
-    enum WindowTypes { kWindowRect, kWindowTriangle, kWindowHann, kWindowHamming, kWindowCosine, kWindowBlackman, kWindowBlackman62, kWindowBlackman70, kWindowBlackman74, kWindowBlackman92, kWindowBlackmanHarris, kWindowFlatTop, kWindowKaiser };
-    
-    IndexedWindowFunctions()
-    {
-        WindowFunctions<T, uint16_t>::add(kWindowRect, window_rect);
-        WindowFunctions<T, uint16_t>::add(kWindowTriangle, window_triangle);
-
-        WindowFunctions<T, uint16_t>::add(kWindowHann, window_hann);
-        WindowFunctions<T, uint16_t>::add(kWindowHamming, window_hamming);
-        WindowFunctions<T, uint16_t>::add(kWindowCosine, window_cosine);
-        
-        WindowFunctions<T, uint16_t>::add(kWindowBlackman, window_blackman);
-        WindowFunctions<T, uint16_t>::add(kWindowBlackman62, window_blackman_62);
-        WindowFunctions<T, uint16_t>::add(kWindowBlackman70, window_blackman_70);
-        WindowFunctions<T, uint16_t>::add(kWindowBlackman74, window_blackman_62);
-        WindowFunctions<T, uint16_t>::add(kWindowBlackman92, window_blackman_92);
-        WindowFunctions<T, uint16_t>::add(kWindowBlackmanHarris, window_blackman_harris);
-
-        WindowFunctions<T, uint16_t>::add(kWindowFlatTop, window_flat_top);
-        
-        WindowFunctions<T, uint16_t>::add(kWindowKaiser, window_kaiser);
-    }
-};
-*/
 
 #endif
 
