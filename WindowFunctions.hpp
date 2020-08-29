@@ -8,32 +8,34 @@
 #include <limits>
 #include <vector>
 
+// Naming/coefficients can larged be verified in:
+// Nuttall, A. (1981). Some windows with very good sidelobe behavior.
+// IEEE Transactions on Acoustics, Speech, and Signal Processing, 29(1), 84-91.
+
 namespace window_functions
 {
     // Parameter struct
     
     struct params
     {
-        params(double pwr, double A0 = 0.0, double A1 = 0.0, double A2 = 0.0, double A3 = 0.0, double A4 = 0.0)
-        : a0(A0), a1(A1), a2(A2), a3(A3), a4(A4), power(pwr) {}
+        constexpr params(double A0 = 0.0, double A1 = 0.0, double A2 = 0.0, double A3 = 0.0, double A4 = 0.0, double exp = 1.0)
+        : a0(A0), a1(A1), a2(A2), a3(A3), a4(A4), exponent(exp) {}
         
-        params(double pwr, double *param_array, int N)
+        constexpr params(double *param_array, int N, double exp)
         : a0(N > 0 ? param_array[0] : 0.0)
         , a1(N > 1 ? param_array[1] : 0.0)
         , a2(N > 2 ? param_array[2] : 0.0)
         , a3(N > 3 ? param_array[3] : 0.0)
         , a4(N > 4 ? param_array[4] : 0.0)
-        , power(pwr) {}
+        , exponent(exp) {}
      
-        params() : params(1.0) {}
-
         double a0;
         double a1;
         double a2;
         double a3;
         double a4;
         
-        double power;
+        double exponent;
     };
     
     // Constexpr functions for convenience
@@ -44,7 +46,7 @@ namespace window_functions
     constexpr double pi6()  { return M_PI * 6.0; }
     constexpr double pi8()  { return M_PI * 8.0; }
     
-    constexpr double rational(int x, int y)
+    constexpr double div(int x, int y)
     {
         return static_cast<double>(x) / static_cast<double>(y);
     }
@@ -164,9 +166,25 @@ namespace window_functions
         return w0(static_cast<double>(i) - N2);
     }
     
+    inline double two_term(uint32_t i, uint32_t N, const params& p)
+    {
+        return sum(i, N, constant(p.a0), cosx(-(1.0 - p.a0), pi2()));
+    }
+    
+    inline double three_term(uint32_t i, uint32_t N, const params& p)
+    {
+        return sum(i, N, constant(p.a0), cosx(-p.a1, pi2()), cosx(p.a2, pi4()));
+    }
+    
+    inline double four_term(uint32_t i, uint32_t N, const params& p)
+    {
+        return sum(i, N, constant(p.a0), cosx(-p.a1, pi2()), cosx(p.a2, pi4()), cosx(-p.a3, pi6()));
+    }
+    
     inline double hann(uint32_t i, uint32_t N, const params& p)
     {
-        return sum(i, N, constant(0.5), cosx(-0.5, pi2()));
+        //return sum(i, N, constant(0.5), cosx(-0.5, pi2()));
+        return two_term(i, N, params(0.5));
     }
     
     inline double hamming(uint32_t i, uint32_t N, const params& p)
@@ -174,42 +192,74 @@ namespace window_functions
         // FIX - review
         //alpha is 0.54 or 25/46 or 0.543478260869565
         // see equiripple notes on wikipedia
-        return sum(i, N, constant(0.54), cosx(0.46, pi2()));
+        //return sum(i, N, constant(0.54), cosx(-0.46, pi2()));
+        return two_term(i, N, params(0.54));
     }
     
     inline double blackman(uint32_t i, uint32_t N, const params& p)
     {
-        return sum(i, N, constant(0.42), cosx(-0.5, pi2()), cosx(0.08, pi4()));
+        return three_term(i, N, params(0.42, -0.5, 0.08));
     }
     
     inline double exact_blackman(uint32_t i, uint32_t N, const params& p)
     {
-        return sum(i, N, constant(rational(7938, 18608)), cosx(rational(-9240, 18608), pi2()), cosx(rational(1430, 18608), pi4()));
+        const params pb(div(7938, 18608), div(9240, 18608), div(1430, 18608));
+        return three_term(i, N, pb);
     }
     
-    inline double blackman_harris_61dB(uint32_t i, uint32_t N, const params& p)
+    inline double blackman_harris_62dB(uint32_t i, uint32_t N, const params& p)
     {
-        return sum(i, N, constant(0.44959), cosx(-0.49364, pi2()), cosx(0.05677, pi4()));
+        return three_term(i, N, params(0.44959, 0.49364, 0.05677));
     }
     
-    inline double blackman_harris_67dB(uint32_t i, uint32_t N, const params& p)
+    inline double blackman_harris_71dB(uint32_t i, uint32_t N, const params& p)
     {
-        return sum(i, N, constant(0.42323), cosx(-0.49755, pi2()), cosx(0.07922, pi4()));
+        return three_term(i, N, params(0.42323, 0.49755, 0.07922));
     }
     
     inline double blackman_harris_74dB(uint32_t i, uint32_t N, const params& p)
     {
-        return sum(i, N, constant(0.402217), cosx(-0.49703, pi2()), cosx(0.09892, pi4()), cosx(-0.00188, pi6()));
+        return four_term(i, N, params(0.402217, 0.49703, 0.09892, 0.00188));
     }
     
     inline double blackman_harris_92dB(uint32_t i, uint32_t N, const params& p)
     {
-        return sum(i, N, constant(0.35875), cosx(-0.48829, pi2()), cosx(0.14128, pi4()), cosx(-0.01168, pi6()));
+        return four_term(i, N, params(0.35875, 0.48829, 0.14128, 0.01168));
     }
     
-    inline double cosine_sum_K1(uint32_t i, uint32_t N, const params& p)
+    inline double nuttall_1st_64dB(uint32_t i, uint32_t N, const params& p)
     {
-        return sum(i, N, constant(p.a0), cosx(1.0 - p.a0, pi2()));
+        return three_term(i, N, params(0.40897, 0.5, 0.09103));
+    }
+    
+    inline double nuttall_1st_93dB(uint32_t i, uint32_t N, const params& p)
+    {
+        return four_term(i, N, params(0.355768, 0.487396, 0.144232, 0.012604));
+    }
+    
+    inline double nuttall_3rd_47dB(uint32_t i, uint32_t N, const params& p)
+    {
+        return three_term(i, N, params(0.375, 0.5, 0.125));
+    }
+    
+    inline double nuttall_3rd_83dB(uint32_t i, uint32_t N, const params& p)
+    {
+        return four_term(i, N, params(0.338946, 0.481973, 0.161054, 0.018027));
+    }
+    
+    inline double nuttall_5th_61dB(uint32_t i, uint32_t N, const params& p)
+    {
+        return four_term(i, N, params(0.3125, 0.46875, 0.1875, 0.03125));
+    }
+    
+    inline double nuttall_minimal_71dB(uint32_t i, uint32_t N, const params& p)
+    {
+        return three_term(i, N, params(0.4243801, 0.4973406, 0.0782793));
+    }
+    
+    inline double nuttall_minimal_98dB(uint32_t i, uint32_t N, const params& p)
+    {
+        return four_term(i, N, params(0.3635819, 0.4891775, 0.1365995, 0.0106411));
     }
     
     inline double cosine_sum(uint32_t i, uint32_t N, const params& p)
@@ -259,36 +309,36 @@ namespace window_functions
         auto cb = [&](double x) { return x * x * x; };
         auto qb = [&](double x) { return sq(sq(x)); };
         
-        if (p.power == 1.0)
+        if (p.exponent == 1.0)
         {
             for (uint32_t i = 0; i < size; i++)
                 window[i] = Func(i, N, p);
         }
-        else if (p.power == 0.5)
+        else if (p.exponent == 0.5)
         {
             for (uint32_t i = 0; i < size; i++)
                 window[i] = std::sqrt(Func(i, N, p));
         }
-        else if (p.power == 2.0)
+        else if (p.exponent == 2.0)
         {
             for (uint32_t i = 0; i < size; i++)
                 window[i] = sq(Func(i, N, p));
         }
-        else if (p.power == 3.0)
+        else if (p.exponent == 3.0)
         {
             for (uint32_t i = 0; i < size; i++)
                 window[i] = cb(Func(i, N, p));
         }
-        else if (p.power == 4.0)
+        else if (p.exponent == 4.0)
         {
             for (uint32_t i = 0; i < size; i++)
                 window[i] = qb(Func(i, N, p));
         }
-        else if (p.power > 0 && p.power == std::floor(p.power))
+        else if (p.exponent > 0 && p.exponent == std::floor(p.exponent))
         {
             // FIX range
             
-            int exponent = static_cast<int>(p.power);
+            int exponent = static_cast<int>(p.exponent);
             
             for (uint32_t i = 0; i < size; i++)
                 window[i] = std::pow(Func(i, N, p), exponent);
@@ -296,7 +346,7 @@ namespace window_functions
         else
         {
             for (uint32_t i = 0; i < size; i++)
-                window[i] = std::pow(Func(i, N, p), p.power);
+                window[i] = std::pow(Func(i, N, p), p.exponent);
         }
     }
     
@@ -363,15 +413,15 @@ namespace window_functions
     }
     
     template <class T>
-    void window_blackman_harris_61dB(T window, uint32_t N, uint32_t size, const params& p)
+    void window_blackman_harris_62dB(T window, uint32_t N, uint32_t size, const params& p)
     {
-        generate<window_functions::blackman_harris_61dB>(window, N, size, p);
+        generate<window_functions::blackman_harris_62dB>(window, N, size, p);
     }
     
     template <class T>
-    void window_blackman_harris_67dB(T window, uint32_t N, uint32_t size, const params& p)
+    void window_blackman_harris_71dB(T window, uint32_t N, uint32_t size, const params& p)
     {
-        generate<window_functions::blackman_harris_67dB>(window, N, size, p);
+        generate<window_functions::blackman_harris_71dB>(window, N, size, p);
     }
     
     template <class T>
@@ -387,6 +437,48 @@ namespace window_functions
     }
     
     template <class T>
+    void window_nuttall_1st_64dB(T window, uint32_t N, uint32_t size, const params& p)
+    {
+        generate<window_functions::nuttall_1st_64dB>(window, N, size, p);
+    }
+    
+    template <class T>
+    void window_nuttall_1st_93dB(T window, uint32_t N, uint32_t size, const params& p)
+    {
+        generate<window_functions::nuttall_1st_93dB>(window, N, size, p);
+    }
+    
+    template <class T>
+    void window_nuttall_3rd_47dB(T window, uint32_t N, uint32_t size, const params& p)
+    {
+        generate<window_functions::nuttall_3rd_47dB>(window, N, size, p);
+    }
+    
+    template <class T>
+    void window_nuttall_3rd_83dB(T window, uint32_t N, uint32_t size, const params& p)
+    {
+        generate<window_functions::nuttall_3rd_83dB>(window, N, size, p);
+    }
+    
+    template <class T>
+    void window_nuttall_5th_61dB(T window, uint32_t N, uint32_t size, const params& p)
+    {
+        generate<window_functions::nuttall_5th_61dB>(window, N, size, p);
+    }
+    
+    template <class T>
+    void window_nuttall_minimal_71dB(T window, uint32_t N, uint32_t size, const params& p)
+    {
+        generate<window_functions::nuttall_minimal_71dB>(window, N, size, p);
+    }
+    
+    template <class T>
+    void window_nuttall_minimal_98dB(T window, uint32_t N, uint32_t size, const params& p)
+    {
+        generate<window_functions::nuttall_minimal_98dB>(window, N, size, p);
+    }
+
+    template <class T>
     void window_cosine_sum(T window, uint32_t N, uint32_t size, const params& p)
     {
         generate<window_functions::cosine_sum>(window, N, size, p);
@@ -395,22 +487,24 @@ namespace window_functions
     template <class T>
     void window_kaiser(T window, uint32_t N, uint32_t size, const params& p)
     {
-        params p1(p.power, p.a0, 1.0 / izero(p.a0 * p.a0));
+        params p1(p.a0, 1.0 / izero(p.a0 * p.a0));
+        p1.exponent = p.exponent;
         
-        generate<window_functions::tukey>(window, N, size, p1);
+        generate<window_functions::kaiser>(window, N, size, p1);
     }
     
     template <class T>
     void window_tukey(T window, uint32_t N, uint32_t size, const params& p)
     {
-        params p1(p.power, p.a0 * 0.5, 1.0 - (p.a0 * 0.5));
-        
+        params p1(p.a0 * 0.5, 1.0 - (p.a0 * 0.5));
+        p1.exponent = p.exponent;
+
         generate<window_functions::tukey>(window, N, size, p1);
     }
 }
 
 // FIX - below
-
+/*
 #define WINDOW_PI            3.14159265358979323846
 #define WINDOW_TWOPI        6.28318530717958647692
 #define WINDOW_THREEPI        9.42477796076937971538
@@ -478,7 +572,7 @@ void window_msinetaper6(T window, uint32_t windowSize, uint32_t generateSize)
 {
 	window_multisine_tapers(window, windowSize, generateSize, 6);
 }
-
+*/
 template <class T, class Ref>
 class WindowFunctions
 {
