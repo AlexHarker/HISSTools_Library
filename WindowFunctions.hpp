@@ -53,9 +53,19 @@ namespace window_functions
 {
     struct params
     {
-        params(double pwr = 1.0, double A0 = 0.0, double A1 = 0.0, double A2 = 0.0, double A3 = 0.0, double A4 = 0.0)
+        params(double pwr, double A0 = 0.0, double A1 = 0.0, double A2 = 0.0, double A3 = 0.0, double A4 = 0.0)
         : a0(A0), a1(A1), a2(A2), a3(A3), a4(A4), power(pwr) {}
         
+        params(double pwr, double *param_array, int N)
+        : a0(N > 0 ? param_array[0] : 0.0)
+        , a1(N > 1 ? param_array[1] : 0.0)
+        , a2(N > 2 ? param_array[2] : 0.0)
+        , a3(N > 3 ? param_array[3] : 0.0)
+        , a4(N > 4 ? param_array[4] : 0.0)
+        , power(pwr) {}
+     
+        params() : params(1.0) {}
+
         double a0;
         double a1;
         double a2;
@@ -65,11 +75,11 @@ namespace window_functions
         double power;
     };
     
-    static constexpr double pi()    { return M_PI; }
-    static constexpr double pi2()  { return M_PI * 2.0; }
-    static constexpr double pi4()  { return M_PI * 4.0; }
-    static constexpr double pi6()  { return M_PI * 6.0; }
-    static constexpr double pi8()  { return M_PI * 8.0; }
+    constexpr double pi()   { return M_PI; }
+    constexpr double pi2()  { return M_PI * 2.0; }
+    constexpr double pi4()  { return M_PI * 4.0; }
+    constexpr double pi6()  { return M_PI * 6.0; }
+    constexpr double pi8()  { return M_PI * 8.0; }
     
     struct constant
     {
@@ -95,34 +105,34 @@ namespace window_functions
     };
                  
     template <typename T>
-    static inline double sum(double x, T op)
+    inline double sum(double x, T op)
     {
         return op(x);
     }
     
     template <typename T, typename ...Ts>
-    static inline double sum(double x, T op, Ts... ops)
+    inline double sum(double x, T op, Ts... ops)
     {
         return sum(x, op) + sum(x, ops...);
     }
     
     template <typename ...Ts>
-    static inline double sum(uint32_t i, uint32_t N, Ts... ops)
+    inline double sum(uint32_t i, uint32_t N, Ts... ops)
     {
         return sum(normalise(i, N), ops...);
     }
     
-    static inline double rect(uint32_t i, uint32_t N, const params& p)
+    inline double rect(uint32_t i, uint32_t N, const params& p)
     {
         return 1.0;
     }
     
-    static inline double triangle(uint32_t i, uint32_t N, const params& p)
+    inline double triangle(uint32_t i, uint32_t N, const params& p)
     {
         return 1.0 - fabs(normalise(i, N) * 2.0 - 1.0);
     }
     
-    static inline double trapezoid(uint32_t i, uint32_t N, const params& p)
+    inline double trapezoid(uint32_t i, uint32_t N, const params& p)
     {
         double a = p.a0;
         double b = p.a1;
@@ -141,18 +151,18 @@ namespace window_functions
         return 1.0;
     }
 
-    static inline double welch(uint32_t i, uint32_t N, const params& p)
+    inline double welch(uint32_t i, uint32_t N, const params& p)
     {
         const double x = 2.0 * normalise(i, N) - 1.0;
         return 1.0 - x * x;
     }
 
-    static inline double cosine(uint32_t i, uint32_t N, const params& p)
+    inline double cosine(uint32_t i, uint32_t N, const params& p)
     {
         return sin(pi() * normalise(i, N));
     }
     
-    static inline double parzen(uint32_t i, uint32_t N, const params& p)
+    inline double parzen(uint32_t i, uint32_t N, const params& p)
     {
         // FIX - check scaling
         const double N2 = static_cast<double>(N) * 0.5;
@@ -173,30 +183,30 @@ namespace window_functions
         return w0(static_cast<double>(i) - N2);
     }
     
-    static inline double cosine_sum_K1(uint32_t i, uint32_t N, const params& p)
+    inline double cosine_sum_K1(uint32_t i, uint32_t N, const params& p)
     {
         return sum(i, N, constant(p.a0), cosx(1.0 - p.a0, pi2()));
     }
     
-    static inline double hann(uint32_t i, uint32_t N, const params& p)
+    inline double hann(uint32_t i, uint32_t N, const params& p)
     {
-        return cosine_sum_K1(i, N, 0.5);
+        return sum(i, N, constant(0.5), cosx(-0.5, pi2()));
     }
     
-    static inline double hamming(uint32_t i, uint32_t N, const params& p)
+    inline double hamming(uint32_t i, uint32_t N, const params& p)
     {
         // FIX - review
         //alpha is 0.54 or 25/46 or 0.543478260869565
         // see equiripple notes on wikipedia
-        return cosine_sum_K1(i, N, 0.54);
+        return sum(i, N, constant(0.54), cosx(0.46, pi2()));
     }
     
-    static inline double blackman(uint32_t i, uint32_t N, const params& p)
+    inline double blackman(uint32_t i, uint32_t N, const params& p)
     {
         return sum(i, N, constant(0.42), cosx(-0.5, pi2()), cosx(0.08, pi4()));
     }
     
-    static inline double cosine_sum(uint32_t i, uint32_t N, const params& p)
+    inline double cosine_sum(uint32_t i, uint32_t N, const params& p)
     {
         return sum(i, N, constant(p.a0),
                    cosx(-p.a1, pi2()),
@@ -205,7 +215,7 @@ namespace window_functions
                    cosx(-p.a4, pi8()));
     }
 
-    static inline double izero(double x2)
+    inline double izero(double x2)
     {
         double term = 1.0;
         double bessel = 1.0;
@@ -222,13 +232,13 @@ namespace window_functions
         return bessel;
     }
     
-    static inline double kaiser(uint32_t i, uint32_t N,  const params& p)
+    inline double kaiser(uint32_t i, uint32_t N,  const params& p)
     {
         double x = 2.0 * normalise(i, N) - 1.0;
         return izero((1.0 - x * x) * p.a0 * p.a0) * p.a1;
     }
     
-    static inline double tukey(uint32_t i, uint32_t N, const params& p)
+    inline double tukey(uint32_t i, uint32_t N, const params& p)
     {
         // FIX - look at normalisation here...
         return 0.5 - 0.5 * cos(trapezoid(i, N, p) * pi());
@@ -239,9 +249,49 @@ namespace window_functions
     template <double Func(uint32_t, uint32_t, const params& p), class T>
     void window_generate(T window, uint32_t N, uint32_t size, const params& p)
     {
-        // FIX - Do power function - specialise for sqrt / integer powers / 1?
-        for (uint32_t i = 0; i < size; i++)
-            window[i] = Func(i, N, p);
+        auto sq = [&](double x) { return x * x; };
+        auto cb = [&](double x) { return x * x * x; };
+        auto qb = [&](double x) { return sq(sq(x)); };
+        
+        if (p.power == 1.0)
+        {
+            for (uint32_t i = 0; i < size; i++)
+                window[i] = Func(i, N, p);
+        }
+        else if (p.power == 0.5)
+        {
+            for (uint32_t i = 0; i < size; i++)
+                window[i] = std::sqrt(Func(i, N, p));
+        }
+        else if (p.power == 2.0)
+        {
+            for (uint32_t i = 0; i < size; i++)
+                window[i] = sq(Func(i, N, p));
+        }
+        else if (p.power == 3.0)
+        {
+            for (uint32_t i = 0; i < size; i++)
+                window[i] = cb(Func(i, N, p));
+        }
+        else if (p.power == 4.0)
+        {
+            for (uint32_t i = 0; i < size; i++)
+                window[i] = qb(Func(i, N, p));
+        }
+        else if (p.power > 0 && p.power == std::floor(p.power))
+        {
+            // FIX range
+            
+            int exponent = static_cast<int>(p.power);
+            
+            for (uint32_t i = 0; i < size; i++)
+                window[i] = std::pow(Func(i, N, p), exponent);
+        }
+        else
+        {
+            for (uint32_t i = 0; i < size; i++)
+                window[i] = std::pow(Func(i, N, p), p.power);
+        }
     }
     
     // Specific generators
