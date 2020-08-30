@@ -5,6 +5,7 @@
 #include <iostream>
 #include <sstream>
 #include <iomanip>
+#include <random>
 
 #include "../../../WindowFunctions.hpp"
 #include "../../../AudioFile/OAudioFile.h"
@@ -81,6 +82,41 @@ private:
     uint64_t        mStore2;
 };
 
+std::default_random_engine rand_engine;
+
+int random_integer(int min, int max)
+{
+    return (rand_engine() % ((max + 1) - min)) + min;
+}
+
+bool check_symmetry()
+{
+    const int size = random_integer(20, 300);
+    int begin = random_integer(0, size / 2 + 2);
+    int end = random_integer(size / 2 - 2, size);
+    
+    double window1[size];
+    double window2[size];
+
+    using namespace window_functions;
+
+    triangle(window1, size, 0, size, params());
+    triangle(window2, size, begin, end, params());
+
+    for (int i = begin; i < end; i++)
+    {
+        if (window1[i] != window2[i - begin])
+        {
+            double relative_error = exp(fabs(log(window1[i] / window2[i - begin])));
+        
+            if (relative_error > 1.000000000001 || isnan(relative_error))
+                return false;
+        }
+    }
+    
+    return true;
+}
+
 template <typename FuncType>
 void check_window(const char* wind, FuncType f, const window_functions::params &p)
 {
@@ -97,7 +133,6 @@ void check_window(const char* wind, FuncType f, const window_functions::params &
     {
         if (window[i] != window[size - i])
         {
-            //std::cout << "failed " << i << " " << window[i] << " " << window[size - i] << "\n";
             symmetry = false;
             break;
         }
@@ -114,8 +149,11 @@ int main(int argc, const char * argv[])
 {
     const static int size = 32768;
     const static int iter = 1024;
+    const static int sym_iter = 32768;
     double window[size];
 
+    rand_engine.seed(std::random_device()());
+    
     using namespace window_functions;
     
     params ep;
@@ -150,13 +188,24 @@ int main(int argc, const char * argv[])
     
     timer.relative("Window Speed Test");
 
+    for (int i = 0; i < sym_iter; i++)
+    {
+        if (!check_symmetry())
+        {
+            std::cout << "Symmetry copying failed!\n";
+            break;
+        }
+        
+        if (i == sym_iter - 1)
+            std::cout << "Symmetry copying succeeded!\n";
+    }
+
     indexed_generator<double, trapezoid<double>, hann<double>> gen;
     
     gen(0, window, size, 0, size, params(0.2, 0.3));
     
     if (argc)
     {
-        std::cout << argv[1];
         HISSTools::OAudioFile file(argv[1], HISSTools::BaseAudioFile::kAudioFileWAVE, HISSTools::BaseAudioFile::kAudioFileFloat32, 1, 44100.0);
         
         if (file.isOpen())
