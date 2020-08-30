@@ -87,7 +87,7 @@ void check_window(const char* wind, FuncType f, const window_functions::params &
     const static int size = 32768;
     double window[size];
     
-    f(window, size, size, p);
+    f(window, size, 0, size, p);
     
     auto it = std::max_element(window, window + size);
     auto n = it - window;
@@ -132,19 +132,19 @@ int main(int argc, const char * argv[])
     check_window<decltype(&window_tukey<double>)>("tukey", &window_tukey<double>, typ);
 
     for (int i = 0; i < iter; i++)
-        window_sine(window, size, size, params());
+        window_sine(window, size, 0, size, params());
     
     Timer timer;
     
     timer.start();
     for (int i = 0; i < iter; i++)
-        window_cosine_sum(window, size, size, p);
+        window_cosine_sum(window, size, 0, size, p);
     timer.stop();
     timer.finish("Branch Speed Test");
     
     timer.start();
     for (int i = 0; i < iter; i++)
-        window_hann(window, size, size, params(0.2, 0.3));
+        window_hann(window, size, 0, size, params(0.2, 0.3));
     timer.stop();
     timer.finish("Non-branch Speed Test");
     
@@ -152,7 +152,7 @@ int main(int argc, const char * argv[])
 
     indexed_generator<double, window_trapezoid<double>, window_hann<double>> gen;
     
-    gen(0, window, size, size, params(0.2, 0.3));
+    gen(0, window, size, 0, size, params(0.2, 0.3));
     
     if (argc)
     {
