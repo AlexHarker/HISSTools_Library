@@ -9,8 +9,15 @@
 #include <vector>
 
 // Coefficients (and the basis for naming) can larged be found in:
+//
 // Nuttall, A. (1981). Some windows with very good sidelobe behavior.
 // IEEE Transactions on Acoustics, Speech, and Signal Processing, 29(1), 84-91.
+//
+// Similar windows / additional flat-top windows from:
+//
+// Heinzel, G., Rüdiger, A., & Schilling, R. (2002).
+// Spectrum and spectral density estimation by the Discrete Fourier transform (DFT),
+// including a comprehensive list of window functions and some new flat-top windows.
 
 namespace window_functions
 {
@@ -311,6 +318,36 @@ namespace window_functions
             return 0.5 - 0.5 * cos(trapezoid(i, N, p) * pi());
         }
         
+        inline double ni_flat_top(uint32_t i, uint32_t N, const params& p)
+        {
+            return cosine_3_term(i, N, params(0.2810639, 0.5208972, 0.1980399));
+        }
+        
+        inline double hp_flat_top(uint32_t i, uint32_t N, const params& p)
+        {
+            return cosine_4_term(i, N, params(1.0, 1.912510941, 1.079173272, 0.1832630879));
+        }
+        
+        inline double stanford_flat_top(uint32_t i, uint32_t N, const params& p)
+        {
+            return cosine_5_term(i, N, params(1.0, 1.939, 1.29, 0.388, 0.028));
+        }
+        
+        inline double heinzel_flat_top_70dB(uint32_t i, uint32_t N, const params& p)
+        {
+            return cosine_4_term(i, N, params(1.0, 1.90796, 1.07349, 0.18199));
+        }
+        
+        inline double heinzel_flat_top_90dB(uint32_t i, uint32_t N, const params& p)
+        {
+            return cosine_5_term(i, N, params(1.0, 1.942604, 1.340318, 0.440811, 0.043097));
+        }
+        
+        inline double heinzel_flat_top_95dB(uint32_t i, uint32_t N, const params& p)
+        {
+            return cosine_5_term(i, N, params(1.0, 1.9383379, 1.3045202, 0.4028270, 0.0350665));
+        }
+        
         // Abstract generator
         
         template <window_func Func, bool symmetric, class T>
@@ -579,6 +616,42 @@ namespace window_functions
         impl::generate<impl::tukey, true>(window, N, begin, end, p1);
     }
     
+    template <class T>
+    void ni_flat_top(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
+    {
+        impl::generate<impl::ni_flat_top, true>(window, N, begin, end, p);
+    }
+    
+    template <class T>
+    void hp_flat_top(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
+    {
+        impl::generate<impl::hp_flat_top, true>(window, N, begin, end, p);
+    }
+    
+    template <class T>
+    void stanford_flat_top(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
+    {
+        impl::generate<impl::stanford_flat_top, true>(window, N, begin, end, p);
+    }
+    
+    template <class T>
+    void heinzel_flat_top_70dB(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
+    {
+        impl::generate<impl::heinzel_flat_top_70dB, true>(window, N, begin, end, p);
+    }
+    
+    template <class T>
+    void heinzel_flat_top_90dB(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
+    {
+        impl::generate<impl::heinzel_flat_top_90dB, true>(window, N, begin, end, p);
+    }
+    
+    template <class T>
+    void heinzel_flat_top_95dB(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
+    {
+        impl::generate<impl::heinzel_flat_top_95dB, true>(window, N, begin, end, p);
+    }
+    
     template <class T, window_generator<T> ...gens>
     struct indexed_generator
     {
@@ -594,24 +667,4 @@ namespace window_functions
 
 }
 
-// FIX - below
-/*
-#define WINDOW_PI            3.14159265358979323846
-#define WINDOW_TWOPI        6.28318530717958647692
-#define WINDOW_THREEPI        9.42477796076937971538
-#define WINDOW_FOURPI        12.56637061435817295384
-#define WINDOW_FIVEPI       15.707963267947966
-#define WINDOW_SIXPI        18.84955592153875943076
-
-// HOW TO REPRESENT ALL OF THESE?
-
-template <class T>
-void window_flat_top(T window, uint32_t windowSize, uint32_t generateSize)
-{
-	for (uint32_t i = 0; i < generateSize; i++)
-        window[i] = 0.2810639 - (0.5208972 * cos(WINDOW_TWOPI * window_functions::normalise(i, windowSize))) + (0.1980399 * cos(WINDOW_FOURPI * window_functions::normalise(i, windowSize)));
-}
-*/
-
 #endif
-
