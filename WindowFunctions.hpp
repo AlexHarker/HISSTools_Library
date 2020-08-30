@@ -333,7 +333,7 @@ namespace window_functions
                     uint32_t begin_n = M - begin;
                     uint32_t end_n = (end - begin) - begin_n;
                     
-                    if (begin_n >= end_n)
+                    if (begin_n > end_n)
                     {
                         copy_last = window + (N+1)/2 - begin;
                         copy_first = copy_last - end_n;
