@@ -43,469 +43,472 @@ namespace window_functions
     template <class T>
     using window_generator = void(T*, uint32_t, uint32_t, uint32_t, const params&);
     
-    // Constexpr functions for convenience
-    
-    constexpr double pi()   { return M_PI; }
-    constexpr double pi2()  { return M_PI * 2.0; }
-    constexpr double pi4()  { return M_PI * 4.0; }
-    constexpr double pi6()  { return M_PI * 6.0; }
-    constexpr double pi8()  { return M_PI * 8.0; }
-    
-    constexpr double div(int x, int y)
+    namespace impl
     {
-        return static_cast<double>(x) / static_cast<double>(y);
-    }
-    
-    // Operators for cosine sum windows
-    
-    struct constant
-    {
-        constant(double v) : value(v) {}
+        // Constexpr functions for convenience
         
-        inline double operator()(double x) { return value; }
+        constexpr double pi()   { return M_PI; }
+        constexpr double pi2()  { return M_PI * 2.0; }
+        constexpr double pi4()  { return M_PI * 4.0; }
+        constexpr double pi6()  { return M_PI * 6.0; }
+        constexpr double pi8()  { return M_PI * 8.0; }
         
-        const double value;
-    };
-    
-    struct cosx
-    {
-        cosx(double c, double mul)
-        : coefficient(c), multiplier(mul) {}
-        
-        inline double operator()(double x)
+        constexpr double div(int x, int y)
         {
-            return coefficient ? coefficient * cos(x * multiplier) : 0.0;
+            return static_cast<double>(x) / static_cast<double>(y);
         }
-
-        const double coefficient;
-        const double multiplier;
-    };
-    
-    // Normalisation helper
-    
-    static inline double normalise(uint32_t x, uint32_t N)
-    {
-        return static_cast<double>(x) / static_cast<double>(N);
-    }
-    
-    // Summing functions for cosine sum windows
-    
-    template <typename T>
-    inline double sum(double x, T op)
-    {
-        return op(x);
-    }
-    
-    template <typename T, typename ...Ts>
-    inline double sum(double x, T op, Ts... ops)
-    {
-        return sum(x, op) + sum(x, ops...);
-    }
-    
-    template <typename ...Ts>
-    inline double sum(uint32_t i, uint32_t N, Ts... ops)
-    {
-        return sum(normalise(i, N), ops...);
-    }
-    
-    // Specific window calculations
-    
-    inline double rect(uint32_t i, uint32_t N, const params& p)
-    {
-        return 1.0;
-    }
-    
-    inline double triangle(uint32_t i, uint32_t N, const params& p)
-    {
-        return 1.0 - fabs(normalise(i, N) * 2.0 - 1.0);
-    }
-    
-    inline double trapezoid(uint32_t i, uint32_t N, const params& p)
-    {
-        double a = p.a0;
-        double b = p.a1;
         
-        if (b < a)
-            std::swap(a, b);
+        // Operators for cosine sum windows
         
-        const double x = normalise(i, N);
-        
-        if (x <= a)
-            return x / a;
-        
-        if (x >= b)
-            return 1.0 - ((x - b) / (1.0 - b));
-        
-        return 1.0;
-    }
-
-    inline double welch(uint32_t i, uint32_t N, const params& p)
-    {
-        const double x = 2.0 * normalise(i, N) - 1.0;
-        return 1.0 - x * x;
-    }
-
-    inline double sine(uint32_t i, uint32_t N, const params& p)
-    {
-        return sin(pi() * normalise(i, N));
-    }
-    
-    inline double parzen(uint32_t i, uint32_t N, const params& p)
-    {
-        // FIX - check scaling
-        const double N2 = static_cast<double>(N) * 0.5;
-        
-        auto w0 = [&](double x)
+        struct constant
         {
-            x = fabs(x) / N2;
+            constant(double v) : value(v) {}
             
-            if (x > 0.5)
-            {
-                double v = (1.0 - x);
-                return 2.0 * v * v * v;
-            }
+            inline double operator()(double x) { return value; }
             
-            return 1.0 - 6.0 * x * x * (1.0 - x);
+            const double value;
         };
         
-        return w0(static_cast<double>(i) - N2);
-    }
-    
-    inline double two_term(uint32_t i, uint32_t N, const params& p)
-    {
-        return sum(i, N, constant(p.a0), cosx(-(1.0 - p.a0), pi2()));
-    }
-    
-    inline double three_term(uint32_t i, uint32_t N, const params& p)
-    {
-        return sum(i, N, constant(p.a0), cosx(-p.a1, pi2()), cosx(p.a2, pi4()));
-    }
-    
-    inline double four_term(uint32_t i, uint32_t N, const params& p)
-    {
-        return sum(i, N, constant(p.a0), cosx(-p.a1, pi2()), cosx(p.a2, pi4()), cosx(-p.a3, pi6()));
-    }
-    
-    inline double hann(uint32_t i, uint32_t N, const params& p)
-    {
-        //return sum(i, N, constant(0.5), cosx(-0.5, pi2()));
-        return two_term(i, N, params(0.5));
-    }
-    
-    inline double hamming(uint32_t i, uint32_t N, const params& p)
-    {
-        // FIX - review
-        //alpha is 0.54 or 25/46 or 0.543478260869565
-        // see equiripple notes on wikipedia
-        //return sum(i, N, constant(0.54), cosx(-0.46, pi2()));
-        return two_term(i, N, params(0.54));
-    }
-    
-    inline double blackman(uint32_t i, uint32_t N, const params& p)
-    {
-        return three_term(i, N, params(0.42, -0.5, 0.08));
-    }
-    
-    inline double exact_blackman(uint32_t i, uint32_t N, const params& p)
-    {
-        const params pb(div(7938, 18608), div(9240, 18608), div(1430, 18608));
-        return three_term(i, N, pb);
-    }
-    
-    inline double blackman_harris_62dB(uint32_t i, uint32_t N, const params& p)
-    {
-        return three_term(i, N, params(0.44959, 0.49364, 0.05677));
-    }
-    
-    inline double blackman_harris_71dB(uint32_t i, uint32_t N, const params& p)
-    {
-        return three_term(i, N, params(0.42323, 0.49755, 0.07922));
-    }
-    
-    inline double blackman_harris_74dB(uint32_t i, uint32_t N, const params& p)
-    {
-        return four_term(i, N, params(0.402217, 0.49703, 0.09892, 0.00188));
-    }
-    
-    inline double blackman_harris_92dB(uint32_t i, uint32_t N, const params& p)
-    {
-        return four_term(i, N, params(0.35875, 0.48829, 0.14128, 0.01168));
-    }
-    
-    inline double nuttall_1st_64dB(uint32_t i, uint32_t N, const params& p)
-    {
-        return three_term(i, N, params(0.40897, 0.5, 0.09103));
-    }
-    
-    inline double nuttall_1st_93dB(uint32_t i, uint32_t N, const params& p)
-    {
-        return four_term(i, N, params(0.355768, 0.487396, 0.144232, 0.012604));
-    }
-    
-    inline double nuttall_3rd_47dB(uint32_t i, uint32_t N, const params& p)
-    {
-        return three_term(i, N, params(0.375, 0.5, 0.125));
-    }
-    
-    inline double nuttall_3rd_83dB(uint32_t i, uint32_t N, const params& p)
-    {
-        return four_term(i, N, params(0.338946, 0.481973, 0.161054, 0.018027));
-    }
-    
-    inline double nuttall_5th_61dB(uint32_t i, uint32_t N, const params& p)
-    {
-        return four_term(i, N, params(0.3125, 0.46875, 0.1875, 0.03125));
-    }
-    
-    inline double nuttall_minimal_71dB(uint32_t i, uint32_t N, const params& p)
-    {
-        return three_term(i, N, params(0.4243801, 0.4973406, 0.0782793));
-    }
-    
-    inline double nuttall_minimal_98dB(uint32_t i, uint32_t N, const params& p)
-    {
-        return four_term(i, N, params(0.3635819, 0.4891775, 0.1365995, 0.0106411));
-    }
-    
-    inline double cosine_sum(uint32_t i, uint32_t N, const params& p)
-    {
-        return sum(i, N, constant(p.a0),
-                   cosx(-p.a1, pi2()),
-                   cosx(p.a2, pi4()),
-                   cosx(-p.a3, pi6()),
-                   cosx(-p.a4, pi8()));
-    }
-
-    inline double izero(double x2)
-    {
-        double term = 1.0;
-        double bessel = 1.0;
-        
-        // N.B. - loop until term is zero for maximum accuracy
-        
-        for (unsigned long i = 1; term > std::numeric_limits<double>::epsilon(); i++)
+        struct cosx
         {
-            const double i2 = static_cast<double>(i * i);
-            term = term * x2 * (1.0 / (4.0 * i2));
-            bessel += term;
-        }
-        
-        return bessel;
-    }
-    
-    inline double kaiser(uint32_t i, uint32_t N,  const params& p)
-    {
-        double x = 2.0 * normalise(i, N) - 1.0;
-        return izero((1.0 - x * x) * p.a0 * p.a0) * p.a1;
-    }
-    
-    inline double tukey(uint32_t i, uint32_t N, const params& p)
-    {
-        // FIX - look at normalisation here...
-        return 0.5 - 0.5 * cos(trapezoid(i, N, p) * pi());
-    }
-    
-    // Abstract generator
-    
-    template <window_func Func, class T>
-    void inline generate(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
-    {
-        auto sq = [&](double x) { return x * x; };
-        auto cb = [&](double x) { return x * x * x; };
-        auto qb = [&](double x) { return sq(sq(x)); };
-        auto toType = [](double x) { return static_cast<T>(x); };
-        
-        if (p.exponent == 1.0)
-        {
-            for (uint32_t i = begin; i < end; i++)
-                window[i] = toType(Func(i, N, p));
-        }
-        else if (p.exponent == 0.5)
-        {
-            for (uint32_t i = begin; i < end; i++)
-                window[i] = toType(std::sqrt(Func(i, N, p)));
-        }
-        else if (p.exponent == 2.0)
-        {
-            for (uint32_t i = begin; i < end; i++)
-                window[i] = toType(sq(Func(i, N, p)));
-        }
-        else if (p.exponent == 3.0)
-        {
-            for (uint32_t i = begin; i < end; i++)
-                window[i] = toType(cb(Func(i, N, p)));
-        }
-        else if (p.exponent == 4.0)
-        {
-            for (uint32_t i = begin; i < end; i++)
-                window[i] = toType(qb(Func(i, N, p)));
-        }
-        else if (p.exponent > 0 && p.exponent == std::floor(p.exponent))
-        {
-            // FIX range
+            cosx(double c, double mul)
+            : coefficient(c), multiplier(mul) {}
             
-            int exponent = static_cast<int>(p.exponent);
+            inline double operator()(double x)
+            {
+                return coefficient ? coefficient * cos(x * multiplier) : 0.0;
+            }
             
-            for (uint32_t i = begin; i < end; i++)
-                window[i] = toType(std::pow(Func(i, N, p), exponent));
-        }
-        else
+            const double coefficient;
+            const double multiplier;
+        };
+        
+        // Normalisation helper
+        
+        static inline double normalise(uint32_t x, uint32_t N)
         {
-            for (uint32_t i = begin; i < end; i++)
-                window[i] = toType(std::pow(Func(i, N, p), p.exponent));
+            return static_cast<double>(x) / static_cast<double>(N);
+        }
+        
+        // Summing functions for cosine sum windows
+        
+        template <typename T>
+        inline double sum(double x, T op)
+        {
+            return op(x);
+        }
+        
+        template <typename T, typename ...Ts>
+        inline double sum(double x, T op, Ts... ops)
+        {
+            return sum(x, op) + sum(x, ops...);
+        }
+        
+        template <typename ...Ts>
+        inline double sum(uint32_t i, uint32_t N, Ts... ops)
+        {
+            return sum(normalise(i, N), ops...);
+        }
+        
+        // Specific window calculations
+        
+        inline double rect(uint32_t i, uint32_t N, const params& p)
+        {
+            return 1.0;
+        }
+        
+        inline double triangle(uint32_t i, uint32_t N, const params& p)
+        {
+            return 1.0 - fabs(normalise(i, N) * 2.0 - 1.0);
+        }
+        
+        inline double trapezoid(uint32_t i, uint32_t N, const params& p)
+        {
+            double a = p.a0;
+            double b = p.a1;
+            
+            if (b < a)
+                std::swap(a, b);
+            
+            const double x = normalise(i, N);
+            
+            if (x <= a)
+                return x / a;
+            
+            if (x >= b)
+                return 1.0 - ((x - b) / (1.0 - b));
+            
+            return 1.0;
+        }
+        
+        inline double welch(uint32_t i, uint32_t N, const params& p)
+        {
+            const double x = 2.0 * normalise(i, N) - 1.0;
+            return 1.0 - x * x;
+        }
+        
+        inline double sine(uint32_t i, uint32_t N, const params& p)
+        {
+            return sin(pi() * normalise(i, N));
+        }
+        
+        inline double parzen(uint32_t i, uint32_t N, const params& p)
+        {
+            // FIX - check scaling
+            const double N2 = static_cast<double>(N) * 0.5;
+            
+            auto w0 = [&](double x)
+            {
+                x = fabs(x) / N2;
+                
+                if (x > 0.5)
+                {
+                    double v = (1.0 - x);
+                    return 2.0 * v * v * v;
+                }
+                
+                return 1.0 - 6.0 * x * x * (1.0 - x);
+            };
+            
+            return w0(static_cast<double>(i) - N2);
+        }
+        
+        inline double two_term(uint32_t i, uint32_t N, const params& p)
+        {
+            return sum(i, N, constant(p.a0), cosx(-(1.0 - p.a0), pi2()));
+        }
+        
+        inline double three_term(uint32_t i, uint32_t N, const params& p)
+        {
+            return sum(i, N, constant(p.a0), cosx(-p.a1, pi2()), cosx(p.a2, pi4()));
+        }
+        
+        inline double four_term(uint32_t i, uint32_t N, const params& p)
+        {
+            return sum(i, N, constant(p.a0), cosx(-p.a1, pi2()), cosx(p.a2, pi4()), cosx(-p.a3, pi6()));
+        }
+        
+        inline double hann(uint32_t i, uint32_t N, const params& p)
+        {
+            //return sum(i, N, constant(0.5), cosx(-0.5, pi2()));
+            return two_term(i, N, params(0.5));
+        }
+        
+        inline double hamming(uint32_t i, uint32_t N, const params& p)
+        {
+            // FIX - review
+            //alpha is 0.54 or 25/46 or 0.543478260869565
+            // see equiripple notes on wikipedia
+            //return sum(i, N, constant(0.54), cosx(-0.46, pi2()));
+            return two_term(i, N, params(0.54));
+        }
+        
+        inline double blackman(uint32_t i, uint32_t N, const params& p)
+        {
+            return three_term(i, N, params(0.42, -0.5, 0.08));
+        }
+        
+        inline double exact_blackman(uint32_t i, uint32_t N, const params& p)
+        {
+            const params pb(div(7938, 18608), div(9240, 18608), div(1430, 18608));
+            return three_term(i, N, pb);
+        }
+        
+        inline double blackman_harris_62dB(uint32_t i, uint32_t N, const params& p)
+        {
+            return three_term(i, N, params(0.44959, 0.49364, 0.05677));
+        }
+        
+        inline double blackman_harris_71dB(uint32_t i, uint32_t N, const params& p)
+        {
+            return three_term(i, N, params(0.42323, 0.49755, 0.07922));
+        }
+        
+        inline double blackman_harris_74dB(uint32_t i, uint32_t N, const params& p)
+        {
+            return four_term(i, N, params(0.402217, 0.49703, 0.09892, 0.00188));
+        }
+        
+        inline double blackman_harris_92dB(uint32_t i, uint32_t N, const params& p)
+        {
+            return four_term(i, N, params(0.35875, 0.48829, 0.14128, 0.01168));
+        }
+        
+        inline double nuttall_1st_64dB(uint32_t i, uint32_t N, const params& p)
+        {
+            return three_term(i, N, params(0.40897, 0.5, 0.09103));
+        }
+        
+        inline double nuttall_1st_93dB(uint32_t i, uint32_t N, const params& p)
+        {
+            return four_term(i, N, params(0.355768, 0.487396, 0.144232, 0.012604));
+        }
+        
+        inline double nuttall_3rd_47dB(uint32_t i, uint32_t N, const params& p)
+        {
+            return three_term(i, N, params(0.375, 0.5, 0.125));
+        }
+        
+        inline double nuttall_3rd_83dB(uint32_t i, uint32_t N, const params& p)
+        {
+            return four_term(i, N, params(0.338946, 0.481973, 0.161054, 0.018027));
+        }
+        
+        inline double nuttall_5th_61dB(uint32_t i, uint32_t N, const params& p)
+        {
+            return four_term(i, N, params(0.3125, 0.46875, 0.1875, 0.03125));
+        }
+        
+        inline double nuttall_minimal_71dB(uint32_t i, uint32_t N, const params& p)
+        {
+            return three_term(i, N, params(0.4243801, 0.4973406, 0.0782793));
+        }
+        
+        inline double nuttall_minimal_98dB(uint32_t i, uint32_t N, const params& p)
+        {
+            return four_term(i, N, params(0.3635819, 0.4891775, 0.1365995, 0.0106411));
+        }
+        
+        inline double cosine_sum(uint32_t i, uint32_t N, const params& p)
+        {
+            return sum(i, N, constant(p.a0),
+                       cosx(-p.a1, pi2()),
+                       cosx(p.a2, pi4()),
+                       cosx(-p.a3, pi6()),
+                       cosx(-p.a4, pi8()));
+        }
+        
+        inline double izero(double x2)
+        {
+            double term = 1.0;
+            double bessel = 1.0;
+            
+            // N.B. - loop until term is zero for maximum accuracy
+            
+            for (unsigned long i = 1; term > std::numeric_limits<double>::epsilon(); i++)
+            {
+                const double i2 = static_cast<double>(i * i);
+                term = term * x2 * (1.0 / (4.0 * i2));
+                bessel += term;
+            }
+            
+            return bessel;
+        }
+        
+        inline double kaiser(uint32_t i, uint32_t N,  const params& p)
+        {
+            double x = 2.0 * normalise(i, N) - 1.0;
+            return izero((1.0 - x * x) * p.a0 * p.a0) * p.a1;
+        }
+        
+        inline double tukey(uint32_t i, uint32_t N, const params& p)
+        {
+            // FIX - look at normalisation here...
+            return 0.5 - 0.5 * cos(trapezoid(i, N, p) * pi());
+        }
+        
+        // Abstract generator
+        
+        template <window_func Func, class T>
+        void inline generate(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
+        {
+            auto sq = [&](double x) { return x * x; };
+            auto cb = [&](double x) { return x * x * x; };
+            auto qb = [&](double x) { return sq(sq(x)); };
+            auto toType = [](double x) { return static_cast<T>(x); };
+            
+            if (p.exponent == 1.0)
+            {
+                for (uint32_t i = begin; i < end; i++)
+                    window[i] = toType(Func(i, N, p));
+            }
+            else if (p.exponent == 0.5)
+            {
+                for (uint32_t i = begin; i < end; i++)
+                    window[i] = toType(std::sqrt(Func(i, N, p)));
+            }
+            else if (p.exponent == 2.0)
+            {
+                for (uint32_t i = begin; i < end; i++)
+                    window[i] = toType(sq(Func(i, N, p)));
+            }
+            else if (p.exponent == 3.0)
+            {
+                for (uint32_t i = begin; i < end; i++)
+                    window[i] = toType(cb(Func(i, N, p)));
+            }
+            else if (p.exponent == 4.0)
+            {
+                for (uint32_t i = begin; i < end; i++)
+                    window[i] = toType(qb(Func(i, N, p)));
+            }
+            else if (p.exponent > 0 && p.exponent == std::floor(p.exponent))
+            {
+                // FIX range
+                
+                int exponent = static_cast<int>(p.exponent);
+                
+                for (uint32_t i = begin; i < end; i++)
+                    window[i] = toType(std::pow(Func(i, N, p), exponent));
+            }
+            else
+            {
+                for (uint32_t i = begin; i < end; i++)
+                    window[i] = toType(std::pow(Func(i, N, p), p.exponent));
+            }
         }
     }
     
     // Specific window generators
     
     template <class T>
-    void window_rect(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
+    void rect(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
     {
-        generate<window_functions::rect>(window, N, begin, end, p);
+        impl::generate<impl::rect>(window, N, begin, end, p);
     }
     
     template <class T>
-    void window_triangle(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
+    void triangle(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
     {
-        generate<window_functions::triangle>(window, N, begin, end, p);
+        impl::generate<impl::triangle>(window, N, begin, end, p);
     }
     
     template <class T>
-    void window_trapezoid(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
+    void trapezoid(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
     {
-        generate<window_functions::trapezoid>(window, N, begin, end, p);
+        impl::generate<impl::trapezoid>(window, N, begin, end, p);
     }
     
     template <class T>
-    void window_welch(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
+    void welch(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
     {
-        generate<window_functions::welch>(window, N, begin, end, p);
+        impl::generate<impl::welch>(window, N, begin, end, p);
     }
     
     template <class T>
-    void window_parzen(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
+    void parzen(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
     {
-        generate<window_functions::parzen>(window, N, begin, end, p);
+        impl::generate<impl::parzen>(window, N, begin, end, p);
     }
     
     template <class T>
-    void window_sine(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
+    void sine(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
     {
-        generate<window_functions::sine>(window, N, begin, end, p);
+        impl::generate<impl::sine>(window, N, begin, end, p);
     }
     
     template <class T>
-    void window_hann(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
+    void hann(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
     {
-        generate<window_functions::hann>(window, N, begin, end, p);
+        impl::generate<impl::hann>(window, N, begin, end, p);
     }
     
     template <class T>
-    void window_hamming(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
+    void hamming(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
     {
-        generate<window_functions::hamming>(window, N, begin, end, p);
+        impl::generate<impl::hamming>(window, N, begin, end, p);
     }
     
     template <class T>
-    void window_blackman(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
+    void blackman(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
     {
-        generate<window_functions::blackman>(window, N, begin, end, p);
+        impl::generate<impl::blackman>(window, N, begin, end, p);
     }
     
     template <class T>
-    void window_exact_blackman(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
+    void exact_blackman(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
     {
-        generate<window_functions::exact_blackman>(window, N, begin, end, p);
+        impl::generate<impl::exact_blackman>(window, N, begin, end, p);
     }
     
     template <class T>
-    void window_blackman_harris_62dB(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
+    void blackman_harris_62dB(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
     {
-        generate<window_functions::blackman_harris_62dB>(window, N, begin, end, p);
+        impl::generate<impl::blackman_harris_62dB>(window, N, begin, end, p);
     }
     
     template <class T>
-    void window_blackman_harris_71dB(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
+    void blackman_harris_71dB(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
     {
-        generate<window_functions::blackman_harris_71dB>(window, N, begin, end, p);
+        impl::generate<impl::blackman_harris_71dB>(window, N, begin, end, p);
     }
     
     template <class T>
-    void window_blackman_harris_74dB(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
+    void blackman_harris_74dB(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
     {
-        generate<window_functions::blackman_harris_74dB>(window, N, begin, end, p);
+        impl::generate<impl::blackman_harris_74dB>(window, N, begin, end, p);
     }
     
     template <class T>
-    void window_blackman_harris_92dB(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
+    void blackman_harris_92dB(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
     {
-        generate<window_functions::blackman_harris_92dB>(window, N, begin, end, p);
+        impl::generate<impl::blackman_harris_92dB>(window, N, begin, end, p);
     }
     
     template <class T>
-    void window_nuttall_1st_64dB(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
+    void nuttall_1st_64dB(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
     {
-        generate<window_functions::nuttall_1st_64dB>(window, N, begin, end, p);
+        impl::generate<impl::nuttall_1st_64dB>(window, N, begin, end, p);
     }
     
     template <class T>
-    void window_nuttall_1st_93dB(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
+    void nuttall_1st_93dB(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
     {
-        generate<window_functions::nuttall_1st_93dB>(window, N, begin, end, p);
+        impl::generate<impl::nuttall_1st_93dB>(window, N, begin, end, p);
     }
     
     template <class T>
-    void window_nuttall_3rd_47dB(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
+    void nuttall_3rd_47dB(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
     {
-        generate<window_functions::nuttall_3rd_47dB>(window, N, begin, end, p);
+        impl::generate<impl::nuttall_3rd_47dB>(window, N, begin, end, p);
     }
     
     template <class T>
-    void window_nuttall_3rd_83dB(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
+    void nuttall_3rd_83dB(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
     {
-        generate<window_functions::nuttall_3rd_83dB>(window, N, begin, end, p);
+        impl::generate<impl::nuttall_3rd_83dB>(window, N, begin, end, p);
     }
     
     template <class T>
-    void window_nuttall_5th_61dB(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
+    void nuttall_5th_61dB(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
     {
-        generate<window_functions::nuttall_5th_61dB>(window, N, begin, end, p);
+        impl::generate<impl::nuttall_5th_61dB>(window, N, begin, end, p);
     }
     
     template <class T>
-    void window_nuttall_minimal_71dB(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
+    void nuttall_minimal_71dB(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
     {
-        generate<window_functions::nuttall_minimal_71dB>(window, N, begin, end, p);
+        impl::generate<impl::nuttall_minimal_71dB>(window, N, begin, end, p);
     }
     
     template <class T>
-    void window_nuttall_minimal_98dB(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
+    void nuttall_minimal_98dB(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
     {
-        generate<window_functions::nuttall_minimal_98dB>(window, N, begin, end, p);
+        impl::generate<impl::nuttall_minimal_98dB>(window, N, begin, end, p);
     }
 
     template <class T>
-    void window_cosine_sum(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
+    void cosine_sum(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
     {
-        generate<window_functions::cosine_sum>(window, N, begin, end, p);
+        impl::generate<impl::cosine_sum>(window, N, begin, end, p);
     }
     
     template <class T>
-    void window_kaiser(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
+    void kaiser(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
     {
-        params p1(p.a0, 1.0 / izero(p.a0 * p.a0));
+        params p1(p.a0, 1.0 / impl::izero(p.a0 * p.a0));
         p1.exponent = p.exponent;
         
-        generate<window_functions::kaiser>(window, N, begin, end, p1);
+        impl::generate<impl::kaiser>(window, N, begin, end, p1);
     }
     
     template <class T>
-    void window_tukey(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
+    void tukey(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
     {
         params p1(p.a0 * 0.5, 1.0 - (p.a0 * 0.5));
         p1.exponent = p.exponent;
 
-        generate<window_functions::tukey>(window, N, begin, end, p1);
+        impl::generate<impl::tukey>(window, N, begin, end, p1);
     }
     
     template <class T, window_generator<T> ...gens>

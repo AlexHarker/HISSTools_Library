@@ -123,34 +123,34 @@ int main(int argc, const char * argv[])
     params typ(0.1);
     params p(0.5, 0.5);
     
-    check_window<decltype(&window_parzen<double>)>("parzen", &window_parzen<double>, ep);
-    check_window<decltype(&window_welch<double>)>("welch", &window_welch<double>, ep);
-    check_window<decltype(&window_sine<double>)>("sine", &window_sine<double>, ep);
-    check_window<decltype(&window_hann<double>)>("hann", &window_hann<double>, ep);
-    check_window<decltype(&window_triangle<double>)>("triangle", &window_triangle<double>, ep);
-    check_window<decltype(&window_trapezoid<double>)>("trapezoid", &window_trapezoid<double>, tp);
-    check_window<decltype(&window_tukey<double>)>("tukey", &window_tukey<double>, typ);
+    check_window<decltype(&parzen<double>)>("parzen", &parzen<double>, ep);
+    check_window<decltype(&welch<double>)>("welch", &welch<double>, ep);
+    check_window<decltype(&sine<double>)>("sine", &sine<double>, ep);
+    check_window<decltype(&hann<double>)>("hann", &hann<double>, ep);
+    check_window<decltype(&triangle<double>)>("triangle", &triangle<double>, ep);
+    check_window<decltype(&trapezoid<double>)>("trapezoid", &trapezoid<double>, tp);
+    check_window<decltype(&tukey<double>)>("tukey", &tukey<double>, typ);
 
     for (int i = 0; i < iter; i++)
-        window_sine(window, size, 0, size, params());
+        sine(window, size, 0, size, params());
     
     Timer timer;
     
     timer.start();
     for (int i = 0; i < iter; i++)
-        window_cosine_sum(window, size, 0, size, p);
+        cosine_sum(window, size, 0, size, p);
     timer.stop();
     timer.finish("Branch Speed Test");
     
     timer.start();
     for (int i = 0; i < iter; i++)
-        window_hann(window, size, 0, size, params(0.2, 0.3));
+        hann(window, size, 0, size, params(0.2, 0.3));
     timer.stop();
     timer.finish("Non-branch Speed Test");
     
     timer.relative("Window Speed Test");
 
-    indexed_generator<double, window_trapezoid<double>, window_hann<double>> gen;
+    indexed_generator<double, trapezoid<double>, hann<double>> gen;
     
     gen(0, window, size, 0, size, params(0.2, 0.3));
     
