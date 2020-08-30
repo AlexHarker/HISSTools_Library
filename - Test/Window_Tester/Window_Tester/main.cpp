@@ -117,8 +117,7 @@ bool check_symmetry()
     return true;
 }
 
-template <typename FuncType>
-void check_window(const char* wind, FuncType f, const window_functions::params &p)
+void check_window(const char* wind, window_functions::window_generator<double> f, const window_functions::params &p)
 {
     const static int size = 32768;
     double window[size];
@@ -161,13 +160,13 @@ int main(int argc, const char * argv[])
     params typ(0.1);
     params p(0.5, 0.5);
     
-    check_window<decltype(&parzen<double>)>("parzen", &parzen<double>, ep);
-    check_window<decltype(&welch<double>)>("welch", &welch<double>, ep);
-    check_window<decltype(&sine<double>)>("sine", &sine<double>, ep);
-    check_window<decltype(&hann<double>)>("hann", &hann<double>, ep);
-    check_window<decltype(&triangle<double>)>("triangle", &triangle<double>, ep);
-    check_window<decltype(&trapezoid<double>)>("trapezoid", &trapezoid<double>, tp);
-    check_window<decltype(&tukey<double>)>("tukey", &tukey<double>, typ);
+    check_window("parzen", &parzen<double>, ep);
+    check_window("welch", &welch<double>, ep);
+    check_window("sine", &sine<double>, ep);
+    check_window("hann", &hann<double>, ep);
+    check_window("triangle", &triangle<double>, ep);
+    check_window("trapezoid", &trapezoid<double>, tp);
+    check_window("tukey", &tukey<double>, typ);
 
     for (int i = 0; i < iter; i++)
         sine(window, size, 0, size, params());
