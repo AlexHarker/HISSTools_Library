@@ -175,7 +175,7 @@ int main(int argc, const char * argv[])
     
     timer.start();
     for (int i = 0; i < iter; i++)
-        cosine_sum(window, size, 0, size, p);
+        cosine_2_term(window, size, 0, size, p);
     timer.stop();
     timer.finish("Branch Speed Test");
     
@@ -199,9 +199,9 @@ int main(int argc, const char * argv[])
             std::cout << "Symmetry copying succeeded!\n";
     }
 
-    indexed_generator<double, trapezoid<double>, hann<double>> gen;
+    indexed_generator<double, sine_taper<double>, hann<double>> gen;
     
-    gen(0, window, size, 0, size, params(0.2, 0.3));
+    gen(0, window, size, 0, size, params(4));
     
     if (argc)
     {

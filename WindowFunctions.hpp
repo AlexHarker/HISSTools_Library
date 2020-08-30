@@ -8,7 +8,7 @@
 #include <limits>
 #include <vector>
 
-// Naming/coefficients can larged be verified in:
+// Coefficients (and the basis for naming) can larged be found in:
 // Nuttall, A. (1981). Some windows with very good sidelobe behavior.
 // IEEE Transactions on Acoustics, Speech, and Signal Processing, 29(1), 84-91.
 
@@ -76,7 +76,7 @@ namespace window_functions
             
             inline double operator()(double x)
             {
-                return coefficient ? coefficient * cos(x * multiplier) : 0.0;
+                return coefficient * cos(x * multiplier);
             }
             
             const double coefficient;
@@ -173,25 +173,33 @@ namespace window_functions
             return w0(static_cast<double>(i) - N2);
         }
         
-        inline double two_term(uint32_t i, uint32_t N, const params& p)
+        inline double cosine_2_term(uint32_t i, uint32_t N, const params& p)
         {
             return sum(i, N, constant(p.a0), cosx(-(1.0 - p.a0), pi2()));
         }
         
-        inline double three_term(uint32_t i, uint32_t N, const params& p)
+        inline double cosine_3_term(uint32_t i, uint32_t N, const params& p)
         {
             return sum(i, N, constant(p.a0), cosx(-p.a1, pi2()), cosx(p.a2, pi4()));
         }
         
-        inline double four_term(uint32_t i, uint32_t N, const params& p)
+        inline double cosine_4_term(uint32_t i, uint32_t N, const params& p)
         {
             return sum(i, N, constant(p.a0), cosx(-p.a1, pi2()), cosx(p.a2, pi4()), cosx(-p.a3, pi6()));
         }
         
+        inline double cosine_5_term(uint32_t i, uint32_t N, const params& p)
+        {
+            return sum(i, N, constant(p.a0),
+                       cosx(-p.a1, pi2()),
+                       cosx(p.a2, pi4()),
+                       cosx(-p.a3, pi6()),
+                       cosx(-p.a4, pi8()));
+        }
+        
         inline double hann(uint32_t i, uint32_t N, const params& p)
         {
-            //return sum(i, N, constant(0.5), cosx(-0.5, pi2()));
-            return two_term(i, N, params(0.5));
+            return cosine_2_term(i, N, params(0.5));
         }
         
         inline double hamming(uint32_t i, uint32_t N, const params& p)
@@ -200,82 +208,78 @@ namespace window_functions
             //alpha is 0.54 or 25/46 or 0.543478260869565
             // see equiripple notes on wikipedia
             //return sum(i, N, constant(0.54), cosx(-0.46, pi2()));
-            return two_term(i, N, params(0.54));
+            return cosine_2_term(i, N, params(0.54));
         }
         
         inline double blackman(uint32_t i, uint32_t N, const params& p)
         {
-            return three_term(i, N, params(0.42, -0.5, 0.08));
+            return cosine_3_term(i, N, params(0.42, -0.5, 0.08));
         }
         
         inline double exact_blackman(uint32_t i, uint32_t N, const params& p)
         {
             const params pb(div(7938, 18608), div(9240, 18608), div(1430, 18608));
-            return three_term(i, N, pb);
+            return cosine_3_term(i, N, pb);
         }
         
         inline double blackman_harris_62dB(uint32_t i, uint32_t N, const params& p)
         {
-            return three_term(i, N, params(0.44959, 0.49364, 0.05677));
+            return cosine_3_term(i, N, params(0.44959, 0.49364, 0.05677));
         }
         
         inline double blackman_harris_71dB(uint32_t i, uint32_t N, const params& p)
         {
-            return three_term(i, N, params(0.42323, 0.49755, 0.07922));
+            return cosine_3_term(i, N, params(0.42323, 0.49755, 0.07922));
         }
         
         inline double blackman_harris_74dB(uint32_t i, uint32_t N, const params& p)
         {
-            return four_term(i, N, params(0.402217, 0.49703, 0.09892, 0.00188));
+            return cosine_4_term(i, N, params(0.402217, 0.49703, 0.09892, 0.00188));
         }
         
         inline double blackman_harris_92dB(uint32_t i, uint32_t N, const params& p)
         {
-            return four_term(i, N, params(0.35875, 0.48829, 0.14128, 0.01168));
+            return cosine_4_term(i, N, params(0.35875, 0.48829, 0.14128, 0.01168));
         }
         
         inline double nuttall_1st_64dB(uint32_t i, uint32_t N, const params& p)
         {
-            return three_term(i, N, params(0.40897, 0.5, 0.09103));
+            return cosine_3_term(i, N, params(0.40897, 0.5, 0.09103));
         }
         
         inline double nuttall_1st_93dB(uint32_t i, uint32_t N, const params& p)
         {
-            return four_term(i, N, params(0.355768, 0.487396, 0.144232, 0.012604));
+            return cosine_4_term(i, N, params(0.355768, 0.487396, 0.144232, 0.012604));
         }
         
         inline double nuttall_3rd_47dB(uint32_t i, uint32_t N, const params& p)
         {
-            return three_term(i, N, params(0.375, 0.5, 0.125));
+            return cosine_3_term(i, N, params(0.375, 0.5, 0.125));
         }
         
         inline double nuttall_3rd_83dB(uint32_t i, uint32_t N, const params& p)
         {
-            return four_term(i, N, params(0.338946, 0.481973, 0.161054, 0.018027));
+            return cosine_4_term(i, N, params(0.338946, 0.481973, 0.161054, 0.018027));
         }
         
         inline double nuttall_5th_61dB(uint32_t i, uint32_t N, const params& p)
         {
-            return four_term(i, N, params(0.3125, 0.46875, 0.1875, 0.03125));
+            return cosine_4_term(i, N, params(0.3125, 0.46875, 0.1875, 0.03125));
         }
         
         inline double nuttall_minimal_71dB(uint32_t i, uint32_t N, const params& p)
         {
-            return three_term(i, N, params(0.4243801, 0.4973406, 0.0782793));
+            return cosine_3_term(i, N, params(0.4243801, 0.4973406, 0.0782793));
         }
         
         inline double nuttall_minimal_98dB(uint32_t i, uint32_t N, const params& p)
         {
-            return four_term(i, N, params(0.3635819, 0.4891775, 0.1365995, 0.0106411));
+            return cosine_4_term(i, N, params(0.3635819, 0.4891775, 0.1365995, 0.0106411));
         }
         
-        inline double cosine_sum(uint32_t i, uint32_t N, const params& p)
+        inline double sine_taper(uint32_t i, uint32_t N, const params& p)
         {
-            return sum(i, N, constant(p.a0),
-                       cosx(-p.a1, pi2()),
-                       cosx(p.a2, pi4()),
-                       cosx(-p.a3, pi6()),
-                       cosx(-p.a4, pi8()));
+            return sin(p.a0 * pi() * normalise(i, N));
         }
         
         inline double izero(double x2)
@@ -435,6 +439,30 @@ namespace window_functions
     }
     
     template <class T>
+    void cosine_2_term(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
+    {
+        impl::generate<impl::cosine_2_term, true>(window, N, begin, end, p);
+    }
+    
+    template <class T>
+    void cosine_3_term(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
+    {
+        impl::generate<impl::cosine_3_term, true>(window, N, begin, end, p);
+    }
+    
+    template <class T>
+    void cosine_4_term(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
+    {
+        impl::generate<impl::cosine_4_term, true>(window, N, begin, end, p);
+    }
+    
+    template <class T>
+    void cosine_5_term(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
+    {
+        impl::generate<impl::cosine_5_term, true>(window, N, begin, end, p);
+    }
+    
+    template <class T>
     void hann(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
     {
         impl::generate<impl::hann, true>(window, N, begin, end, p);
@@ -523,11 +551,14 @@ namespace window_functions
     {
         impl::generate<impl::nuttall_minimal_98dB, true>(window, N, begin, end, p);
     }
-
+    
     template <class T>
-    void cosine_sum(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
+    void sine_taper(T *window, uint32_t N, uint32_t begin, uint32_t end, const params& p)
     {
-        impl::generate<impl::cosine_sum, true>(window, N, begin, end, p);
+        params p1(std::round(p.a0));
+        p1.exponent = p.exponent;
+        
+        impl::generate<impl::sine_taper, false>(window, N, begin, end, p1);
     }
     
     template <class T>
@@ -556,6 +587,8 @@ namespace window_functions
             return generators[type](window, N, begin, end, p);
         }
         
+        window_generator<T> *get(size_t type) {return generators[type]; }
+        
         window_generator<T> *generators[sizeof...(gens)] = { gens... };
     };
 
@@ -577,58 +610,6 @@ void window_flat_top(T window, uint32_t windowSize, uint32_t generateSize)
 {
 	for (uint32_t i = 0; i < generateSize; i++)
         window[i] = 0.2810639 - (0.5208972 * cos(WINDOW_TWOPI * window_functions::normalise(i, windowSize))) + (0.1980399 * cos(WINDOW_FOURPI * window_functions::normalise(i, windowSize)));
-}
-
-
-// The below is incorrect!!!!
-
-template <class T>
-void window_multisine_tapers(T window, uint32_t windowSize, uint32_t generateSize, uint32_t num_tapers)
-{
-	for (uint32_t j = 0; j < generateSize; j++)
-		window[j] = 0.0;
-	
-	for (uint32_t i = 0; i < num_tapers; i++)
-	{
-		for (uint32_t j = 0; j < generateSize; j++)
-			window[j] += sin(WINDOW_PI * (double) (i + 1) * (double) (j + 1) / (double) (windowSize + 1));
-	}
-}
-
-template <class T>
-void window_msinetaper1(T window, uint32_t windowSize, uint32_t generateSize)
-{
-	window_multisine_tapers(window, windowSize, generateSize, 1);
-}
-
-template <class T>
-void window_msinetaper2(T window, uint32_t windowSize, uint32_t generateSize)
-{
-	window_multisine_tapers(window, windowSize, generateSize, 2);
-}
-
-template <class T>
-void window_msinetaper3(T window, uint32_t windowSize, uint32_t generateSize)
-{
-	window_multisine_tapers(window, windowSize, generateSize, 3);
-}
-
-template <class T>
-void window_msinetaper4(T window, uint32_t windowSize, uint32_t generateSize)
-{
-	window_multisine_tapers(window, windowSize, generateSize, 4);
-}
-
-template <class T>
-void window_msinetaper5(T window, uint32_t windowSize, uint32_t generateSize)
-{
-	window_multisine_tapers(window, windowSize, generateSize, 5);
-}
-
-template <class T>
-void window_msinetaper6(T window, uint32_t windowSize, uint32_t generateSize)
-{
-	window_multisine_tapers(window, windowSize, generateSize, 6);
 }
 */
 
