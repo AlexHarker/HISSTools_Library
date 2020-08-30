@@ -119,20 +119,20 @@ int main(int argc, const char * argv[])
     using namespace window_functions;
     
     params ep;
-    params tp(1.0, 0.1, 0.9);
-    params typ(1.0, 0.1);
-    params p(1.0, 0.5, 0.5);
+    params tp(0.1, 0.9);
+    params typ(0.1);
+    params p(0.5, 0.5);
     
-    check_window<decltype(&window_parzen<double*>)>("parzen", &window_parzen<double*>, ep);
-    check_window<decltype(&window_welch<double*>)>("welch", &window_welch<double*>, ep);
-    check_window<decltype(&window_cosine<double*>)>("cosine", &window_cosine<double*>, ep);
-    check_window<decltype(&window_hann<double*>)>("hann", &window_hann<double*>, ep);
-    check_window<decltype(&window_triangle<double*>)>("triangle", &window_triangle<double*>, ep);
-    check_window<decltype(&window_trapezoid<double*>)>("trapezoid", &window_trapezoid<double*>, tp);
-    check_window<decltype(&window_tukey<double*>)>("tukey", &window_tukey<double*>, typ);
+    check_window<decltype(&window_parzen<double>)>("parzen", &window_parzen<double>, ep);
+    check_window<decltype(&window_welch<double>)>("welch", &window_welch<double>, ep);
+    check_window<decltype(&window_sine<double>)>("sine", &window_sine<double>, ep);
+    check_window<decltype(&window_hann<double>)>("hann", &window_hann<double>, ep);
+    check_window<decltype(&window_triangle<double>)>("triangle", &window_triangle<double>, ep);
+    check_window<decltype(&window_trapezoid<double>)>("trapezoid", &window_trapezoid<double>, tp);
+    check_window<decltype(&window_tukey<double>)>("tukey", &window_tukey<double>, typ);
 
     for (int i = 0; i < iter; i++)
-        window_cosine(window, size, size, params());
+        window_sine(window, size, size, params());
     
     Timer timer;
     
@@ -144,12 +144,16 @@ int main(int argc, const char * argv[])
     
     timer.start();
     for (int i = 0; i < iter; i++)
-        window_cosine_sum(window, size, size, p);
+        window_hann(window, size, size, params(0.2, 0.3));
     timer.stop();
     timer.finish("Non-branch Speed Test");
     
     timer.relative("Window Speed Test");
 
+    indexed_generator<double, window_trapezoid<double>, window_hann<double>> gen;
+    
+    gen(0, window, size, size, params(0.2, 0.3));
+    
     if (argc)
     {
         std::cout << argv[1];
