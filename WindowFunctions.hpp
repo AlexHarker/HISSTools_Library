@@ -664,7 +664,6 @@ namespace window_functions
         
         window_generator<T> *generators[sizeof...(gens)] = { gens... };
     };
-
 }
 
 #endif
