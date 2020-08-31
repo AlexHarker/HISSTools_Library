@@ -220,7 +220,7 @@ namespace window_functions
         
         inline double blackman(uint32_t i, uint32_t N, const params& p)
         {
-            return cosine_3_term(i, N, params(0.42, -0.5, 0.08));
+            return cosine_3_term(i, N, params(0.42, 0.5, 0.08));
         }
         
         inline double exact_blackman(uint32_t i, uint32_t N, const params& p)
