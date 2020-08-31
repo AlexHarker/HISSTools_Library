@@ -28,7 +28,7 @@ namespace window_functions
         constexpr params(double A0 = 0.0, double A1 = 0.0, double A2 = 0.0, double A3 = 0.0, double A4 = 0.0, double exp = 1.0)
         : a0(A0), a1(A1), a2(A2), a3(A3), a4(A4), exponent(exp) {}
         
-        constexpr params(double *param_array, int N, double exp)
+        constexpr params(const double *param_array, int N, double exp)
         : a0(N > 0 ? param_array[0] : 0.0)
         , a1(N > 1 ? param_array[1] : 0.0)
         , a2(N > 2 ? param_array[2] : 0.0)
