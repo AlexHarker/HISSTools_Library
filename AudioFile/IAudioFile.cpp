@@ -547,7 +547,7 @@ namespace HISSTools
     
     void IAudioFile::parseWaveHeader(const char* fileType)
     {
-        char chunk[16];
+        char chunk[40];
         uint32_t chunkSize;
         
         // Check endianness
@@ -558,7 +558,9 @@ namespace HISSTools
         // Search for the format chunk and read first 16 bytes (ignored any
         // extended header info)
         
-        if (!(findChunk("fmt ", chunkSize) && readChunk(chunk, 16, chunkSize)))
+        if (!(findChunk("fmt ", chunkSize)
+                && (chunkSize != 16 || chunkSize != 18 || chunkSize != 40)
+                && readChunk(chunk, chunkSize, chunkSize)))
         {
             setErrorBit(ERR_FILE_BAD_FORMAT);
             return;
@@ -566,18 +568,43 @@ namespace HISSTools
         
         // Check for supported formats
         
-        if (getU16(chunk, getHeaderEndianness()) != 0x0001 && getU16(chunk, getHeaderEndianness()) != 0x0003)
-        {
-            setErrorBit(ERR_WAVE_UNSUPPORTED_FORMAT);
-            return;
-        }
+        uint16_t formatTag = getU16(chunk, getHeaderEndianness());
         
         // Retrieve relevant data
+        
+        uint16_t formatByte;
+        uint16_t bitDepth = getU16(chunk + 14, getHeaderEndianness());
+        
+        switch (formatTag)
+        {
+          case 0x0001:
+          case 0x0003:
+          {
+            formatByte = getU16(chunk + 0, getHeaderEndianness());
+            break;
+          }
+          case 0xFFFE: //WAVE_FORMAT_EXTENSIBLE
+          {
+            formatByte = getU16(chunk + 24, getHeaderEndianness());
+            bool validFormat = (formatByte == 0x0001) || (formatByte == 0x0003);
+            uint16_t validBitsPerSample = getU16(chunk + 18, getHeaderEndianness());
+
+            constexpr unsigned char guidBytes[14] = {0x00,0x00,0x00,0x00,0x10,0x00,0x80,0x00,0x00,0xaa,0x00,0x38,0x9B,0x71};
+            bool validGUID = std::memcmp(chunk + 26, &guidBytes, 14) == 0;
+
+            //No support for funky stuff like 24-bits stored in 32, or non PCM/float formats
+            if(validFormat && validGUID && validBitsPerSample == bitDepth) break;
+          }
+          default:
+          {
+            setErrorBit(ERR_WAVE_UNSUPPORTED_FORMAT);
+            return;
+          }
+        }
         
         NumberFormat format = getU16(chunk + 0, getHeaderEndianness()) == 0x0003 ? kAudioFileFloat : kAudioFileInt;
         setChannels(getU16(chunk + 2, getHeaderEndianness()));
         setSamplingRate(getU32(chunk + 4, getHeaderEndianness()));
-        uint16_t bitDepth = getU16(chunk + 14, getHeaderEndianness());
         
         // Set PCM Format
         
