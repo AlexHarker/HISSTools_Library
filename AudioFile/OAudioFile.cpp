@@ -619,65 +619,72 @@ namespace HISSTools
         bool success = true;
   
         uint32_t byteDepth = getByteDepth();
-        uintptr_t inputSamples = (channel < 0) ? getChannels() * numFrames : numFrames;
+        uint16_t numChannels = (channel < 0) ? getChannels() : 1;
         uint32_t channelStep = (channel < 0) ? 1 : getChannels();
         uintptr_t byteStep = byteDepth * channelStep;
         FrameCount endFrame = getPosition() + numFrames;
           
         // Write zeros to channels if necessary (multichannel files written one channel at a time)
-        success &= resize(endFrame);
+        
+        bool allChannels = !(channel >= 0 && getChannels() > 1);
+        
+        if (!allChannels)
+          success &= resize(endFrame);
 
         mFile.seekg(mFile.tellp());
-        
+                
         channel = std::max(channel, 0);
         
         while (numFrames)
         {
           FrameCount loopFrames = numFrames > WORK_LOOP_SIZE ? WORK_LOOP_SIZE : numFrames;
+          uintptr_t loopSamples = loopFrames * numChannels;
           uintptr_t j = channel * byteDepth;
           FrameCount pos = mFile.tellg();
 
           // Read chunk from file to write back to
-
-          mFile.clear();
-          mFile.read(reinterpret_cast<char*>(mBuffer), loopFrames * getFrameByteCount());
           
-          if(mFile.gcount() != loopFrames * getFrameByteCount())
+          if (!allChannels)
           {
-              setErrorBit(ERR_FILE_COULDNT_WRITE);
-              return;
+            mFile.clear();
+            mFile.read(reinterpret_cast<char*>(mBuffer), loopFrames * getFrameByteCount());
+            
+            if(mFile.gcount() != loopFrames * getFrameByteCount())
+            {
+                setErrorBit(ERR_FILE_COULDNT_WRITE);
+                return;
+            }
           }
-
           // Write audio data
           
           switch (getPCMFormat())
           {
               case kAudioFileInt8:
                   if (getFileType() == kAudioFileWAVE)
-                      for (uintptr_t i = 0; i < loopFrames; i++, j += byteStep)
+                      for (uintptr_t i = 0; i < loopSamples; i++, j += byteStep)
                           rawU08(inputToU8(input[i]),mBuffer + j);
                   else
-                      for (uintptr_t i = 0; i < loopFrames; i++)
+                      for (uintptr_t i = 0; i < loopSamples; i++)
                           rawU08(inputToU32(input[i], 8),mBuffer + j);
                   break;
 
               case kAudioFileInt16:
-                  for (uintptr_t i = 0; i < loopFrames; i++, j += byteStep)
+                  for (uintptr_t i = 0; i < loopSamples; i++, j += byteStep)
                       rawU16(inputToU32(input[i], 16), getAudioEndianness(), mBuffer + j);
                   break;
 
               case kAudioFileInt24:
-                  for (uintptr_t i = 0; i < loopFrames; i++, j += byteStep)
+                  for (uintptr_t i = 0; i < loopSamples; i++, j += byteStep)
                       rawU24(inputToU32(input[i], 24), getAudioEndianness(), mBuffer + j);
                   break;
 
               case kAudioFileInt32:
-                  for (uintptr_t i = 0; i < loopFrames; i++, j += byteStep)
+                  for (uintptr_t i = 0; i < loopSamples; i++, j += byteStep)
                       rawU32(inputToU32(input[i], 32), getAudioEndianness(), mBuffer + j);
                   break;
 
               case kAudioFileFloat32:
-                  for (uintptr_t i = 0; i < loopFrames; i++, j += byteStep)
+                  for (uintptr_t i = 0; i < loopSamples; i++, j += byteStep)
                   {
                       float value = input[i];
                       rawU32(*reinterpret_cast<uint32_t*>(&value), getAudioEndianness(), mBuffer + j);
@@ -685,7 +692,7 @@ namespace HISSTools
                   break;
 
               case kAudioFileFloat64:
-                  for (uintptr_t i = 0; i < loopFrames; i++,  j += byteStep)
+                  for (uintptr_t i = 0; i < loopSamples; i++,  j += byteStep)
                   {
                       double value = input[i];
                       rawU64(*reinterpret_cast<uint64_t*>(&value), getAudioEndianness(), mBuffer + j);
@@ -695,11 +702,11 @@ namespace HISSTools
           
           //write buffer back to file
           
-          mFile.seekp(pos);
+          if (!allChannels) mFile.seekp(pos);
           bool didwrite = writeInternal(reinterpret_cast<const char*>(mBuffer), loopFrames * getFrameByteCount());
           
           numFrames -= loopFrames;
-          input     += loopFrames;
+          input     += loopSamples;
         }
         
         // Update number of frames
