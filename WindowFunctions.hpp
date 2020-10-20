@@ -139,10 +139,10 @@ namespace window_functions
             
             const double x = normalise(i, N);
             
-            if (x <= a)
+            if (x < a)
                 return x / a;
             
-            if (x >= b)
+            if (x > b)
                 return 1.0 - ((x - b) / (1.0 - b));
             
             return 1.0;
