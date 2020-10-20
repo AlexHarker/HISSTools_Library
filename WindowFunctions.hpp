@@ -211,10 +211,9 @@ namespace window_functions
         
         inline double hamming(uint32_t i, uint32_t N, const params& p)
         {
-            // FIX - review
-            //alpha is 0.54 or 25/46 or 0.543478260869565
+            // N.B. here we use approx alpha of 0.54 (not 25/46 or 0.543478260869565)
             // see equiripple notes on wikipedia
-            //return sum(i, N, constant(0.54), cosx(-0.46, pi2()));
+            
             return cosine_2_term(i, N, params(0.54));
         }
         
@@ -294,7 +293,7 @@ namespace window_functions
             double term = 1.0;
             double bessel = 1.0;
             
-            // N.B. - loop until term is zero for maximum accuracy
+            // N.B. - loop based on epsilon for maximum accuracy
             
             for (unsigned long i = 1; term > std::numeric_limits<double>::epsilon(); i++)
             {
