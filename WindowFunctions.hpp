@@ -161,7 +161,6 @@ namespace window_functions
         
         inline double parzen(uint32_t i, uint32_t N, const params& p)
         {
-            // FIX - check scaling
             const double N2 = static_cast<double>(N) * 0.5;
             
             auto w0 = [&](double x)
@@ -313,7 +312,6 @@ namespace window_functions
         
         inline double tukey(uint32_t i, uint32_t N, const params& p)
         {
-            // FIX - look at normalisation here...
             return 0.5 - 0.5 * cos(trapezoid(i, N, p) * pi());
         }
         
