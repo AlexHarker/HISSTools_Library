@@ -201,7 +201,7 @@ namespace window_functions
                        cosx(-p.a1, pi2()),
                        cosx(p.a2, pi4()),
                        cosx(-p.a3, pi6()),
-                       cosx(-p.a4, pi8()));
+                       cosx(p.a4, pi8()));
         }
         
         inline double hann(uint32_t i, uint32_t N, const params& p)
