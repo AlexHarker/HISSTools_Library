@@ -417,10 +417,8 @@ namespace window_functions
                 for (uint32_t i = begin; i < end; i++)
                     *window++ = toType(qb(Func(i, N, p)));
             }
-            else if (p.exponent > 0 && p.exponent == std::floor(p.exponent))
+            else if (p.exponent > 0 && p.exponent <= std::numeric_limits<int>().max() && p.exponent == std::floor(p.exponent))
             {
-                // FIX range
-                
                 int exponent = static_cast<int>(p.exponent);
                 
                 for (uint32_t i = begin; i < end; i++)
