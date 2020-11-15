@@ -53,7 +53,9 @@ public:
     }
 
     void set_max_fft_size(uintptr_t size) { processor::set_max_fft_size(size); }
-        
+    
+    uintptr_t max_fft_size() { return processor::max_fft_size(); }
+
     void smooth(T *out, const T *in, const T *kernel, uintptr_t length, uintptr_t kernel_length, double width_lo, double width_hi, bool symmetric, EdgeType edges)
     {
         if (!length || !kernel_length)
