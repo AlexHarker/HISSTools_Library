@@ -22,6 +22,14 @@ namespace HISSTools
         PartitionedConvolve(uintptr_t maxFFTSize, uintptr_t maxLength, uintptr_t offset, uintptr_t length);
         ~PartitionedConvolve();
         
+        // Non-moveable and copyable
+
+        PartitionedConvolve(PartitionedConvolve& obj) = delete;
+        PartitionedConvolve& operator = (PartitionedConvolve& obj) = delete;
+        PartitionedConvolve(PartitionedConvolve&& obj) = delete;
+        PartitionedConvolve& operator = (PartitionedConvolve        //obj.mFreeFunction = nullptr;
+&& obj) = delete;
+        
         ConvolveError setFFTSize(uintptr_t FFTSize);
         ConvolveError setLength(uintptr_t length);
         void setOffset(uintptr_t offset);

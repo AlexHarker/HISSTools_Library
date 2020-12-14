@@ -138,15 +138,19 @@ public:
     : mLock(false), mPtr(nullptr), mSize(0), mFreeFunction(nullptr)
     {
         *this = std::move(obj);
+        obj.mPtr = nullptr;
+        obj.mFreeFunction = nullptr;
     }
     
     MemorySwap& operator = (MemorySwap&& obj)
     {
         clear();
         obj.lock();
-        mPtr = std::move(obj.mPtr);
-        mSize = std::move(obj.mSize);
-        mFreeFunction = std::move(obj.mFreeFunction);
+        mPtr = obj.mPtr;
+        mSize = obj.mSize;
+        mFreeFunction = obj.mFreeFunction;
+        obj.mPtr = nullptr;
+        obj.mFreeFunction = nullptr;
         obj.unlock();
         
         return *this;

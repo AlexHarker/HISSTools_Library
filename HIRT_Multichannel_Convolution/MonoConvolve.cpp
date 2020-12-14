@@ -41,16 +41,16 @@ HISSTools::MonoConvolve::MonoConvolve(uintptr_t maxLength, bool zeroLatency, uin
 // Move Constructor
 
 HISSTools::MonoConvolve::MonoConvolve(MonoConvolve&& obj)
-: mAllocator(obj.mAllocator),
-mSizes(std::move(obj.mSizes)),
-mTime1(std::move(obj.mTime1)),
-mPart1(std::move(obj.mPart1)),
-mPart2(std::move(obj.mPart2)),
-mPart3(std::move(obj.mPart3)),
-mPart4(std::move(obj.mPart4)),
-mLength(obj.mLength),
-mPart4Offset(obj.mPart4Offset),
-mReset(true)
+: mAllocator(obj.mAllocator)
+, mSizes(std::move(obj.mSizes))
+, mTime1(std::move(obj.mTime1))
+, mPart1(std::move(obj.mPart1))
+, mPart2(std::move(obj.mPart2))
+, mPart3(std::move(obj.mPart3))
+, mPart4(std::move(obj.mPart4))
+, mLength(obj.mLength)
+, mPart4Offset(obj.mPart4Offset)
+, mReset(true)
 {}
 
 // Move Assignment
