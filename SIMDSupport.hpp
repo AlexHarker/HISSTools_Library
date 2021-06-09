@@ -4,8 +4,17 @@
 
 #include <cmath>
 #include <cstdint>
+
+#if defined(__arm__) || defined(__arm64)
+#include <memory.h>
+#elif defined(__APPLE__) || defined(__linux__) || defined(_WIN32)
+#if defined(_WIN32)
+#include <malloc.h>
+#include <intrin.h>
+#endif
 #include <emmintrin.h>
 #include <immintrin.h>
+#endif
 
 #ifdef __APPLE__
 
@@ -735,4 +744,3 @@ template <int N> SIMDType<float, N> abs(const SIMDType<float, N> a)
 }
 
 #endif
-
