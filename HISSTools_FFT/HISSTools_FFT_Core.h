@@ -66,7 +66,7 @@ namespace hisstools_fft_impl{
     
 // Aligned Allocation
 
-#if defined(__APPLE__) || defined (__linux__)
+#if defined(__APPLE__) || defined (__linux__) || defined(__EMSCRIPTEN__)
     
     template <class T>
     T *allocate_aligned(size_t size)
@@ -76,16 +76,6 @@ namespace hisstools_fft_impl{
             return static_cast<T *>(mem);
         else
             return nullptr;
-    }
-
-#elif defined(__EMSCRIPTEN__)
-
-    template <class T>
-    T *allocate_aligned(size_t size)
-    {
-        void *mem;
-        posix_memalign(&mem, alignment_size, size * sizeof(T));
-        return static_cast<T *>(mem);
     }
 
 #elif defined(__arm__) || defined(__arm64__)
