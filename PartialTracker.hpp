@@ -191,12 +191,12 @@ public:
     }
     
     const track<T> &get_track(size_t idx) { return m_tracks[idx]; }
-    
-private:
-    
+        
     size_t max_peaks() const { return m_max_peaks; }
     size_t max_tracks() const { return m_max_tracks; }
     
+private:
+
     void init(size_t n_peaks, size_t n_tracks)
     {
         m_max_peaks = n_peaks;
