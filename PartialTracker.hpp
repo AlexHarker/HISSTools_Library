@@ -68,7 +68,7 @@ struct track
 };
 
 template <typename T, size_t N, size_t M>//, typename Allocator = aligned_allocator>
-class peak_tracker
+class partial_tracker
 {
     typedef T (*CostType)(T, T, T);
     typedef const T&(peak<T>::*GetMethod)();
@@ -78,6 +78,7 @@ class peak_tracker
 public:
 
     peak_tracker() : m_freq_scale(1), m_amp_scale(1)
+    partial_tracker()
     {
         reset();
         set_cost_calculation(true, true, true);
@@ -100,7 +101,7 @@ public:
     
     void reset()
     {
-        for (size_t i = 0; i < N; i++)
+        for (size_t i = 0; i < max_tracks(); i++)
             m_tracks[i] = track<T>{};
     }
     
@@ -167,15 +168,15 @@ public:
     
 private:
     
-    size_t max_peaks() const { return M; }
-    size_t max_tracks() const { return N; }
+    size_t max_peaks() const { return m_max_peaks; }
+    size_t max_tracks() const { return m_max_tracks; }
     
     void reset_assignments()
     {
-        for (size_t i = 0; i < M; i++)
+        for (size_t i = 0; i < max_peaks(); i++)
             m_peak_assigned[i] = false;
         
-        for (size_t i = 0; i < N; i++)
+        for (size_t i = 0; i < max_tracks(); i++)
             m_track_assigned[i] = false;
     }
     
@@ -211,7 +212,7 @@ private:
 
         for (size_t i = 0; i < n_peaks; i++)
         {
-            for (size_t j = 0; j < N; j++)
+            for (size_t j = 0; j < max_tracks(); j++)
             {
                 if (m_tracks[j].m_active)
                 {
