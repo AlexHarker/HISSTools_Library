@@ -1,6 +1,6 @@
 
-#ifndef PEAK_TRACKER_H
-#define PEAK_TRACKER_H
+#ifndef PARTIAL_TRACKER_H
+#define PARTIAL_TRACKER_H
 
 #include <algorithm>
 #include <limits>

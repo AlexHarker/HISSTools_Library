@@ -25,7 +25,7 @@
 /* Begin PBXFileReference section */
 		B80A0567267E1C3000AB6A91 /* Peak_Tester */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Peak_Tester; sourceTree = BUILT_PRODUCTS_DIR; };
 		B80A056A267E1C3000AB6A91 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
-		B8474420267E1C7100DA966D /* PeakTracker.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = PeakTracker.hpp; path = ../../../PeakTracker.hpp; sourceTree = "<group>"; };
+		B8474420267E1C7100DA966D /* PartialTracker.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = PartialTracker.hpp; path = ../../../PartialTracker.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -58,7 +58,7 @@
 		B80A0569267E1C3000AB6A91 /* Peak_Tester */ = {
 			isa = PBXGroup;
 			children = (
-				B8474420267E1C7100DA966D /* PeakTracker.hpp */,
+				B8474420267E1C7100DA966D /* PartialTracker.hpp */,
 				B80A056A267E1C3000AB6A91 /* main.cpp */,
 			);
 			path = Peak_Tester;
