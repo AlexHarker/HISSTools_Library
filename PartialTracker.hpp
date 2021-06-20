@@ -38,7 +38,7 @@ public:
     {
         if (m_db == std::numeric_limits<T>::infinity())
             m_db = std::log10(m_amp) * 20.0;
-            
+        
         return m_db;
     }
     
@@ -53,18 +53,20 @@ private:
 template <typename T>
 struct track
 {
-    track() : m_peak(), m_active(false), m_start(false) {}
-    track(peak<T> peak) : m_peak(peak), m_active(true), m_start(true) {}
+    enum State { kOff, kStart, kContinue, kSwitch  };
     
-    void set_peak(const peak<T>& peak)
+    track() : m_peak(), m_state(kOff) {}
+    
+    void set_peak(const peak<T>& peak, bool start)
     {
         m_peak = peak;
-        m_start = false;
+        m_state = start ? (active() ? kSwitch : kStart): kContinue;
     }
     
+    bool active() const { return m_state != kOff; }
+    
     peak<T> m_peak;
-    bool m_active;
-    bool m_start;
+    State m_state;
 };
 
 template <typename T, typename Allocator = malloc_allocator>
@@ -72,14 +74,14 @@ class partial_tracker
 {
     typedef T (*CostType)(T, T, T);
     typedef const T&(peak<T>::*GetMethod)() const;
-
+    
     using cost = std::tuple<T, size_t, size_t>;
     
     template <bool B>
     using enable_if_t = typename std::enable_if<B, int>::type;
     
 public:
-
+    
     template <typename U = Allocator, enable_if_t<std::is_default_constructible<U>::value> = 0>
     partial_tracker(size_t n_tracks, size_t n_peaks)
     {
@@ -136,11 +138,11 @@ public:
         // Setup
         
         n_peaks = std::min(n_peaks, max_peaks());
-
+        
         reset_assignments();
         
         // Calculate cost functions
-    
+        
         size_t n_costs = find_costs(peaks, n_peaks);
         
         // Sort costs
@@ -148,7 +150,7 @@ public:
         std::sort(m_costs, m_costs + n_costs,
                   [](const cost& a, const cost& b)
                   { return std::get<0>(a) < std::get<0>(b); });
-
+        
         // Assign in order of lowest cost
         
         for (size_t i = 0; i < n_costs; i++)
@@ -158,7 +160,7 @@ public:
             
             if (!m_peak_assigned[peak_idx] && !m_track_assigned[track_idx])
             {
-                m_tracks[track_idx].set_peak(peaks[peak_idx]);
+                m_tracks[track_idx].set_peak(peaks[peak_idx], false);
                 assign(peak_idx, track_idx);
             }
         }
@@ -173,7 +175,7 @@ public:
                 {
                     if (!m_track_assigned[j])
                     {
-                        m_tracks[j] = track<T>(peaks[i]);
+                        m_tracks[j].set_peak(peaks[i], true);
                         assign(i, j);
                         break;
                     }
@@ -191,12 +193,12 @@ public:
     }
     
     const track<T> &get_track(size_t idx) { return m_tracks[idx]; }
-        
+    
     size_t max_peaks() const { return m_max_peaks; }
     size_t max_tracks() const { return m_max_tracks; }
     
 private:
-
+    
     void init(size_t n_peaks, size_t n_tracks)
     {
         m_max_peaks = n_peaks;
@@ -251,19 +253,19 @@ private:
         
         T freq_scale = m_square_cost ? m_freq_scale * m_freq_scale : m_freq_scale;
         T amp_scale = m_square_cost ? m_amp_scale * m_amp_scale : m_amp_scale;
-
+        
         for (size_t i = 0; i < n_peaks; i++)
         {
             for (size_t j = 0; j < max_tracks(); j++)
             {
-                if (m_tracks[j].m_active)
+                if (m_tracks[j].active())
                 {
                     peak<T>& a = peaks[i];
                     peak<T>& b = m_tracks[j].m_peak;
-                
+                    
                     T cost = CostFunc((a.*Freq)(), (b.*Freq)(), freq_scale)
                     + CostFunc((a.*Amp)(), (b.*Amp)(), amp_scale);
-                
+                    
                     if (cost < m_max_cost)
                         m_costs[n_costs++] = std::make_tuple(cost, i, j);
                 }
