@@ -23,10 +23,10 @@ public:
     
     peak() : peak(0, 0) {}
     
-    const T &freq() { return m_freq; }
-    const T &amp() { return m_amp; }
+    const T &freq() const { return m_freq; }
+    const T &amp() const { return m_amp; }
     
-    const T &pitch()
+    const T &pitch() const
     {
         if (m_pitch == std::numeric_limits<T>::infinity())
             m_pitch = std::log2(m_freq / 440.0) * 12.0 + 69.0;
@@ -34,7 +34,7 @@ public:
         return m_pitch;
     }
     
-    const T &db()
+    const T &db() const
     {
         if (m_db == std::numeric_limits<T>::infinity())
             m_db = std::log10(m_amp) * 20.0;
@@ -46,8 +46,8 @@ private:
     
     T m_freq;
     T m_amp;
-    T m_pitch;
-    T m_db;
+    mutable T m_pitch;
+    mutable T m_db;
 };
 
 template <typename T>
@@ -71,7 +71,7 @@ template <typename T, typename Allocator = malloc_allocator>
 class partial_tracker
 {
     typedef T (*CostType)(T, T, T);
-    typedef const T&(peak<T>::*GetMethod)();
+    typedef const T&(peak<T>::*GetMethod)() const;
 
     using cost = std::tuple<T, size_t, size_t>;
     
