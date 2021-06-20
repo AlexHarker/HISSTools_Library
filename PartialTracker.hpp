@@ -3,6 +3,7 @@
 #define PARTIAL_TRACKER_H
 
 #include <algorithm>
+#include <cmath>
 #include <limits>
 #include <tuple>
 
