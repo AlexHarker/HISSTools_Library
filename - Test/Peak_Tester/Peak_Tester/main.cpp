@@ -8,9 +8,9 @@
 
 #include <iostream>
 
-#include "PeakTracker.hpp"
+#include "PartialTracker.hpp"
 
-using Tracker = peak_tracker<double, 12, 10>;
+using Tracker = partial_tracker<double>;
 
 void post_tracks(Tracker& tracker, int N)
 {
@@ -28,7 +28,7 @@ void post_tracks(Tracker& tracker, int N)
         
 int main(int argc, const char * argv[])
 {
-    peak_tracker<double, 12, 10> tracker;
+    Tracker tracker(12, 12);
     peak<double> peaks[10];
     
     for (int i = 0; i < 10; i++)
