@@ -67,7 +67,7 @@ struct track
     bool m_start;
 };
 
-template <typename T, size_t N, size_t M>//, typename Allocator = aligned_allocator>
+template <typename T, typename Allocator = malloc_allocator>
 class partial_tracker
 {
     typedef T (*CostType)(T, T, T);
@@ -75,15 +75,42 @@ class partial_tracker
 
     using cost = std::tuple<T, size_t, size_t>;
     
+    template <bool B>
+    using enable_if_t = typename std::enable_if<B, int>::type;
+    
 public:
 
     peak_tracker() : m_freq_scale(1), m_amp_scale(1)
-    partial_tracker()
+    template <typename U = Allocator, enable_if_t<std::is_default_constructible<U>::value> = 0>
+    partial_tracker(size_t n_tracks, size_t n_peaks)
     {
-        reset();
-        set_cost_calculation(true, true, true);
-        set_cost_scaling(T(0.5), T(6), T(1));
+        init(n_tracks, n_peaks);
     }
+    
+    template <typename U = Allocator, enable_if_t<std::is_copy_constructible<U>::value> = 0>
+    partial_tracker(const Allocator& allocator, size_t n_tracks, size_t n_peaks)
+    : m_allocator(allocator)
+    {
+        init(n_tracks, n_peaks);
+    }
+    
+    template <typename U = Allocator, enable_if_t<std::is_default_constructible<U>::value> = 0>
+    partial_tracker(Allocator&& allocator, size_t n_tracks, size_t n_peaks)
+    : m_allocator(allocator)
+    {
+        init(n_tracks, n_peaks);
+    }
+    
+    ~partial_tracker()
+    {
+        m_allocator.deallocate(m_tracks);
+        m_allocator.deallocate(m_costs);
+        m_allocator.deallocate(m_peak_assigned);
+        m_allocator.deallocate(m_track_assigned);
+    }
+    
+    partial_tracker(const partial_tracker&) = delete;
+    partial_tracker & operator=(const partial_tracker&) = delete;
     
     void set_cost_calculation(bool square_cost, bool use_pitch, bool use_db)
     {
@@ -171,6 +198,22 @@ private:
     size_t max_peaks() const { return m_max_peaks; }
     size_t max_tracks() const { return m_max_tracks; }
     
+    void init(size_t n_peaks, size_t n_tracks)
+    {
+        m_max_peaks = n_peaks;
+        m_max_tracks = n_tracks;
+        
+        m_tracks = m_allocator.template allocate<track<T>>(n_tracks);
+        m_costs = m_allocator.template allocate<cost>(n_tracks * n_peaks);
+        m_peak_assigned = m_allocator.template allocate<bool>(n_peaks);
+        m_track_assigned = m_allocator.template allocate<bool>(n_tracks);
+        
+        reset();
+        
+        set_cost_calculation(true, true, true);
+        set_cost_scaling(T(0.5), T(6), T(1));
+    }
+    
     void reset_assignments()
     {
         for (size_t i = 0; i < max_peaks(); i++)
@@ -257,16 +300,31 @@ private:
         }
     }
     
+    // Allocator
+    
+    Allocator m_allocator;
+    
+    // Sizes
+    
+    size_t m_max_peaks;
+    size_t m_max_tracks;
+    
+    // Cost parameters
+    
     bool m_use_pitch;
     bool m_use_db;
     bool m_square_cost;
-    track<T> m_tracks[N];
-    cost m_costs[M * N];
-    bool m_peak_assigned[M];
-    bool m_track_assigned[N];
+    
     T m_freq_scale;
     T m_amp_scale;
     T m_max_cost;
+    
+    // Tracking data
+    
+    track<T> *m_tracks;
+    cost *m_costs;
+    bool *m_peak_assigned;
+    bool *m_track_assigned;
 };
 
 #endif
