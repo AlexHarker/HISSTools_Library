@@ -80,7 +80,6 @@ class partial_tracker
     
 public:
 
-    peak_tracker() : m_freq_scale(1), m_amp_scale(1)
     template <typename U = Allocator, enable_if_t<std::is_default_constructible<U>::value> = 0>
     partial_tracker(size_t n_tracks, size_t n_peaks)
     {
