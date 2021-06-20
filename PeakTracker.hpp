@@ -35,7 +35,7 @@ public:
     
     const T &db()
     {
-        if (m_pitch == std::numeric_limits<T>::infinity())
+        if (m_db == std::numeric_limits<T>::infinity())
             m_db = std::log10(m_amp) * 20.0;
             
         return m_db;
@@ -85,7 +85,7 @@ public:
     
     void set_cost_calculation(bool square_cost, bool use_pitch, bool use_db)
     {
-        square_cost = square_cost;
+        m_square_cost = square_cost;
         m_use_pitch = use_pitch;
         m_use_db = use_db;
     }
@@ -205,18 +205,24 @@ private:
     {
         size_t n_costs = 0;
         
+        T freq_scale = m_square_cost ? m_freq_scale * m_freq_scale : m_freq_scale;
+        T amp_scale = m_square_cost ? m_amp_scale * m_amp_scale : m_amp_scale;
+
         for (size_t i = 0; i < n_peaks; i++)
         {
             for (size_t j = 0; j < N; j++)
             {
-                peak<T>& a = peaks[i];
-                peak<T>& b = m_tracks[j].m_peak;
+                if (m_tracks[j].m_active)
+                {
+                    peak<T>& a = peaks[i];
+                    peak<T>& b = m_tracks[j].m_peak;
                 
-                T cost = CostFunc((a.*Freq)(), (b.*Freq)(), m_freq_scale)
-                + CostFunc((a.*Amp)(), (b.*Amp)(), m_amp_scale);
+                    T cost = CostFunc((a.*Freq)(), (b.*Freq)(), freq_scale)
+                    + CostFunc((a.*Amp)(), (b.*Amp)(), amp_scale);
                 
-                if (cost < m_max_cost)
-                    m_costs[n_costs++] = std::make_tuple(cost, i, j);
+                    if (cost < m_max_cost)
+                        m_costs[n_costs++] = std::make_tuple(cost, i, j);
+                }
             }
         }
         
