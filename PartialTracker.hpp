@@ -51,13 +51,16 @@ private:
 };
 
 template <typename T>
+using cpeak = const peak<T>;
+
+template <typename T>
 struct track
 {
     enum State { kOff, kStart, kContinue, kSwitch  };
     
     track() : m_peak(), m_state(kOff) {}
     
-    void set_peak(const peak<T>& peak, bool start)
+    void set_peak(cpeak<T>& peak, bool start)
     {
         m_peak = peak;
         m_state = start ? (active() ? kSwitch : kStart): kContinue;
@@ -69,7 +72,90 @@ struct track
     State m_state;
 };
 
-template <typename T, typename Allocator = malloc_allocator>
+template <typename T, bool Impl>
+class change_tracker
+{
+public:
+    
+    change_tracker() : m_active(true)
+    {
+        reset();
+    }
+    
+    void add_change(cpeak<T>& now, cpeak<T>& prev, bool use_pitch, bool use_db)
+    {
+        T f_change;
+        T a_change;
+        
+        if (!m_active)
+            return;
+        
+        if (use_pitch)
+            f_change = now.pitch() - prev.pitch();
+        else
+            f_change = now.freq() - prev.freq();
+        
+        if (use_db)
+            a_change = now.db() - prev.db();
+        else
+            a_change = now.amp() - prev.amp();
+        
+        m_freq_sum += f_change;
+        m_freq_abs += std::abs(f_change);
+        m_amp_sum += a_change;
+        m_amp_abs += std::abs(a_change);
+        m_count++;
+    }
+    
+    void complete()
+    {
+        if (m_count)
+        {
+            T recip = T(1) / static_cast<T>(m_count);
+            m_freq_sum *= recip;
+            m_freq_abs *= recip;
+            m_amp_sum *= recip;
+            m_amp_abs *= recip;
+        }
+    }
+    
+    void reset()
+    {
+        m_freq_sum = 0;
+        m_freq_abs = 0;
+        m_amp_sum = 0;
+        m_amp_abs = 0;
+        m_count = 0;
+    }
+    
+    T freq_sum() const { return m_freq_sum; }
+    T freq_abs() const { return m_freq_abs; }
+    T amp_sum() const { return m_amp_sum; }
+    T amp_abs() const { return m_amp_abs; }
+    
+    void active(bool on) { m_active = on; }
+    
+private:
+    
+    T m_freq_sum;
+    T m_freq_abs;
+    T m_amp_sum;
+    T m_amp_abs;
+    
+    bool m_active;
+    size_t m_count;
+};
+
+template <typename T>
+class change_tracker<T, false>
+{
+public:
+    void add_change(cpeak<T>& now, cpeak<T>& prev, bool use_pitch, bool use_db) {}
+    void complete() {}
+    void reset() {}
+};
+
+template <typename T, bool Changes = false, typename Allocator = malloc_allocator>
 class partial_tracker
 {
     typedef T (*CostType)(T, T, T);
@@ -131,6 +217,8 @@ public:
     {
         for (size_t i = 0; i < max_tracks(); i++)
             m_tracks[i] = track<T>{};
+        
+        m_changes.reset();
     }
     
     void process(peak<T> *peaks, size_t n_peaks, T start_threshold)
@@ -140,6 +228,7 @@ public:
         n_peaks = std::min(n_peaks, max_peaks());
         
         reset_assignments();
+        m_changes.reset();
         
         // Calculate cost functions
         
@@ -160,10 +249,17 @@ public:
             
             if (!m_peak_assigned[peak_idx] && !m_track_assigned[track_idx])
             {
-                m_tracks[track_idx].set_peak(peaks[peak_idx], false);
+                cpeak<T>& new_peak = peaks[peak_idx];
+                cpeak<T>& old_peak = m_tracks[track_idx].m_peak;
+                
+                m_changes.add_change(new_peak, old_peak, m_use_pitch, m_use_db);
+
+                m_tracks[track_idx].set_peak(new_peak, false);
                 assign(peak_idx, track_idx);
             }
         }
+        
+        m_changes.complete();
         
         // Start new tracks (prioritised by input order)
         
@@ -196,6 +292,21 @@ public:
     
     size_t max_peaks() const { return m_max_peaks; }
     size_t max_tracks() const { return m_max_tracks; }
+    
+    template<bool B = Changes, enable_if_t<B> = 0>
+    void calc_changes(bool calc) { return m_changes.active(calc); }
+    
+    template<bool B = Changes, enable_if_t<B> = 0>
+    T freq_change_sum() const { return m_changes.freq_sum(); }
+    
+    template<bool B = Changes, enable_if_t<B> = 0>
+    T freq_change_abs() const { return m_changes.freq_abs(); }
+    
+    template<bool B = Changes, enable_if_t<B> = 0>
+    T amp_change_sum() const { return m_changes.amp_sum(); }
+    
+    template<bool B = Changes, enable_if_t<B> = 0>
+    T amp_change_abs() const { return m_changes.amp_abs(); }
     
 private:
     
@@ -326,6 +437,8 @@ private:
     cost *m_costs;
     bool *m_peak_assigned;
     bool *m_track_assigned;
+    
+    change_tracker<T, Changes> m_changes;
 };
 
 #endif
