@@ -358,7 +358,7 @@ private:
     }
     
     template<CostType CostFunc, GetMethod Freq, GetMethod Amp>
-    size_t find_costs(peak<T> *peaks, size_t n_peaks)
+    size_t find_costs(cpeak<T> *peaks, size_t n_peaks)
     {
         size_t n_costs = 0;
         
@@ -371,8 +371,8 @@ private:
             {
                 if (m_tracks[j].active())
                 {
-                    peak<T>& a = peaks[i];
-                    peak<T>& b = m_tracks[j].m_peak;
+                    cpeak<T>& a = peaks[i];
+                    cpeak<T>& b = m_tracks[j].m_peak;
                     
                     T cost = CostFunc((a.*Freq)(), (b.*Freq)(), freq_scale)
                     + CostFunc((a.*Amp)(), (b.*Amp)(), amp_scale);
