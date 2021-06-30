@@ -56,7 +56,7 @@ using cpeak = const peak<T>;
 template <typename T>
 struct track
 {
-    enum State { kOff, kStart, kContinue, kSwitch  };
+    enum State { kOff, kStart, kContinue, kSwitch };
     
     track() : m_peak(), m_state(kOff) {}
     
