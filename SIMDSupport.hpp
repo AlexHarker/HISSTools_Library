@@ -79,15 +79,17 @@ struct SIMDLimits<float>
     static const int byte_width = 32;
 };
 
-#elif defined(__SSE__)
+#elif defined(__SSE__) || defined(__arm__) || defined(__arm64)
 #define SIMD_COMPILER_SUPPORT_LEVEL SIMD_COMPILER_SUPPORT_VEC128
 
+#if defined (__SSE__) || defined(__arm64)
 template<>
 struct SIMDLimits<double>
 {
     static const int max_size = 2;
     static const int byte_width = 16;
 };
+#endif
 
 template<>
 struct SIMDLimits<float>
@@ -374,6 +376,7 @@ struct SIMDType<float, 2>
 
 #ifdef SIMD_COMPILER_SUPPORT_NEON /* Neon Intrinsics */
 
+#if defined(__arm64)
 template<>
 struct SIMDType<double, 2> : public SIMDVector<double, float64x2_t, 2>
 {
@@ -441,6 +444,7 @@ struct SIMDType<double, 2> : public SIMDVector<double, float64x2_t, 2>
         return SIMDType<float, 2>(static_cast<float>(vals[0]), static_cast<float>(vals[1]));
     }
 };
+#endif /* defined (__arm64) */
 
 template<>
 struct SIMDType<float, 4> : public SIMDVector<float, float32x4_t, 4>
