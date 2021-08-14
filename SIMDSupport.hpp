@@ -169,10 +169,10 @@ struct SIMDType {};
 
 // ************* A Vector of Given Size (Made of Vectors) ************** //
 
-template <int final_size, class T>
+template <class T, int final_size>
 struct SizedVector
 {
-    typedef SizedVector SV;
+    using SV = SizedVector;
     typedef typename T::scalar_type scalar_type;
     static const int size = final_size;
     static const int array_size = final_size / T::size;
@@ -184,41 +184,7 @@ struct SizedVector
             mData[i] = a;
     }
     SizedVector(const SizedVector *ptr) { *this = *ptr; }
-    SizedVector(const typename T::scalar_type *array) { *this = *reinterpret_cast<const SizedVector *>(array); }
-    
-    // This template allows a static loop
-    
-    template <int First, int Last>
-    struct static_for
-    {
-        template <typename Fn>
-        void operator()(SizedVector &result, const SizedVector &a, const SizedVector &b, Fn const& fn) const
-        {
-            if (First < Last)
-            {
-                result.mData[First] = fn(a.mData[First], b.mData[First]);
-                static_for<First + 1, Last>()(result, a, b, fn);
-            }
-        }
-    };
-    
-    // This specialisation avoids infinite recursion
-    
-    template <int N>
-    struct static_for<N, N>
-    {
-        template <typename Fn>
-        void operator()(SV &result, const SV &a, const SV &b, Fn const& fn) const {}
-    };
-    
-    template <typename Op> friend SizedVector op(const SV& a, const SV& b, Op op)
-    {
-        SV result;
-        
-        static_for<0, array_size>()(result, a, b, op);
-        
-        return result;
-    }
+    SizedVector(const typename T::scalar_type *array) { static_for<0, array_size>().load(*this, array); }
     
     friend SV operator + (const SV& a, const SV& b) { return op(a, b, std::plus<T>()); }
     friend SV operator - (const SV& a, const SV& b) { return op(a, b, std::minus<T>()); }
@@ -241,6 +207,52 @@ struct SizedVector
     friend SV operator <= (const SV& a, const SV& b) { return op(a, b, std::less_equal<T>()); }
     
     T mData[array_size];
+    
+private:
+    
+    // Helpers
+    
+    // This template allows a static loop
+    
+    template <int First, int Last>
+    struct static_for
+    {
+        template <typename Fn>
+        void operator()(SV &result, const SV &a, const SV &b, Fn const& fn) const
+        {
+            result.mData[First] = fn(a.mData[First], b.mData[First]);
+            static_for<First + 1, Last>()(result, a, b, fn);
+        }
+        
+        void load(SV &vector, const typename T::scalar_type *array)
+        {
+            vector.mData[First].load(array);
+            static_for<First + 1, Last>().load(vector, array + T::size);
+        }
+    };
+    
+    // This specialisation avoids infinite recursion
+    
+    template <int N>
+    struct static_for<N, N>
+    {
+        template <typename Fn>
+        void operator()(SV &result, const SV &a, const SV &b, Fn const& fn) const {}
+        
+        void load(SV &vector, const typename T::scalar_type *array) {}
+    };
+    
+    // Op template
+    
+    template <typename Op>
+    friend SV op(const SV& a, const SV& b, Op op)
+    {
+        SV result;
+        
+        static_for<0, array_size>()(result, a, b, op);
+        
+        return result;
+    }
 };
 
 // ************** Platform-Agnostic Data Type Definitions ************** //
@@ -494,9 +506,9 @@ struct SIMDType<float, 4> : public SIMDVector<float, float32x4_t, 4>
         return _mm_shuffle_ps(a.mVal, b.mVal, ((z<<6)|(y<<4)|(x<<2)|w));
     }*/
     
-    operator SizedVector<4, SIMDType<double, 2>>()
+    operator SizedVector<SIMDType<double, 2>, 4>()
     {
-        SizedVector<4, SIMDType<double, 2>> vec;
+        SizedVector<SIMDType<double, 2>, 4> vec;
         
         vec.mData[0] = vcvt_f64_f32(vget_low_f32(mVal);
         vec.mData[1] = vcvt_f64_f32(vget_high_f32(mVal);
@@ -528,9 +540,9 @@ struct SIMDType<int32_t, 4> : public SIMDVector<int32_t, __m128i, 4>
     
     operator SIMDType<float, 4>() { return SIMDType<float, 4>( vcvtq_f32_s32(mVal)); }
     /*
-    operator SizedVector<4, SIMDType<double, 2>>()
+    operator SizedVector<SIMDType<double, 2>, 4>()
     {
-        SizedVector<4, SIMDType<double, 2>> vec;
+        SizedVector<SIMDType<double, 2>, 4> vec;
         
         vec.mData[0] = _mm_cvtepi32_pd(mVal);
         vec.mData[1] = _mm_cvtepi32_pd(_mm_shuffle_epi32(mVal, 0xE));
@@ -657,9 +669,9 @@ struct SIMDType<float, 4> : public SIMDVector<float, __m128, 4>
         return _mm_shuffle_ps(a.mVal, b.mVal, ((z<<6)|(y<<4)|(x<<2)|w));
     }
     
-    operator SizedVector<4, SIMDType<double, 2>>()
+    operator SizedVector<SIMDType<double, 2>, 4>()
     {
-        SizedVector<4, SIMDType<double, 2>> vec;
+        SizedVector<SIMDType<double, 2>, 4> vec;
         
         vec.mData[0] = _mm_cvtps_pd(mVal);
         vec.mData[1] = _mm_cvtps_pd(_mm_movehl_ps(mVal, mVal));
@@ -691,9 +703,9 @@ struct SIMDType<int32_t, 4> : public SIMDVector<int32_t, __m128i, 4>
     
     operator SIMDType<float, 4>() { return SIMDType<float, 4>( _mm_cvtepi32_ps(mVal)); }
     
-    operator SizedVector<4, SIMDType<double, 2>>()
+    operator SizedVector<SIMDType<double, 2>, 4>()
     {
-        SizedVector<4, SIMDType<double, 2>> vec;
+        SizedVector<SIMDType<double, 2>, 4> vec;
         
         vec.mData[0] = _mm_cvtepi32_pd(mVal);
         vec.mData[1] = _mm_cvtepi32_pd(_mm_shuffle_epi32(mVal, 0xE));
@@ -801,9 +813,9 @@ struct SIMDType<float, 8> : public SIMDVector<float, __m256, 8>
     friend SIMDType operator >= (const SIMDType& a, const SIMDType& b) { return _mm256_cmp_ps(a.mVal, b.mVal, _CMP_GE_OQ); }
     friend SIMDType operator <= (const SIMDType& a, const SIMDType& b) { return _mm256_cmp_ps(a.mVal, b.mVal, _CMP_LE_OQ); }
     
-    operator SizedVector<8, SIMDType<double, 4>>()
+    operator SizedVector<SIMDType<double, 4>, 8>()
     {
-        SizedVector<8, SIMDType<double, 4>> vec;
+        SizedVector<SIMDType<double, 4>, 8> vec;
         
         vec.mData[0] = _mm256_cvtps_pd(_mm256_extractf128_ps(mVal, 0));
         vec.mData[1] = _mm256_cvtps_pd(_mm256_extractf128_ps(mVal, 1));
