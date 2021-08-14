@@ -5,22 +5,38 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
-#include <emmintrin.h>
-#include <immintrin.h>
+#include <cstdlib>
 #include <functional>
 
-#define SIMD_COMPILER_SUPPORT_SCALAR 0
-#define SIMD_COMPILER_SUPPORT_SSE128 1
-#define SIMD_COMPILER_SUPPORT_AVX256 2
-#define SIMD_COMPILER_SUPPORT_AVX512 3
+#if defined(__arm__) || defined(__arm64)
+#include <arm_neon.h>
+#include <memory.h>
+#define SIMD_COMPILER_SUPPORT_NEON 1
+#elif defined(__APPLE__) || defined(__linux__) || defined(_WIN32)
+#if defined(_WIN32)
+#include <malloc.h>
+#include <intrin.h>
+#endif
+#include <emmintrin.h>
+#include <immintrin.h>
+#endif
 
-// Microsoft Visual Studio doesn't ever define __SSE__ so if necessary we derive it from other defines
+// ******************** MSVC SSE Support Detection ********************* //
+
+// MSVC doesn't ever define __SSE__ so if needed set it from other defines
 
 #ifndef __SSE__
 #if defined _M_X64 || (defined _M_IX86_FP && _M_IX86_FP > 0)
 #define __SSE__ 1
 #endif
 #endif
+
+// ****************** Determine SIMD Compiler Support ****************** //
+
+#define SIMD_COMPILER_SUPPORT_SCALAR 0
+#define SIMD_COMPILER_SUPPORT_VEC128 1
+#define SIMD_COMPILER_SUPPORT_VEC256 2
+#define SIMD_COMPILER_SUPPORT_VEC512 3
 
 template<class T>
 struct SIMDLimits
@@ -30,7 +46,7 @@ struct SIMDLimits
 };
 
 #if defined(__AVX512F__)
-#define SIMD_COMPILER_SUPPORT_LEVEL SIMD_COMPILER_SUPPORT_AVX512
+#define SIMD_COMPILER_SUPPORT_LEVEL SIMD_COMPILER_SUPPORT_VEC512
 
 template<>
 struct SIMDLimits<double>
@@ -47,7 +63,7 @@ struct SIMDLimits<float>
 };
 
 #elif defined(__AVX__)
-#define SIMD_COMPILER_SUPPORT_LEVEL SIMD_COMPILER_SUPPORT_AVX256
+#define SIMD_COMPILER_SUPPORT_LEVEL SIMD_COMPILER_SUPPORT_VEC256
 
 template<>
 struct SIMDLimits<double>
@@ -64,7 +80,7 @@ struct SIMDLimits<float>
 };
 
 #elif defined(__SSE__)
-#define SIMD_COMPILER_SUPPORT_LEVEL SIMD_COMPILER_SUPPORT_SSE128
+#define SIMD_COMPILER_SUPPORT_LEVEL SIMD_COMPILER_SUPPORT_VEC128
 
 template<>
 struct SIMDLimits<double>
@@ -354,7 +370,172 @@ struct SIMDType<float, 2>
 
 // ************************ 128-bit SIMD Types ************************* //
 
-#if (SIMD_COMPILER_SUPPORT_LEVEL >= SIMD_COMPILER_SUPPORT_SSE)
+#if (SIMD_COMPILER_SUPPORT_LEVEL >= SIMD_COMPILER_SUPPORT_VEC128)
+
+#ifdef SIMD_COMPILER_SUPPORT_NEON /* Neon Intrinsics */
+
+template<>
+struct SIMDType<double, 2> : public SIMDVector<double, float64x2_t, 2>
+{
+    SIMDType() {}
+    SIMDType(const double& a) { mVal = vdupq_n_f64(a); }
+    SIMDType(const double* a) { mVal = vld1q_f64(a); }
+    SIMDType(float64x2_t a) : SIMDVector(a) {}
+    
+    SIMDType(const SIMDType<float, 2> &a)
+    {
+        double vals[2];
+        
+        vals[0] = a.mVals[0];
+        vals[1] = a.mVals[1];
+        
+        mVal = vld1q_f64(vals);
+    }
+    
+    void store(double *a) const { vst1q_f64(a, mVal); }
+    
+    friend SIMDType operator + (const SIMDType& a, const SIMDType& b) { return vaddq_f64(a.mVal, b.mVal); }
+    friend SIMDType operator - (const SIMDType& a, const SIMDType& b) { return vsubq_f64(a.mVal, b.mVal); }
+    friend SIMDType operator * (const SIMDType& a, const SIMDType& b) { return vmulq_f64(a.mVal, b.mVal); }
+    friend SIMDType operator / (const SIMDType& a, const SIMDType& b) { return vdivq_f64(a.mVal, b.mVal); }
+    
+    SIMDType& operator += (const SIMDType& b) { return (*this = *this + b); }
+    SIMDType& operator -= (const SIMDType& b) { return (*this = *this - b); }
+    SIMDType& operator *= (const SIMDType& b) { return (*this = *this * b); }
+    SIMDType& operator /= (const SIMDType& b) { return (*this = *this / b); }
+    
+    friend SIMDType sqrt(const SIMDType& a) { return vsqrtq_f64(a.mVal); }
+    
+    // N.B. - ties issue (this matches intel, but not the scalar)
+    //friend SIMDType round(const SIMDType& a) { return vrndnq_f64(a.mVal, _MM_FROUND_TO_NEAREST_INT |_MM_FROUND_NO_EXC); }
+    friend SIMDType trunc(const SIMDType& a) { return vrndq_f64(a.mVal); }
+    
+    friend SIMDType min(const SIMDType& a, const SIMDType& b) { return vminq_f64(a.mVal, b.mVal); }
+    friend SIMDType max(const SIMDType& a, const SIMDType& b) { return vmaxq_f64(a.mVal, b.mVal); }
+    friend SIMDType sel(const SIMDType& a, const SIMDType& b, const SIMDType& c) { return and_not(c, a) | (b & c); }
+    
+    //friend SIMDType and_not(const SIMDType& a, const SIMDType& b) { return _mm_andnot_pd(a.mVal, b.mVal); }
+    //friend SIMDType operator & (const SIMDType& a, const SIMDType& b) { return vandq_s64(a.mVal, b.mVal); }
+    //friend SIMDType operator | (const SIMDType& a, const SIMDType& b) { return vorrq_s64(a.mVal, b.mVal); }
+    //friend SIMDType operator ^ (const SIMDType& a, const SIMDType& b) { return veorq_s64(a.mVal, b.mVal); }
+    
+    friend SIMDType operator == (const SIMDType& a, const SIMDType& b) { return vceqq_f64(a.mVal, b.mVal); }
+    //friend SIMDType operator != (const SIMDType& a, const SIMDType& b) { return _mm_cmpneq_pd(a.mVal, b.mVal); }
+    friend SIMDType operator > (const SIMDType& a, const SIMDType& b) { return vcgtq_f64(a.mVal, b.mVal); }
+    friend SIMDType operator < (const SIMDType& a, const SIMDType& b) { return vcltq_f64(a.mVal, b.mVal); }
+    friend SIMDType operator >= (const SIMDType& a, const SIMDType& b) { return vcgeq_f64(a.mVal, b.mVal); }
+    friend SIMDType operator <= (const SIMDType& a, const SIMDType& b) { return vcleq_f64(a.mVal, b.mVal); }
+    /*
+    template <int y, int x>
+    static SIMDType shuffle(const SIMDType& a, const SIMDType& b)
+    {
+        return _mm_shuffle_pd(a.mVal, b.mVal, (y<<1)|x);
+    }
+    */
+    operator SIMDType<float, 2>()
+    {
+        double vals[2];
+        
+        store(vals);
+        
+        return SIMDType<float, 2>(static_cast<float>(vals[0]), static_cast<float>(vals[1]));
+    }
+};
+
+template<>
+struct SIMDType<float, 4> : public SIMDVector<float, float32x4_t, 4>
+{
+    SIMDType() {}
+    SIMDType(const float& a) { mVal = vdupq_n_f32(a); }
+    SIMDType(const float* a) { mVal = vld1q_f32(a); }
+    SIMDType(float32x4_t a) : SIMDVector(a) {}
+    
+    void store(float *a) const { vst1q_f32(a, mVal); }
+    
+    friend SIMDType operator + (const SIMDType& a, const SIMDType& b) { return vaddq_f32(a.mVal, b.mVal); }
+    friend SIMDType operator - (const SIMDType& a, const SIMDType& b) { return vsubq_f32(a.mVal, b.mVal); }
+    friend SIMDType operator * (const SIMDType& a, const SIMDType& b) { return vmulq_f32(a.mVal, b.mVal); }
+    friend SIMDType operator / (const SIMDType& a, const SIMDType& b) { return vdivq_f32(a.mVal, b.mVal); }
+    
+    SIMDType& operator += (const SIMDType& b) { return (*this = *this + b); }
+    SIMDType& operator -= (const SIMDType& b) { return (*this = *this - b); }
+    SIMDType& operator *= (const SIMDType& b) { return (*this = *this * b); }
+    SIMDType& operator /= (const SIMDType& b) { return (*this = *this / b); }
+    
+    friend SIMDType sqrt(const SIMDType& a) { return vsqrtq_f32(a.mVal); }
+    
+    // N.B. - ties issue (this matches intel, but not the scalar)
+    //friend SIMDType round(const SIMDType& a) { return vrndnq_f32(a.mVal); }
+    friend SIMDType trunc(const SIMDType& a) { return vrndq_f32(a.mVal); }
+    
+    friend SIMDType min(const SIMDType& a, const SIMDType& b) { return vminq_f32(a.mVal, b.mVal); }
+    friend SIMDType max(const SIMDType& a, const SIMDType& b) { return vmaxq_f32(a.mVal, b.mVal); }
+    friend SIMDType sel(const SIMDType& a, const SIMDType& b, const SIMDType& c) { return and_not(c, a) | (b & c); }
+    
+    //friend SIMDType and_not(const SIMDType& a, const SIMDType& b) { return _mm_andnot_ps(a.mVal, b.mVal); }
+    //friend SIMDType operator & (const SIMDType& a, const SIMDType& b) { return vandq_s32(a.mVal, b.mVal); }
+    //friend SIMDType operator | (const SIMDType& a, const SIMDType& b) { return vorrq_s32(a.mVal, b.mVal); }
+    //friend SIMDType operator ^ (const SIMDType& a, const SIMDType& b) { return veorq_s32(a.mVal, b.mVal); }
+    
+    friend SIMDType operator == (const SIMDType& a, const SIMDType& b) { return vceqq_f32(a.mVal, b.mVal); }
+    //friend SIMDType operator != (const SIMDType& a, const SIMDType& b) { return vmvnq_u32((a.mVal == b.mVal).mVal); }
+    friend SIMDType operator > (const SIMDType& a, const SIMDType& b) { return vcgtq_f32(a.mVal, b.mVal); }
+    friend SIMDType operator < (const SIMDType& a, const SIMDType& b) { return vcltq_f32(a.mVal, b.mVal); }
+    friend SIMDType operator >= (const SIMDType& a, const SIMDType& b) { return vcgeq_f32(a.mVal, b.mVal); }
+    friend SIMDType operator <= (const SIMDType& a, const SIMDType& b) { return vcleq_f32(a.mVal, b.mVal); }
+    /*
+    template <int z, int y, int x, int w>
+    static SIMDType shuffle(const SIMDType& a, const SIMDType& b)
+    {
+        return _mm_shuffle_ps(a.mVal, b.mVal, ((z<<6)|(y<<4)|(x<<2)|w));
+    }*/
+    
+    operator SizedVector<4, SIMDType<double, 2>>()
+    {
+        SizedVector<4, SIMDType<double, 2>> vec;
+        
+        vec.mData[0] = vcvt_f64_f32(vget_low_f32(mVal);
+        vec.mData[1] = vcvt_f64_f32(vget_high_f32(mVal);
+        
+        return vec;
+    }
+};
+
+template<>
+struct SIMDType<int32_t, 4> : public SIMDVector<int32_t, __m128i, 4>
+{
+    SIMDType() {}
+    SIMDType(const int32_t& a) { mVal = vdupq_n_s32(a); }
+    SIMDType(const int32_t* a) { mVal = vld1q_s32(a); }
+    SIMDType(__m128i a) : SIMDVector(a) {}
+    
+    void store(int32_t *a) const { vst1q_s32(a, mVal); }
+    
+    friend SIMDType operator + (const SIMDType& a, const SIMDType& b) { return vaddq_s32(a.mVal, b.mVal); }
+    friend SIMDType operator - (const SIMDType& a, const SIMDType& b) { return vsubq_s32(a.mVal, b.mVal); }
+    friend SIMDType operator * (const SIMDType& a, const SIMDType& b) { return vmulq_s32(a.mVal, b.mVal); }
+    
+    SIMDType& operator += (const SIMDType& b) { return (*this = *this + b); }
+    SIMDType& operator -= (const SIMDType& b) { return (*this = *this - b); }
+    SIMDType& operator *= (const SIMDType& b) { return (*this = *this * b); }
+    
+    friend SIMDType min(const SIMDType& a, const SIMDType& b) { return vminq_s32(a.mVal, b.mVal); }
+    friend SIMDType max(const SIMDType& a, const SIMDType& b) { return vmaxq_s32(a.mVal, b.mVal); }
+    
+    operator SIMDType<float, 4>() { return SIMDType<float, 4>( vcvtq_f32_s32(mVal)); }
+    /*
+    operator SizedVector<4, SIMDType<double, 2>>()
+    {
+        SizedVector<4, SIMDType<double, 2>> vec;
+        
+        vec.mData[0] = _mm_cvtepi32_pd(mVal);
+        vec.mData[1] = _mm_cvtepi32_pd(_mm_shuffle_epi32(mVal, 0xE));
+        
+        return vec;
+    }*/
+};
+
+#else /* Intel Instrinsics */
 
 template<>
 struct SIMDType<double, 2> : public SIMDVector<double, __m128d, 2>
@@ -388,6 +569,7 @@ struct SIMDType<double, 2> : public SIMDVector<double, __m128d, 2>
     
     friend SIMDType sqrt(const SIMDType& a) { return _mm_sqrt_pd(a.mVal); }
     
+    // N.B. - ties issue
     friend SIMDType round(const SIMDType& a) { return _mm_round_pd(a.mVal, _MM_FROUND_TO_NEAREST_INT |_MM_FROUND_NO_EXC); }
     friend SIMDType trunc(const SIMDType& a) { return _mm_round_pd(a.mVal, _MM_FROUND_TO_ZERO |_MM_FROUND_NO_EXC); }
     
@@ -445,6 +627,7 @@ struct SIMDType<float, 4> : public SIMDVector<float, __m128, 4>
     
     friend SIMDType sqrt(const SIMDType& a) { return _mm_sqrt_ps(a.mVal); }
     
+    // N.B. - ties issue
     friend SIMDType round(const SIMDType& a) { return _mm_round_ps(a.mVal, _MM_FROUND_TO_NEAREST_INT |_MM_FROUND_NO_EXC); }
     friend SIMDType trunc(const SIMDType& a) { return _mm_round_ps(a.mVal, _MM_FROUND_TO_ZERO |_MM_FROUND_NO_EXC); }
     
@@ -515,11 +698,13 @@ struct SIMDType<int32_t, 4> : public SIMDVector<int32_t, __m128i, 4>
     }
 };
 
-#endif
+#endif /* SIMD_COMPILER_SUPPORT_NEON - End Intel Intrinsics */
+
+#endif /* SIMD_COMPILER_SUPPORT_LEVEL >= SIMD_COMPILER_SUPPORT_VEC128 */
 
 // ************************ 256-bit SIMD Types ************************* //
 
-#if (SIMD_COMPILER_SUPPORT_LEVEL >= SIMD_COMPILER_SUPPORT_AVX256)
+#if (SIMD_COMPILER_SUPPORT_LEVEL >= SIMD_COMPILER_SUPPORT_VEC256)
 
 template<>
 struct SIMDType<double, 4> : public SIMDVector<double, __m256d, 4>
@@ -546,6 +731,7 @@ struct SIMDType<double, 4> : public SIMDVector<double, __m256d, 4>
     
     friend SIMDType sqrt(const SIMDType& a) { return _mm256_sqrt_pd(a.mVal); }
     
+    // N.B. - ties issue
     friend SIMDType round(const SIMDType& a) { return _mm256_round_pd(a.mVal, _MM_FROUND_TO_NEAREST_INT |_MM_FROUND_NO_EXC); }
     friend SIMDType trunc(const SIMDType& a) { return _mm256_round_pd(a.mVal, _MM_FROUND_TO_ZERO |_MM_FROUND_NO_EXC); }
     
@@ -591,6 +777,7 @@ struct SIMDType<float, 8> : public SIMDVector<float, __m256, 8>
     
     friend SIMDType sqrt(const SIMDType& a) { return _mm256_sqrt_ps(a.mVal); }
     
+    // N.B. - ties issue
     friend SIMDType round(const SIMDType& a) { return _mm256_round_ps(a.mVal, _MM_FROUND_TO_NEAREST_INT |_MM_FROUND_NO_EXC); }
     friend SIMDType trunc(const SIMDType& a) { return _mm256_round_ps(a.mVal, _MM_FROUND_TO_ZERO |_MM_FROUND_NO_EXC); }
     
@@ -625,7 +812,7 @@ struct SIMDType<float, 8> : public SIMDVector<float, __m256, 8>
 
 // ************************ 512-bit SIMD Types ************************* //
 
-#if (SIMD_COMPILER_SUPPORT_LEVEL >= SIMD_COMPILER_SUPPORT_AVX512)
+#if (SIMD_COMPILER_SUPPORT_LEVEL >= SIMD_COMPILER_SUPPORT_VEC512)
 
 template<>
 struct SIMDType<double, 8> : public SIMDVector<double, __m512d, 8>
