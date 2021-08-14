@@ -2,61 +2,11 @@
 #ifndef SIMDSUPPORT_HPP
 #define SIMDSUPPORT_HPP
 
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <emmintrin.h>
 #include <immintrin.h>
-
-#ifdef __APPLE__
-
-template <class T> T *allocate_aligned(size_t size)
-{
-    return static_cast<T *>(malloc(size * sizeof(T)));
-}
-
-template <class T> void deallocate_aligned(T *ptr)
-{
-    free(ptr);
-}
-
-#elif defined(__linux__)
-
-#include <stdlib.h>
-
-// Forward declation
-
-template <class T> struct SIMDLimits;
-
-template <class T> T *allocate_aligned(size_t size)
-{
-    void *mem;
-    posix_memalign(&mem, SIMDLimits<T>::byte_width, size * sizeof(T));
-    return static_cast<T *>(mem);
-}
-
-template <class T> void deallocate_aligned(T *ptr)
-{
-    free(ptr);
-}
-
-#else
-
-#include <malloc.h>
-
-template <class T> T *allocate_aligned(size_t size)
-{
-    return static_cast<T *>(_aligned_malloc(size * sizeof(T), 16));
-}
-
-template <class T> void deallocate_aligned(T *ptr)
-{
-    _aligned_free(ptr);
-}
-
-#endif
-
-
-#include <algorithm>
 #include <functional>
 
 #define SIMD_COMPILER_SUPPORT_SCALAR 0
@@ -72,7 +22,8 @@ template <class T> void deallocate_aligned(T *ptr)
 #endif
 #endif
 
-template<class T> struct SIMDLimits
+template<class T>
+struct SIMDLimits
 {
     static const int max_size = 1;
     static const int byte_width = sizeof(T);
@@ -81,13 +32,15 @@ template<class T> struct SIMDLimits
 #if defined(__AVX512F__)
 #define SIMD_COMPILER_SUPPORT_LEVEL SIMD_COMPILER_SUPPORT_AVX512
 
-template<> struct SIMDLimits<double>
+template<>
+struct SIMDLimits<double>
 {
     static const int max_size = 8;
     static const int byte_width = 64;
 };
 
-template<> struct SIMDLimits<float>
+template<>
+struct SIMDLimits<float>
 {
     static const int max_size = 16;
     static const int byte_width = 64;
@@ -96,13 +49,15 @@ template<> struct SIMDLimits<float>
 #elif defined(__AVX__)
 #define SIMD_COMPILER_SUPPORT_LEVEL SIMD_COMPILER_SUPPORT_AVX256
 
-template<> struct SIMDLimits<double>
+template<>
+struct SIMDLimits<double>
 {
     static const int max_size = 4;
     static const int byte_width = 32;
 };
 
-template<> struct SIMDLimits<float>
+template<>
+struct SIMDLimits<float>
 {
     static const int max_size = 8;
     static const int byte_width = 32;
@@ -111,13 +66,15 @@ template<> struct SIMDLimits<float>
 #elif defined(__SSE__)
 #define SIMD_COMPILER_SUPPORT_LEVEL SIMD_COMPILER_SUPPORT_SSE128
 
-template<> struct SIMDLimits<double>
+template<>
+struct SIMDLimits<double>
 {
     static const int max_size = 2;
     static const int byte_width = 16;
 };
 
-template<> struct SIMDLimits<float>
+template<>
+struct SIMDLimits<float>
 {
     static const int max_size = 4;
     static const int byte_width = 16;
@@ -127,18 +84,75 @@ template<> struct SIMDLimits<float>
 #define SIMD_COMPILER_SUPPORT_LEVEL SIMD_COMPILER_SUPPORT_SCALAR
 #endif
 
-// Select Functionality for all types
+// ********************* Aligned Memory Allocation ********************* //
 
-template <class T> T select(const T& a, const T& b, const T& mask)
+#ifdef __APPLE__
+
+template <class T>
+T *allocate_aligned(size_t size)
 {
-    return (b & mask) | and_not(mask, a);
+    return static_cast<T *>(malloc(size * sizeof(T)));
 }
 
-// Data Type Definitions
+template <class T>
+void deallocate_aligned(T *ptr)
+{
+    free(ptr);
+}
 
-// ******************** A Vector of Given Size (Made of Vectors) ******************** //
+#elif defined(__linux__)
 
-template <int final_size, class T> struct SizedVector
+template <class T>
+T *allocate_aligned(size_t size)
+{
+    void *mem;
+    posix_memalign(&mem, SIMDLimits<T>::byte_width, size * sizeof(T));
+    return static_cast<T *>(mem);
+}
+
+template <class T>
+void deallocate_aligned(T *ptr)
+{
+    free(ptr);
+}
+
+#else
+
+template <class T>
+T *allocate_aligned(size_t size)
+{
+    return static_cast<T *>(_aligned_malloc(size * sizeof(T), SIMDLimits<T>::byte_width));
+}
+
+template <class T>
+void deallocate_aligned(T *ptr)
+{
+    _aligned_free(ptr);
+}
+
+#endif
+
+// ******************** Basic Data Type Definitions ******************** //
+
+template <class T, class U, int vec_size>
+struct SIMDVector
+{
+    static const int size = vec_size;
+    typedef T scalar_type;
+    
+    SIMDVector() {}
+    SIMDVector(U a) : mVal(a) {}
+    
+    U mVal;
+};
+
+template <class T, int vec_size>
+struct SIMDType {};
+
+// ************* A Vector of Given Size (Made of Vectors) ************** //
+
+template <int final_size, class T>
+struct SizedVector
 {
     typedef SizedVector SV;
     typedef typename T::scalar_type scalar_type;
@@ -211,20 +225,7 @@ template <int final_size, class T> struct SizedVector
     T mData[array_size];
 };
 
-// ******************** Basic Data Type Defintions ******************** //
-
-template <class T, class U, int vec_size> struct SIMDVector
-{
-    static const int size = vec_size;
-    typedef T scalar_type;
-    
-    SIMDVector() {}
-    SIMDVector(U a) : mVal(a) {}
-    
-    U mVal;
-};
-
-template <class T, int vec_size> struct SIMDType {};
+// ************** Platform-Agnostic Data Type Definitions ************** //
 
 template<>
 struct SIMDType<double, 1>
@@ -349,6 +350,10 @@ struct SIMDType<float, 2>
     float mVals[2];
 };
 
+// ************** Platform-Specific Data Type Definitions ************** //
+
+// ************************ 128-bit SIMD Types ************************* //
+
 #if (SIMD_COMPILER_SUPPORT_LEVEL >= SIMD_COMPILER_SUPPORT_SSE)
 
 template<>
@@ -402,7 +407,8 @@ struct SIMDType<double, 2> : public SIMDVector<double, __m128d, 2>
     friend SIMDType operator >= (const SIMDType& a, const SIMDType& b) { return _mm_cmple_pd(a.mVal, b.mVal); }
     friend SIMDType operator <= (const SIMDType& a, const SIMDType& b) { return _mm_cmpge_pd(a.mVal, b.mVal); }
     
-    template <int y, int x> static SIMDType shuffle(const SIMDType& a, const SIMDType& b)
+    template <int y, int x>
+    static SIMDType shuffle(const SIMDType& a, const SIMDType& b)
     {
         return _mm_shuffle_pd(a.mVal, b.mVal, (y<<1)|x);
     }
@@ -458,7 +464,8 @@ struct SIMDType<float, 4> : public SIMDVector<float, __m128, 4>
     friend SIMDType operator >= (const SIMDType& a, const SIMDType& b) { return _mm_cmple_ps(a.mVal, b.mVal); }
     friend SIMDType operator <= (const SIMDType& a, const SIMDType& b) { return _mm_cmpge_ps(a.mVal, b.mVal); }
     
-    template <int z, int y, int x, int w> static SIMDType shuffle(const SIMDType& a, const SIMDType& b)
+    template <int z, int y, int x, int w>
+    static SIMDType shuffle(const SIMDType& a, const SIMDType& b)
     {
         return _mm_shuffle_ps(a.mVal, b.mVal, ((z<<6)|(y<<4)|(x<<2)|w));
     }
@@ -509,6 +516,8 @@ struct SIMDType<int32_t, 4> : public SIMDVector<int32_t, __m128i, 4>
 };
 
 #endif
+
+// ************************ 256-bit SIMD Types ************************* //
 
 #if (SIMD_COMPILER_SUPPORT_LEVEL >= SIMD_COMPILER_SUPPORT_AVX256)
 
@@ -614,6 +623,8 @@ struct SIMDType<float, 8> : public SIMDVector<float, __m256, 8>
 
 #endif
 
+// ************************ 512-bit SIMD Types ************************* //
+
 #if (SIMD_COMPILER_SUPPORT_LEVEL >= SIMD_COMPILER_SUPPORT_AVX512)
 
 template<>
@@ -700,7 +711,17 @@ struct SIMDType<float, 16> : public SIMDVector<float, __m512, 16>
 
 #endif
 
-// abs functions
+// ********************** Common Functionality ********************** //
+
+// Select Functionality for all types
+
+template <class T, int N>
+T select(const SIMDType<T, N>& a, const SIMDType<T, N>& b, const SIMDType<T, N>& mask)
+{
+    return (b & mask) | and_not(mask, a);
+}
+
+// Abs functionality
 
 static inline SIMDType<double, 1> abs(const SIMDType<double, 1> a)
 {
@@ -718,7 +739,8 @@ static inline SIMDType<float, 1> abs(const SIMDType<float, 1> a)
     return *(reinterpret_cast<float *>(&temp));
 }
 
-template <int N> SIMDType<double, N> abs(const SIMDType<double, N> a)
+template <int N>
+SIMDType<double, N> abs(const SIMDType<double, N> a)
 {
     const static uint64_t bit_mask_64 = 0x7FFFFFFFFFFFFFFFU;
     const double bit_mask_64d = *(reinterpret_cast<const double *>(&bit_mask_64));
@@ -726,7 +748,8 @@ template <int N> SIMDType<double, N> abs(const SIMDType<double, N> a)
     return a & SIMDType<double, N>(bit_mask_64d);
 }
 
-template <int N> SIMDType<float, N> abs(const SIMDType<float, N> a)
+template <int N>
+SIMDType<float, N> abs(const SIMDType<float, N> a)
 {
     const static uint32_t bit_mask_32 = 0x7FFFFFFFU;
     const float bit_mask_32f = *(reinterpret_cast<const double *>(&bit_mask_32));
@@ -735,4 +758,3 @@ template <int N> SIMDType<float, N> abs(const SIMDType<float, N> a)
 }
 
 #endif
-
