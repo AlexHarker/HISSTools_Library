@@ -27,8 +27,7 @@ namespace HISSTools
         PartitionedConvolve(PartitionedConvolve& obj) = delete;
         PartitionedConvolve& operator = (PartitionedConvolve& obj) = delete;
         PartitionedConvolve(PartitionedConvolve&& obj) = delete;
-        PartitionedConvolve& operator = (PartitionedConvolve        //obj.mFreeFunction = nullptr;
-&& obj) = delete;
+        PartitionedConvolve& operator = (PartitionedConvolve&& obj) = delete;
         
         ConvolveError setFFTSize(uintptr_t FFTSize);
         ConvolveError setLength(uintptr_t length);
