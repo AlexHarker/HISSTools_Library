@@ -23,8 +23,7 @@
 #ifdef __APPLE__
 uintptr_t padded_length(uintptr_t length)
 {
-    return ((length + 15) >> 4) << 4;
-    // return length;
+    return length;
 }
 #else
 uintptr_t padded_length(uintptr_t length)
@@ -86,7 +85,7 @@ ConvolveError HISSTools::TimeDomainConvolve::set(const float *input, uintptr_t l
     
     reset();
     
-    return (!mLength && length > 2044) ? CONVOLVE_ERR_TIME_IMPULSE_TOO_LONG : CONVOLVE_ERR_NONE;
+    return (!mLength && (length - mOffset) > 2044) ? CONVOLVE_ERR_TIME_IMPULSE_TOO_LONG : CONVOLVE_ERR_NONE;
 }
 
 void HISSTools::TimeDomainConvolve::reset()
@@ -94,66 +93,39 @@ void HISSTools::TimeDomainConvolve::reset()
     mReset = true;
 }
 
-template <class T>
-void convolve(const float *in, T *impulse, float *output, uintptr_t N, uintptr_t L)
+#ifdef __APPLE__
+void convolve(const float *in, const float *impulse, float *output, uintptr_t N, uintptr_t L)
 {
+    vDSP_conv(in + 1 - L, (vDSP_Stride) 1, impulse, (vDSP_Stride) 1, output, (vDSP_Stride) 1, (vDSP_Length) N, L);
+}
+#else
+void convolve(const float *in, const float *impulse, float *output, uintptr_t N, uintptr_t L)
+{
+    constexpr int size = FloatVector::size;
+    
     L = padded_length(L);
+    
+    const FloatVector *impulse_vector = reinterpret_cast<const FloatVector *>(impulse);
     
     for (uintptr_t i = 0; i < N; i++)
     {
-        T outputAccum = T(0.f);
-        const float *input = in - L + 1 + i - T::size;
+        FloatVector outputAccum(0.f);
+        const float *input = in - L + 1 + i - size;
         
         for (uintptr_t j = 0; j < L >> 2; j += 4)
         {
             // Load vals
             
-            outputAccum += (impulse[j + 0] * T::unaligned_load(input += T::size));
-            outputAccum += (impulse[j + 1] * T::unaligned_load(input += T::size));
-            outputAccum += (impulse[j + 2] * T::unaligned_load(input += T::size));
-            outputAccum += (impulse[j + 3] * T::unaligned_load(input += T::size));
+            outputAccum += (impulse_vector[j + 0] * FloatVector::unaligned_load(input += size));
+            outputAccum += (impulse_vector[j + 1] * FloatVector::unaligned_load(input += size));
+            outputAccum += (impulse_vector[j + 2] * FloatVector::unaligned_load(input += size));
+            outputAccum += (impulse_vector[j + 3] * FloatVector::unaligned_load(input += size));
         }
         
         *output++ = outputAccum.sum();
     }
 }
-
-void convolve(const float *in, float *impulse, float *output, uintptr_t N, uintptr_t L)
-{
-    L = padded_length(L);
-    
-    for (uintptr_t i = 0; i < N; i++)
-    {
-        float outputAccum = 0.f;
-        const float *input = in - L + 1 + i;
-        
-        for (uintptr_t j = 0; j < L; j += 8)
-        {
-            // Load vals
-            
-            outputAccum += impulse[j+0] * *input++;
-            outputAccum += impulse[j+1] * *input++;
-            outputAccum += impulse[j+2] * *input++;
-            outputAccum += impulse[j+3] * *input++;
-            outputAccum += impulse[j+4] * *input++;
-            outputAccum += impulse[j+5] * *input++;
-            outputAccum += impulse[j+6] * *input++;
-            outputAccum += impulse[j+7] * *input++;
-        }
-        
-        *output++ = outputAccum;
-    }
-}
-
-/*
-#ifdef __APPLE__
-template<>
-void convolve(const float *in, float *impulse, float *output, uintptr_t N, uintptr_t L)
-{
-    vDSP_conv(in + 1 - L, (vDSP_Stride) 1, impulse, (vDSP_Stride) 1, output, (vDSP_Stride) 1, (vDSP_Length) N, L);
-}
 #endif
-*/
 
 bool HISSTools::TimeDomainConvolve::process(const float *in, float *out, uintptr_t numSamples)
 {
@@ -170,7 +142,7 @@ bool HISSTools::TimeDomainConvolve::process(const float *in, float *out, uintptr
         // Copy input twice (allows us to read input out in one go)
         
         memcpy(mInputBuffer + mInputPosition, in, sizeof(float) * currentLoop);
-        memcpy(mInputBuffer + 4096 + mInputPosition, in, sizeof(float) * currentLoop);
+        memcpy(mInputBuffer + mInputPosition + 4096, in, sizeof(float) * currentLoop);
         
         // Advance pointer
         
@@ -180,16 +152,7 @@ bool HISSTools::TimeDomainConvolve::process(const float *in, float *out, uintptr
         
         // Do convolution
         
-        if (numSamples % 4)
-            convolve(mInputBuffer + 4096 + (mInputPosition - currentLoop), mImpulseBuffer, out, currentLoop, mImpulseLength);
-        else
-        {
-#ifdef __APPLE__
-            convolve(mInputBuffer + 4096 + (mInputPosition - currentLoop), (FloatVector *) mImpulseBuffer, out, currentLoop, mImpulseLength);
-#else
-            convolve(mInputBuffer + 4096 + (mInputPosition - currentLoop), (FloatVector *) mImpulseBuffer, out, currentLoop, mImpulseLength);
-#endif
-        }
+        convolve(mInputBuffer + 4096 + (mInputPosition - currentLoop), mImpulseBuffer, out, currentLoop, mImpulseLength);
         
         // Updates
         
