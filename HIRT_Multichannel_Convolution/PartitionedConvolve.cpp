@@ -234,7 +234,7 @@ void scaleStore(float *out, float *temp, uintptr_t FFTSize, bool offset)
 {
     T *outPtr = reinterpret_cast<T *>(out + (offset ? FFTSize >> 1: 0));
     T *tempPtr = reinterpret_cast<T *>(temp);
-    T scaleMul((float) (1.0 / (double) (FFTSize << 2)));
+    T scaleMul(1.f / static_cast<float>(FFTSize << 2));
     
     for (uintptr_t i = 0; i < (FFTSize / (T::size * 2)); i++)
         *(outPtr++) = *(tempPtr++) * scaleMul;
