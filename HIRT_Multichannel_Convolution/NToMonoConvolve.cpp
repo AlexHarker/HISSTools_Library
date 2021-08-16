@@ -1,7 +1,8 @@
 
 #include "NToMonoConvolve.h"
 
-HISSTools::NToMonoConvolve::NToMonoConvolve(uint32_t inChans, uintptr_t maxLength, LatencyMode latency) :  mNumInChans(inChans)
+HISSTools::NToMonoConvolve::NToMonoConvolve(uint32_t inChans, uintptr_t maxLength, LatencyMode latency)
+:  mNumInChans(inChans)
 {
     for (uint32_t i = 0; i < mNumInChans; i++)
         mConvolvers.emplace_back(maxLength, latency);
