@@ -6,6 +6,7 @@
 #include "ConvolveErrors.h"
 
 #include <cstdint>
+#include <random>
 
 namespace HISSTools
 {
@@ -83,5 +84,10 @@ namespace HISSTools
         
         intptr_t mResetOffset;
         bool mResetFlag;
+        
+        // Random number generation
+        
+        std::default_random_engine mRandGenerator;
+        std::uniform_int_distribution<uintptr_t> mRandDistribution;
     };
 }

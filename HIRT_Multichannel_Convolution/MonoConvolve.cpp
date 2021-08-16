@@ -4,7 +4,6 @@
 
 #include <algorithm>
 #include <cassert>
-#include <random>
 #include <stdexcept>
 
 typedef MemorySwap<HISSTools::PartitionedConvolve>::Ptr PartPtr;
@@ -20,7 +19,12 @@ void largeFree(HISSTools::PartitionedConvolve *largePartition)
 // Standard Constructor
 
 HISSTools::MonoConvolve::MonoConvolve(uintptr_t maxLength, LatencyMode latency)
-: mAllocator(nullptr), mPart4(0), mLength(0), mPart4ResetOffset(0), mReset(false)
+: mAllocator(nullptr)
+, mPart4(0)
+, mLength(0)
+, mPart4ResetOffset(0)
+, mReset(false)
+, mRandGenerator(std::random_device()())
 {
     switch (latency)
     {
@@ -33,7 +37,12 @@ HISSTools::MonoConvolve::MonoConvolve(uintptr_t maxLength, LatencyMode latency)
 // Constructor (custom partitioning)
 
 HISSTools::MonoConvolve::MonoConvolve(uintptr_t maxLength, bool zeroLatency, uint32_t A, uint32_t B, uint32_t C, uint32_t D)
-: mAllocator(nullptr), mPart4(0), mLength(0), mPart4ResetOffset(0), mReset(false)
+: mAllocator(nullptr)
+, mPart4(0)
+, mLength(0)
+, mPart4ResetOffset(0)
+, mReset(false)
+, mRandGenerator(std::random_device()())
 {
     setPartitions(maxLength, zeroLatency, A, B, C, D);
 }
@@ -76,7 +85,7 @@ void HISSTools::MonoConvolve::setResetOffset(intptr_t offset)
     PartPtr part4 = mPart4.access();
     
     if (offset < 0)
-        offset = std::rand() % (mSizes.back() >> 1);
+        offset = mRandDistribution(mRandGenerator);
     
     if (mPart1) mPart1.get()->setResetOffset(offset + (mSizes[numSizes() - 3] >> 3));
     if (mPart2) mPart2.get()->setResetOffset(offset + (mSizes[numSizes() - 2] >> 3));
@@ -236,5 +245,6 @@ void HISSTools::MonoConvolve::setPartitions(uintptr_t maxLength, bool zeroLatenc
     
     // Set offsets
     
+    mRandDistribution = std::uniform_int_distribution<uintptr_t>(0, (mSizes.back() >> 1) - 1);
     setResetOffset();
 }

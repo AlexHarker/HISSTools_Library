@@ -23,42 +23,6 @@ void offsetSplitPointer(FFT_SPLIT_COMPLEX_F &complex1, const FFT_SPLIT_COMPLEX_F
     complex1.imagp = complex2.imagp + offset;
 }
 
-// FIX - sort the seeding
-
-/*
- #ifndef __APPLE__
- #include <Windows.h>
- #endif
-
- // Random seeding for rand
- 
- static __inline unsigned int get_rand_seed ()
- {
- unsigned int seed;
- 
- #ifdef __APPLE__
- seed = arc4random();
- #else
- HCRYPTPROV hProvider = 0;
- const DWORD dwLength = 4;
- BYTE *pbBuffer = (BYTE *) &seed;
- 
- if (!CryptAcquireContextW(&hProvider, 0, 0, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT | CRYPT_SILENT))
- return 0;
- 
- CryptGenRandom(hProvider, dwLength, pbBuffer);
- CryptReleaseContext(hProvider, 0);
- #endif
- 
- return seed;
- }
- 
- void init_partition_convolve()
- {
- srand(get_rand_seed());
- }
- */
-
 ConvolveError HISSTools::PartitionedConvolve::setMaxFFTSize(uintptr_t maxFFTSize)
 {
     uintptr_t maxFFTSizeLog2 = log2(maxFFTSize);
@@ -86,7 +50,16 @@ ConvolveError HISSTools::PartitionedConvolve::setMaxFFTSize(uintptr_t maxFFTSize
 }
 
 HISSTools::PartitionedConvolve::PartitionedConvolve(uintptr_t maxFFTSize, uintptr_t maxLength, uintptr_t offset, uintptr_t length)
-: mMaxImpulseLength(maxLength), mFFTSizeLog2(0), mInputPosition(0), mPartitionsDone(0), mLastPartition(0), mNumPartitions(0), mValidPartitions(0), mResetOffset(-1), mResetFlag(true)
+: mMaxImpulseLength(maxLength)
+, mFFTSizeLog2(0)
+, mInputPosition(0)
+, mPartitionsDone(0)
+, mLastPartition(0)
+, mNumPartitions(0)
+, mValidPartitions(0)
+, mResetOffset(-1)
+, mResetFlag(true)
+, mRandGenerator(std::random_device()())
 {
     // Set default initial attributes and variables
     
@@ -174,6 +147,8 @@ ConvolveError HISSTools::PartitionedConvolve::setFFTSize(uintptr_t FFTSize)
         mNumPartitions = 0;
         mFFTSizeLog2 = FFTSizeLog2;
     }
+    
+    mRandDistribution = std::uniform_int_distribution<uintptr_t>(0, (FFTSize >> 1) - 1);
     
     return error;
 }
@@ -298,7 +273,7 @@ bool HISSTools::PartitionedConvolve::process(const float *in, float *out, uintpt
         // Reset fft RWCounter (randomly or by fixed amount)
         
         if (mResetOffset < 0)
-            while (FFTSizeHalved < (uintptr_t) (RWCounter = rand() / (RAND_MAX / FFTSizeHalved)));
+            RWCounter = mRandDistribution(mRandGenerator);
         else
             RWCounter = mResetOffset % FFTSizeHalved;
         
