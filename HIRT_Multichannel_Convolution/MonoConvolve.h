@@ -61,7 +61,7 @@ namespace HISSTools
         
         uintptr_t mLength;
         
-        intptr_t mPart4Offset;
+        intptr_t mPart4ResetOffset;
         bool mReset;
     };
 }

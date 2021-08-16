@@ -20,7 +20,7 @@ void largeFree(HISSTools::PartitionedConvolve *largePartition)
 // Standard Constructor
 
 HISSTools::MonoConvolve::MonoConvolve(uintptr_t maxLength, LatencyMode latency)
-: mAllocator(nullptr), mPart4(0), mLength(0), mPart4Offset(0), mReset(false)
+: mAllocator(nullptr), mPart4(0), mLength(0), mPart4ResetOffset(0), mReset(false)
 {
     switch (latency)
     {
@@ -33,7 +33,7 @@ HISSTools::MonoConvolve::MonoConvolve(uintptr_t maxLength, LatencyMode latency)
 // Constructor (custom partitioning)
 
 HISSTools::MonoConvolve::MonoConvolve(uintptr_t maxLength, bool zeroLatency, uint32_t A, uint32_t B, uint32_t C, uint32_t D)
-: mAllocator(nullptr), mPart4(0), mLength(0), mPart4Offset(0), mReset(false)
+: mAllocator(nullptr), mPart4(0), mLength(0), mPart4ResetOffset(0), mReset(false)
 {
     setPartitions(maxLength, zeroLatency, A, B, C, D);
 }
@@ -49,7 +49,7 @@ HISSTools::MonoConvolve::MonoConvolve(MonoConvolve&& obj)
 , mPart3(std::move(obj.mPart3))
 , mPart4(std::move(obj.mPart4))
 , mLength(obj.mLength)
-, mPart4Offset(obj.mPart4Offset)
+, mPart4ResetOffset(obj.mPart4ResetOffset)
 , mReset(true)
 {}
 
@@ -65,7 +65,7 @@ HISSTools::MonoConvolve& HISSTools::MonoConvolve::operator = (MonoConvolve&& obj
     mPart3 = std::move(obj.mPart3);
     mPart4 = std::move(obj.mPart4);
     mLength = obj.mLength;
-    mPart4Offset = obj.mPart4Offset;
+    mPart4ResetOffset = obj.mPart4ResetOffset;
     mReset = true;
     
     return *this;
@@ -84,7 +84,7 @@ void HISSTools::MonoConvolve::setResetOffset(intptr_t offset)
     
     if (part4.get()) part4.get()->setResetOffset(offset);
     
-    mPart4Offset = offset;
+    mPart4ResetOffset = offset;
 }
 
 ConvolveError HISSTools::MonoConvolve::resize(uintptr_t length)
@@ -93,7 +93,7 @@ ConvolveError HISSTools::MonoConvolve::resize(uintptr_t length)
     PartPtr part4 = mPart4.equal(mAllocator, largeFree, length);
     
     if (part4.get())
-        part4.get()->setResetOffset(mPart4Offset);
+        part4.get()->setResetOffset(mPart4ResetOffset);
     
     return part4.getSize() == length ? CONVOLVE_ERR_NONE : CONVOLVE_ERR_MEM_UNAVAILABLE;
 }
@@ -119,7 +119,7 @@ ConvolveError HISSTools::MonoConvolve::set(const float *input, uintptr_t length,
         setPart(mPart3.get(), input, length);
         setPart(part4.get(), input, length);
         
-        part4.get()->setResetOffset(mPart4Offset);
+        part4.get()->setResetOffset(mPart4ResetOffset);
         
         mLength = length;
         reset();
