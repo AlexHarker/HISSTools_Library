@@ -150,6 +150,12 @@ ConvolveError HISSTools::MonoConvolve::reset()
 }
 
 template<class T>
+bool isUnaligned(const T* ptr)
+{
+    return reinterpret_cast<uintptr_t>(ptr) % 16;
+}
+
+template<class T>
 void sum(T *temp, T *out, uintptr_t numItems)
 {
     for (uintptr_t i = 0; i < numItems; i++, out++, temp++)
@@ -161,7 +167,7 @@ void processAndSum(T *obj, const float *in, float *temp, float *out, uintptr_t n
 {
     if (obj && obj->process(in, accumulate ? temp : out, numSamples) && accumulate)
     {
-        if ((numSamples % 4) || (((uintptr_t) out) % 16) || (((uintptr_t) temp) % 16))
+        if ((numSamples % 4) || isUnaligned(out) || isUnaligned(temp))
             sum(temp, out, numSamples);
         else
             sum(reinterpret_cast<FloatVector *>(temp), reinterpret_cast<FloatVector *>(out), numSamples / FloatVector::size);
