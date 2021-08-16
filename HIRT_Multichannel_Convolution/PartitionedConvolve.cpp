@@ -11,12 +11,9 @@
  */
 
 #include "ConvolveSIMD.h"
-
 #include "PartitionedConvolve.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <functional>
+
+#include <algorithm>
 
 // Pointer Utility
 
@@ -237,7 +234,7 @@ ConvolveError HISSTools::PartitionedConvolve::set(const float *input, uintptr_t 
         
         // Get samples and zero pad
         
-        std::copy(input + bufferPosition, input + bufferPosition + numSamps, bufferTemp1);
+        std::copy_n(input + bufferPosition, numSamps, bufferTemp1);
         std::fill_n(bufferTemp1 + numSamps, FFTSize - numSamps, 0.f);
         
         // Do fft straight into position
@@ -296,7 +293,7 @@ bool HISSTools::PartitionedConvolve::process(const float *in, float *out, uintpt
     {
         // Reset fft buffers + accum buffer
         
-        memset(mFFTBuffers[0], 0, getMaxFFTSize() * 5 * sizeof(float));
+        std::fill_n(mFFTBuffers[0], getMaxFFTSize() * 5, 0.f);
         
         // Reset fft RWCounter (randomly or by fixed amount)
         
@@ -329,18 +326,18 @@ bool HISSTools::PartitionedConvolve::process(const float *in, float *out, uintpt
         
         // Load input into buffer (twice) and output from the output buffer
         
-        memcpy(mFFTBuffers[0] + RWCounter, in, loopSize * sizeof(float));
+        std::copy_n(in, loopSize, mFFTBuffers[0] + RWCounter);
         
         if ((hiCounter + loopSize) > FFTSize)
         {
             uintptr_t hi_loop = FFTSize - hiCounter;
-            memcpy(mFFTBuffers[1] + hiCounter, in, hi_loop * sizeof(float));
-            memcpy(mFFTBuffers[1], in + hi_loop, (loopSize - hi_loop) * sizeof(float));
+            std::copy_n(in, hi_loop, mFFTBuffers[1] + hiCounter);
+            std::copy_n(in + hi_loop, (loopSize - hi_loop), mFFTBuffers[1]);
         }
         else
-            memcpy(mFFTBuffers[1] + hiCounter, in, loopSize * sizeof(float));
+            std::copy_n(in, loopSize, mFFTBuffers[1] + hiCounter);
         
-        memcpy(out, mFFTBuffers[3] + RWCounter, loopSize * sizeof(float));
+        std::copy_n(mFFTBuffers[3] + RWCounter, loopSize, out);
         
         // Updates to pointers and counters
         
@@ -397,8 +394,8 @@ bool HISSTools::PartitionedConvolve::process(const float *in, float *out, uintpt
             
             // Clear accumulation buffer
             
-            memset(mAccumBuffer.realp, 0, FFTSizeHalved * sizeof(float));
-            memset(mAccumBuffer.imagp, 0, FFTSizeHalved * sizeof(float));
+            std::fill_n(mAccumBuffer.realp, FFTSizeHalved, 0.f);
+            std::fill_n(mAccumBuffer.imagp, FFTSizeHalved, 0.f);
             
             // Update RWCounter
             

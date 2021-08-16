@@ -1,8 +1,6 @@
 
 #include "NToMonoConvolve.h"
 
-#include <string.h>
-
 HISSTools::NToMonoConvolve::NToMonoConvolve(uint32_t inChans, uintptr_t maxLength, LatencyMode latency) :  mNumInChans(inChans)
 {
     for (uint32_t i = 0; i < mNumInChans; i++)
@@ -37,7 +35,7 @@ void HISSTools::NToMonoConvolve::process(const float * const* ins, float *out, f
 {
     // Zero output then convolve
     
-    memset(out, 0, sizeof(float) * numSamples);
+    std::fill_n(out, numSamples, 0.f);
 	
 	for (uint32_t i = 0; i < mNumInChans && i < activeInChans ; i++)
 		mConvolvers[i].process(ins[i], temp, out, numSamples, true);

@@ -15,10 +15,6 @@
 #include "ConvolveSIMD.h"
 
 #include <algorithm>
-#include <functional>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 
 #ifdef __APPLE__
 uintptr_t padded_length(uintptr_t length)
@@ -46,8 +42,8 @@ HISSTools::TimeDomainConvolve::TimeDomainConvolve(uintptr_t offset, uintptr_t le
     
     // Zero buffers
     
-    memset(mImpulseBuffer, 0, 2048 * sizeof(float));
-    memset(mInputBuffer, 0, 8192 * sizeof(float));
+    std::fill_n(mImpulseBuffer, 2048, 0.f);
+    std::fill_n(mInputBuffer, 8192, 0.f);
 }
 
 HISSTools::TimeDomainConvolve::~TimeDomainConvolve()
@@ -131,7 +127,7 @@ bool HISSTools::TimeDomainConvolve::process(const float *in, float *out, uintptr
 {
     if (mReset)
     {
-        memset(mInputBuffer, 0, 8192 * sizeof(float));
+        std::fill_n(mInputBuffer, 8192, 0.f);
         mReset = false;
     }
     
@@ -141,9 +137,9 @@ bool HISSTools::TimeDomainConvolve::process(const float *in, float *out, uintptr
     {
         // Copy input twice (allows us to read input out in one go)
         
-        memcpy(mInputBuffer + mInputPosition, in, sizeof(float) * currentLoop);
-        memcpy(mInputBuffer + mInputPosition + 4096, in, sizeof(float) * currentLoop);
-        
+        std::copy_n(in, currentLoop, mInputBuffer + mInputPosition);
+        std::copy_n(in, currentLoop, mInputBuffer + mInputPosition + 4096);
+
         // Advance pointer
         
         mInputPosition += currentLoop;
