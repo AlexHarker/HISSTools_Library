@@ -465,9 +465,9 @@ struct SIMDType<double, 2> : public SIMDVector<double, float64x2_t, 2>
     //friend SIMDType sel(const SIMDType& a, const SIMDType& b, const SIMDType& c) { return and_not(c, a) | (b & c); }
     
     //friend SIMDType and_not(const SIMDType& a, const SIMDType& b) { return _mm_andnot_pd(a.mVal, b.mVal); }
-    //friend SIMDType operator & (const SIMDType& a, const SIMDType& b) { return vandq_s64(a.mVal, b.mVal); }
-    //friend SIMDType operator | (const SIMDType& a, const SIMDType& b) { return vorrq_s64(a.mVal, b.mVal); }
-    //friend SIMDType operator ^ (const SIMDType& a, const SIMDType& b) { return veorq_s64(a.mVal, b.mVal); }
+    friend SIMDType operator & (const SIMDType& a, const SIMDType& b) { return bitwise<vandq_s64>(a, b); }
+    friend SIMDType operator | (const SIMDType& a, const SIMDType& b) { return bitwise<vorrq_s64>(a, b); }
+    friend SIMDType operator ^ (const SIMDType& a, const SIMDType& b) { return bitwise<veorq_s64>(a, b); }
     
     friend SIMDType operator == (const SIMDType& a, const SIMDType& b) { return vceqq_f64(a.mVal, b.mVal); }
     //friend SIMDType operator != (const SIMDType& a, const SIMDType& b) { return _mm_cmpneq_pd(a.mVal, b.mVal); }
@@ -489,6 +489,14 @@ struct SIMDType<double, 2> : public SIMDVector<double, float64x2_t, 2>
         store(vals);
         
         return SIMDType<float, 2>(static_cast<float>(vals[0]), static_cast<float>(vals[1]));
+    }
+    
+private:
+    
+    template <int64x2_t Op(int64x2_t, int64x2_t)>
+    friend SIMDType operator bitwise(const SIMDType& a, const SIMDType& b)
+    {
+        return vreinterpretq_s64_f64(Op(vreinterpretq_s64_f64(a.mVal), vreinterpretq_s64_f64(b.mVal)));
     }
 };
 #endif /* defined (__arm64) */
@@ -524,9 +532,9 @@ struct SIMDType<float, 4> : public SIMDVector<float, float32x4_t, 4>
     //friend SIMDType sel(const SIMDType& a, const SIMDType& b, const SIMDType& c) { return and_not(c, a) | (b & c); }
     
     //friend SIMDType and_not(const SIMDType& a, const SIMDType& b) { return _mm_andnot_ps(a.mVal, b.mVal); }
-    //friend SIMDType operator & (const SIMDType& a, const SIMDType& b) { return vandq_s32(a.mVal, b.mVal); }
-    //friend SIMDType operator | (const SIMDType& a, const SIMDType& b) { return vorrq_s32(a.mVal, b.mVal); }
-    //friend SIMDType operator ^ (const SIMDType& a, const SIMDType& b) { return veorq_s32(a.mVal, b.mVal); }
+    friend SIMDType operator & (const SIMDType& a, const SIMDType& b) { return bitwise<vandq_s32>(a, b); }
+    friend SIMDType operator | (const SIMDType& a, const SIMDType& b) { return bitwise<vorrq_s32>(a, b); }
+    friend SIMDType operator ^ (const SIMDType& a, const SIMDType& b) { return bitwise<veorq_s32>(a, b); }
     
     friend SIMDType operator == (const SIMDType& a, const SIMDType& b) { return vceqq_f32(a.mVal, b.mVal); }
     //friend SIMDType operator != (const SIMDType& a, const SIMDType& b) { return vmvnq_u32((a.mVal == b.mVal).mVal); }
@@ -549,6 +557,14 @@ struct SIMDType<float, 4> : public SIMDVector<float, float32x4_t, 4>
         vec.mData[1] = vcvt_f64_f32(vget_high_f32(mVal));
         
         return vec;
+    }
+    
+private:
+    
+    template <int64x2_t Op(int64x2_t, int64x2_t)>
+    friend SIMDType operator bitwise(const SIMDType& a, const SIMDType& b)
+    {
+        return vreinterpretq_s32_f32(Op(vreinterpretq_s32_f32(a.mVal), vreinterpretq_s32_f32(b.mVal)));
     }
 };
 
