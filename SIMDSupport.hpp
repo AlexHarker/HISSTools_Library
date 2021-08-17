@@ -427,6 +427,16 @@ struct SIMDType<float, 2>
 template<>
 struct SIMDType<double, 2> : public SIMDVector<double, float64x2_t, 2>
 {
+private:
+    
+    template <int64x2_t Op(int64x2_t, int64x2_t)>
+    friend SIMDType bitwise(const SIMDType& a, const SIMDType& b)
+    {
+        return vreinterpretq_s64_f64(Op(vreinterpretq_s64_f64(a.mVal), vreinterpretq_s64_f64(b.mVal)));
+    }
+    
+public:
+    
     SIMDType() {}
     SIMDType(const double& a) { mVal = vdupq_n_f64(a); }
     SIMDType(const double* a) { mVal = vld1q_f64(a); }
@@ -490,20 +500,22 @@ struct SIMDType<double, 2> : public SIMDVector<double, float64x2_t, 2>
         
         return SIMDType<float, 2>(static_cast<float>(vals[0]), static_cast<float>(vals[1]));
     }
-    
-private:
-    
-    template <int64x2_t Op(int64x2_t, int64x2_t)>
-    friend SIMDType bitwise(const SIMDType& a, const SIMDType& b)
-    {
-        return vreinterpretq_s64_f64(Op(vreinterpretq_s64_f64(a.mVal), vreinterpretq_s64_f64(b.mVal)));
-    }
 };
 #endif /* defined (__arm64) */
 
 template<>
 struct SIMDType<float, 4> : public SIMDVector<float, float32x4_t, 4>
 {
+private:
+    
+    template <int32x4_t Op(int32x4_t, int32x4_t)>
+    friend SIMDType bitwise(const SIMDType& a, const SIMDType& b)
+    {
+        return vreinterpretq_s32_f32(Op(vreinterpretq_s32_f32(a.mVal), vreinterpretq_s32_f32(b.mVal)));
+    }
+    
+public:
+    
     SIMDType() {}
     SIMDType(const float& a) { mVal = vdupq_n_f32(a); }
     SIMDType(const float* a) { mVal = vld1q_f32(a); }
@@ -557,14 +569,6 @@ struct SIMDType<float, 4> : public SIMDVector<float, float32x4_t, 4>
         vec.mData[1] = vcvt_f64_f32(vget_high_f32(mVal));
         
         return vec;
-    }
-    
-private:
-    
-    template <int64x2_t Op(int64x2_t, int64x2_t)>
-    friend SIMDType bitwise(const SIMDType& a, const SIMDType& b)
-    {
-        return vreinterpretq_s32_f32(Op(vreinterpretq_s32_f32(a.mVal), vreinterpretq_s32_f32(b.mVal)));
     }
 };
 
