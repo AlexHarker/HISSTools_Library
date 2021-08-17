@@ -494,7 +494,7 @@ struct SIMDType<double, 2> : public SIMDVector<double, float64x2_t, 2>
 private:
     
     template <int64x2_t Op(int64x2_t, int64x2_t)>
-    friend SIMDType operator bitwise(const SIMDType& a, const SIMDType& b)
+    friend SIMDType bitwise(const SIMDType& a, const SIMDType& b)
     {
         return vreinterpretq_s64_f64(Op(vreinterpretq_s64_f64(a.mVal), vreinterpretq_s64_f64(b.mVal)));
     }
@@ -562,7 +562,7 @@ struct SIMDType<float, 4> : public SIMDVector<float, float32x4_t, 4>
 private:
     
     template <int64x2_t Op(int64x2_t, int64x2_t)>
-    friend SIMDType operator bitwise(const SIMDType& a, const SIMDType& b)
+    friend SIMDType bitwise(const SIMDType& a, const SIMDType& b)
     {
         return vreinterpretq_s32_f32(Op(vreinterpretq_s32_f32(a.mVal), vreinterpretq_s32_f32(b.mVal)));
     }
