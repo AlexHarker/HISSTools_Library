@@ -128,7 +128,7 @@ uint64_t timing_test(std::string test, uintptr_t fft_log2, double phase, bool ze
 int main(int argc, const char * argv[])
 {
     // insert code here...
-    std::cout << "Hello, World!\n";
+    std::cout << "Double vector size is " << SIMDLimits<double>::max_size << "\n";
     
     int fft_log2 = 14;
     int iter = 100;
@@ -141,6 +141,8 @@ int main(int argc, const char * argv[])
     timing_test<FFT_SETUP_D, FFT_SPLIT_COMPLEX_D, double>("Center Max", fft_log2, 1.0, false, iter);
     timing_test<FFT_SETUP_D, FFT_SPLIT_COMPLEX_D, double>("Zero Lin", fft_log2, 0.5, true, iter);
     timing_test<FFT_SETUP_D, FFT_SPLIT_COMPLEX_D, double>("Center Lin", fft_log2, 0.5, false, iter);
+    
+    std::cout << "Float vector size is " << SIMDLimits<float>::max_size << "\n";
     
     timing_test<FFT_SETUP_F, FFT_SPLIT_COMPLEX_F, float>("Zero Mix", fft_log2, 0.1, true, iter);
     timing_test<FFT_SETUP_F, FFT_SPLIT_COMPLEX_F, float>("Center Mix", fft_log2, 0.9, false, iter);
