@@ -553,7 +553,7 @@ struct SIMDType<float, 4> : public SIMDVector<float, float32x4_t, 4>
 };
 
 template<>
-struct SIMDType<int32_t, 4> : public SIMDVector<int32_t, __m128i, 4>
+struct SIMDType<int32_t, 4> : public SIMDVector<int32_t, int32x4_t, 4>
 {
     SIMDType() {}
     SIMDType(const int32_t& a) { mVal = vdupq_n_s32(a); }
