@@ -558,7 +558,7 @@ struct SIMDType<int32_t, 4> : public SIMDVector<int32_t, int32x4_t, 4>
     SIMDType() {}
     SIMDType(const int32_t& a) { mVal = vdupq_n_s32(a); }
     SIMDType(const int32_t* a) { mVal = vld1q_s32(a); }
-    SIMDType(__m128i a) : SIMDVector(a) {}
+    SIMDType(int32x4_t a) : SIMDVector(a) {}
     
     void store(int32_t *a) const { vst1q_s32(a, mVal); }
     
