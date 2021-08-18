@@ -435,6 +435,11 @@ private:
         return vreinterpretq_s64_f64(Op(vreinterpretq_s64_f64(a.mVal), vreinterpretq_s64_f64(b.mVal)));
     }
     
+    friend float64x2_t neq(float64x2_t a, float64x2_t b)
+    {
+        return vreinterpretq_s32_f64(vmvnq_s32(vreinterpretq_s32_f64(vceqq_f64(a, b))));
+    }
+    
 public:
     
     SIMDType() {}
@@ -480,7 +485,7 @@ public:
     friend SIMDType operator ^ (const SIMDType& a, const SIMDType& b) { return bitwise<veorq_s64>(a, b); }
     
     friend SIMDType operator == (const SIMDType& a, const SIMDType& b) { return vceqq_f64(a.mVal, b.mVal); }
-    //friend SIMDType operator != (const SIMDType& a, const SIMDType& b) { return _mm_cmpneq_pd(a.mVal, b.mVal); }
+    friend SIMDType operator != (const SIMDType& a, const SIMDType& b) { return neq(a.mVal, b.mVal); }
     friend SIMDType operator > (const SIMDType& a, const SIMDType& b) { return vcgtq_f64(a.mVal, b.mVal); }
     friend SIMDType operator < (const SIMDType& a, const SIMDType& b) { return vcltq_f64(a.mVal, b.mVal); }
     friend SIMDType operator >= (const SIMDType& a, const SIMDType& b) { return vcgeq_f64(a.mVal, b.mVal); }
@@ -512,6 +517,11 @@ private:
     friend SIMDType bitwise(const SIMDType& a, const SIMDType& b)
     {
         return vreinterpretq_s32_f32(Op(vreinterpretq_s32_f32(a.mVal), vreinterpretq_s32_f32(b.mVal)));
+    }
+    
+    friend float32x4_t neq(float32x4_t a, float32x4_t b)
+    {
+        return vreinterpretq_s32_f32(vmvnq_s32(vreinterpretq_s32_f32(vceqq_f32(a, b))));
     }
     
 public:
@@ -549,7 +559,7 @@ public:
     friend SIMDType operator ^ (const SIMDType& a, const SIMDType& b) { return bitwise<veorq_s32>(a, b); }
     
     friend SIMDType operator == (const SIMDType& a, const SIMDType& b) { return vceqq_f32(a.mVal, b.mVal); }
-    //friend SIMDType operator != (const SIMDType& a, const SIMDType& b) { return vmvnq_u32((a.mVal == b.mVal).mVal); }
+    friend SIMDType operator != (const SIMDType& a, const SIMDType& b) { return neq(a.mVal, b.mVal); }
     friend SIMDType operator > (const SIMDType& a, const SIMDType& b) { return vcgtq_f32(a.mVal, b.mVal); }
     friend SIMDType operator < (const SIMDType& a, const SIMDType& b) { return vcltq_f32(a.mVal, b.mVal); }
     friend SIMDType operator >= (const SIMDType& a, const SIMDType& b) { return vcgeq_f32(a.mVal, b.mVal); }
