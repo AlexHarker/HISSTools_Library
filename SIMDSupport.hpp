@@ -477,9 +477,10 @@ public:
     
     friend SIMDType min(const SIMDType& a, const SIMDType& b) { return vminq_f64(a.mVal, b.mVal); }
     friend SIMDType max(const SIMDType& a, const SIMDType& b) { return vmaxq_f64(a.mVal, b.mVal); }
-    //friend SIMDType sel(const SIMDType& a, const SIMDType& b, const SIMDType& c) { return and_not(c, a) | (b & c); }
+    friend SIMDType sel(const SIMDType& a, const SIMDType& b, const SIMDType& c) { return and_not(c, a) | (b & c); }
     
-    //friend SIMDType and_not(const SIMDType& a, const SIMDType& b) { return _mm_andnot_pd(a.mVal, b.mVal); }
+    // N.B. - operand swap for and_not
+    friend SIMDType and_not(const SIMDType& a, const SIMDType& b) { return bitwise<vbicq_s64>(b, a); }
     friend SIMDType operator & (const SIMDType& a, const SIMDType& b) { return bitwise<vandq_s64>(a, b); }
     friend SIMDType operator | (const SIMDType& a, const SIMDType& b) { return bitwise<vorrq_s64>(a, b); }
     friend SIMDType operator ^ (const SIMDType& a, const SIMDType& b) { return bitwise<veorq_s64>(a, b); }
@@ -551,9 +552,10 @@ public:
     
     friend SIMDType min(const SIMDType& a, const SIMDType& b) { return vminq_f32(a.mVal, b.mVal); }
     friend SIMDType max(const SIMDType& a, const SIMDType& b) { return vmaxq_f32(a.mVal, b.mVal); }
-    //friend SIMDType sel(const SIMDType& a, const SIMDType& b, const SIMDType& c) { return and_not(c, a) | (b & c); }
+    friend SIMDType sel(const SIMDType& a, const SIMDType& b, const SIMDType& c) { return and_not(c, a) | (b & c); }
     
-    //friend SIMDType and_not(const SIMDType& a, const SIMDType& b) { return _mm_andnot_ps(a.mVal, b.mVal); }
+    // N.B. - operand swap for and_not
+    friend SIMDType and_not(const SIMDType& a, const SIMDType& b) { return bitwise<vbicq_s32>(b, a); }
     friend SIMDType operator & (const SIMDType& a, const SIMDType& b) { return bitwise<vandq_s32>(a, b); }
     friend SIMDType operator | (const SIMDType& a, const SIMDType& b) { return bitwise<vorrq_s32>(a, b); }
     friend SIMDType operator ^ (const SIMDType& a, const SIMDType& b) { return bitwise<veorq_s32>(a, b); }
