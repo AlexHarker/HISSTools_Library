@@ -1,9 +1,6 @@
 
 #include "Convolver.h"
 
-#include <stdio.h>
-#include <string.h>
-
 HISSTools::Convolver::Convolver(uint32_t numIns, uint32_t numOuts, LatencyMode latency)
 : mTemporaryMemory(0)
 {
@@ -130,7 +127,7 @@ ConvolveError HISSTools::Convolver::set(uint32_t inChan, uint32_t outChan, const
     std::vector<float> inputFloat(impulseLength);
     
     for (unsigned long i = 0; i < impulseLength; i++)
-        inputFloat[i] = input[i];
+        inputFloat[i] = static_cast<float>(input[i]);
     
     return set(inChan, outChan, inputFloat.data(), impulseLength, resize);
 }

@@ -1,10 +1,14 @@
 
 #pragma once
 
-#include <stdlib.h>
 #include <cstdint>
+#include <cstdlib>
 #include <atomic>
 #include <functional>
+
+#ifdef _WIN32
+#include <malloc.h>
+#endif
 
 // FIX - locks around memory assignment - can be made more efficient by avoiding this at which point spinlocks will be justified....
 // Follow the HISSTools C++ design for this....  use separate freeing locks so the memory is always freed in the assignment thread
@@ -250,6 +254,17 @@ private:
         mLock.compare_exchange_strong(expected, false);
     }
     
+#ifdef _WIN32
+    static T* allocate(size_t size)
+    {
+        return static_cast<T *>(_aligned_malloc(size * sizeof(T), 16));
+    }
+    
+    static void deallocate(T *ptr)
+    {
+        _aligned_free(ptr);
+    }
+#else
 #ifdef __APPLE__
     static T* allocate(size_t size)
     {
@@ -266,6 +281,7 @@ private:
     {
         free(ptr);
     }
+#endif
     
     std::atomic<bool> mLock;
     
