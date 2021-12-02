@@ -20,7 +20,7 @@ void post_tracks(Tracker& tracker, int N)
 
         std::cout << "index " << i << "\n";
         std::cout << "active " << t.active() << "\n";
-        std::cout << "state " << t.m_state << "\n";
+        std::cout << "state " << static_cast<int>(t.m_state) << "\n";
         std::cout << "freq " << t.m_peak.freq() << "\n";
         std::cout << "amp " << t.m_peak.amp() << "\n";
     }
