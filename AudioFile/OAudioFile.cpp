@@ -5,6 +5,8 @@
 #include <cstring>
 #include <vector>
 
+#define WORK_LOOP_SIZE 1024
+
 namespace HISSTools
 {
     template <typename T> T paddedLength(T length)
@@ -36,7 +38,8 @@ namespace HISSTools
     void OAudioFile::open(const std::string& i, FileType type, PCMFormat format, uint16_t channels, double sr, Endianness endianness)
     {
         close();
-        mFile.open(i.c_str(), std::ios_base::binary);
+        using std::ios_base;
+        mFile.open(i.c_str(), ios_base::binary | ios_base::in | ios_base::out | ios_base::trunc);
 
         seekInternal(0);
 
@@ -55,6 +58,8 @@ namespace HISSTools
                 writeWaveHeader();
             else
                 writeAIFCHeader();
+                
+            mBuffer = new unsigned char[WORK_LOOP_SIZE * getFrameByteCount()];
         }
         else
             setErrorBit(Error::CouldNotOpen);
@@ -109,10 +114,8 @@ namespace HISSTools
         return mFile.good();
     }
 
-    bool OAudioFile::putU64(uint64_t value, Endianness fileEndianness)
+    void OAudioFile::rawU64(uint64_t value, Endianness fileEndianness, unsigned char* bytes)
     {
-        unsigned char bytes[8];
-
         if (fileEndianness == Endianness::Big)
         {
             bytes[0] = (value >> 56) & 0xFF;
@@ -135,14 +138,10 @@ namespace HISSTools
             bytes[6] = (value >> 48) & 0xFF;
             bytes[7] = (value >> 56) & 0xFF;
         }
-
-        return writeInternal(reinterpret_cast<const char*>(bytes), 8);
     }
-
-    bool OAudioFile::putU32(uint32_t value, Endianness fileEndianness)
+    
+    void OAudioFile::rawU32(uint32_t value, Endianness fileEndianness, unsigned char* bytes)
     {
-        unsigned char bytes[4];
-
         if (fileEndianness == Endianness::Big)
         {
             bytes[0] = (value >> 24) & 0xFF;
@@ -157,14 +156,10 @@ namespace HISSTools
             bytes[2] = (value >> 16) & 0xFF;
             bytes[3] = (value >> 24) & 0xFF;
         }
-
-        return writeInternal(reinterpret_cast<const char*>(bytes), 4);
     }
-
-    bool OAudioFile::putU24(uint32_t value, Endianness fileEndianness)
+    
+    void OAudioFile::rawU24(uint32_t value, Endianness fileEndianness, unsigned char* bytes)
     {
-        unsigned char bytes[3];
-
         if (fileEndianness == Endianness::Big)
         {
             bytes[0] = (value >> 16) & 0xFF;
@@ -177,14 +172,10 @@ namespace HISSTools
             bytes[1] = (value >> 8) & 0xFF;
             bytes[2] = (value >> 16) & 0xFF;
         }
-
-        return writeInternal(reinterpret_cast<const char*>(bytes), 3);
     }
-
-    bool OAudioFile::putU16(uint32_t value, Endianness fileEndianness)
+    
+    void OAudioFile::rawU16(uint32_t value, Endianness fileEndianness, unsigned char* bytes)
     {
-        unsigned char bytes[2];
-
         if (fileEndianness == Endianness::Big)
         {
             bytes[0] = (value >> 8) & 0xFF;
@@ -195,6 +186,45 @@ namespace HISSTools
             bytes[0] = (value >> 0) & 0xFF;
             bytes[1] = (value >> 8) & 0xFF;
         }
+    }
+    
+    void OAudioFile::rawU08(uint32_t value, unsigned char* bytes)
+    {
+        bytes[0] = value & 0xFF;
+    }
+
+    bool OAudioFile::putU64(uint64_t value, Endianness fileEndianness)
+    {
+        unsigned char bytes[8];
+
+        rawU64(value, fileEndianness, bytes);
+
+        return writeInternal(reinterpret_cast<const char*>(bytes), 8);
+    }
+
+    bool OAudioFile::putU32(uint32_t value, Endianness fileEndianness)
+    {
+        unsigned char bytes[4];
+
+        rawU32(value, fileEndianness, bytes);
+
+        return writeInternal(reinterpret_cast<const char*>(bytes), 4);
+    }
+
+    bool OAudioFile::putU24(uint32_t value, Endianness fileEndianness)
+    {
+        unsigned char bytes[3];
+
+        rawU24(value, fileEndianness, bytes);
+
+        return writeInternal(reinterpret_cast<const char*>(bytes), 3);
+    }
+
+    bool OAudioFile::putU16(uint32_t value, Endianness fileEndianness)
+    {
+        unsigned char bytes[2];
+
+        rawU16(value, fileEndianness, bytes);
 
         return writeInternal(reinterpret_cast<const char*>(bytes), 2);
     }
@@ -203,7 +233,7 @@ namespace HISSTools
     {
         unsigned char byte;
 
-        byte = value & 0xFF;
+        rawU08(value, &byte);
 
         return writeInternal(reinterpret_cast<const char*>(&byte), 1);
     }
@@ -349,7 +379,8 @@ namespace HISSTools
         success &= putChunk("data", 0);
         mPCMOffset = positionInternal();
 
-        if (!success) setErrorBit(Error::CouldNotWrite);
+        if (!success)
+            setErrorBit(Error::CouldNotWrite);
     }
 
     const char* OAudioFile::getCompressionTag() const
@@ -547,24 +578,28 @@ namespace HISSTools
     void OAudioFile::writeAudio(const T* input, uintptr_t numFrames, int32_t channel)
     {
         bool success = true;
+  
+        const uint32_t byteDepth = getByteDepth();
+        const uint16_t numChannels = (channel < 0) ? getChannels() : 1;
+        const uintptr_t byteStep = byteDepth * ((channel < 0) ? 1 : numChannels);
+        const uintptr_t endFrame = getPosition() + numFrames;
 
-        uint32_t byteDepth = getByteDepth();
-        uintptr_t inputSamples = (channel < 0) ? getChannels() * numFrames : numFrames;
-        uintptr_t offset = (channel < 0) ? 0 : channel * byteDepth;
-        uintptr_t byteStep = (channel < 0) ? 0 : getFrameByteCount() - (byteDepth + offset);
-        uintptr_t endFrame = getPosition() + numFrames;
+        // Check if writing to all channels
         
-        // FIX - the slowest thing is seeking in the file, so that seems like a bad plan - it might be better to read in chunks overwrite locally and then write back the chunk
+        const bool allChannels = !(channel >= 0 && numChannels > 1);
+
+        // Write zeros to channels if necessary (multichannel files are written one channel at a time)
         
-        // Write zeros to channels if necessary (multichannel files written one channel at a time)
+        if (!allChannels)
+          success &= resize(endFrame);
 
-        if (channel >= 0 && getChannels() > 1)
-            success &= resize(endFrame);
-
-        // Write audio data
-
-        switch (getPCMFormat())
+        mFile.seekg(mFile.tellp());
+                
+        channel = std::max(channel, 0);
+        
+        while (numFrames)
         {
+            /*
             case PCMFormat::Int8:
                 if (getFileType() == FileType::WAVE)
                 {
@@ -632,8 +667,82 @@ namespace HISSTools
                     seekRelativeInternal(byteStep);
                 }
                 break;
-        }
+            */
+            uintptr_t loopFrames = numFrames > WORK_LOOP_SIZE ? WORK_LOOP_SIZE : numFrames;
+            uintptr_t loopSamples = loopFrames * numChannels;
+            uintptr_t j = channel * byteDepth;
+            uintptr_t pos = mFile.tellg();
 
+            // Read chunk from file to write back to
+          
+            if (!allChannels)
+            {
+                mFile.clear();
+                mFile.read(reinterpret_cast<char*>(mBuffer), loopFrames * getFrameByteCount());
+            
+                if (mFile.gcount() != loopFrames * getFrameByteCount())
+                {
+                    setErrorBit(Error::CouldNotWrite);
+                    return;
+                }
+            }
+            
+            // Write audio data to a local buffer
+          
+            switch (getPCMFormat())
+            {
+                case PCMFormat::Int8:
+                    if (getFileType() == FileType::WAVE)
+                        for (uintptr_t i = 0; i < loopSamples; i++, j += byteStep)
+                            rawU08(inputToU8(input[i]), mBuffer + j);
+                    else
+                        for (uintptr_t i = 0; i < loopSamples; i++, j += byteStep)
+                            rawU08(inputToU32(input[i], 8), mBuffer + j);
+                    break;
+
+                case PCMFormat::Int16:
+                    for (uintptr_t i = 0; i < loopSamples; i++, j += byteStep)
+                        rawU16(inputToU32(input[i], 16), getAudioEndianness(), mBuffer + j);
+                    break;
+
+                case PCMFormat::Int24:
+                    for (uintptr_t i = 0; i < loopSamples; i++, j += byteStep)
+                        rawU24(inputToU32(input[i], 24), getAudioEndianness(), mBuffer + j);
+                    break;
+
+                case PCMFormat::Int32:
+                    for (uintptr_t i = 0; i < loopSamples; i++, j += byteStep)
+                        rawU32(inputToU32(input[i], 32), getAudioEndianness(), mBuffer + j);
+                    break;
+
+                case PCMFormat::Float32:
+                    for (uintptr_t i = 0; i < loopSamples; i++, j += byteStep)
+                    {
+                        float value = input[i];
+                        rawU32(*reinterpret_cast<uint32_t*>(&value), getAudioEndianness(), mBuffer + j);
+                    }
+                    break;
+
+                case PCMFormat::Float64:
+                    for (uintptr_t i = 0; i < loopSamples; i++,  j += byteStep)
+                    {
+                        double value = input[i];
+                        rawU64(*reinterpret_cast<uint64_t*>(&value), getAudioEndianness(), mBuffer + j);
+                    }
+                    break;
+            }
+            
+            // Write buffer back to file
+            
+            if (!allChannels)
+                mFile.seekp(pos);
+              
+            bool didwrite = writeInternal(reinterpret_cast<const char*>(mBuffer), loopFrames * getFrameByteCount());
+            
+            numFrames -= loopFrames;
+            input     += loopSamples;
+        }
+        
         // Update number of frames
 
         success &= updateHeader();

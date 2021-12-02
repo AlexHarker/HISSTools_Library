@@ -46,7 +46,13 @@ namespace HISSTools
         bool putU24(uint32_t value, Endianness fileEndianness);
         bool putU16(uint32_t value, Endianness fileEndianness);
         bool putU08(uint32_t value);
-        
+
+        void rawU64(uint64_t value, Endianness fileEndianness, unsigned char* bytes);
+        void rawU32(uint32_t value, Endianness fileEndianness, unsigned char* bytes);
+        void rawU24(uint32_t value, Endianness fileEndianness, unsigned char* bytes);
+        void rawU16(uint32_t value, Endianness fileEndianness, unsigned char* bytes);
+        void rawU08(uint32_t value, unsigned char* bytes);
+
         bool putPadByte();
 
         bool putExtended(double);
@@ -71,7 +77,8 @@ namespace HISSTools
         
         //  Data
 
-        std::ofstream mFile;
+        std::fstream mFile;
+        unsigned char* mBuffer;
     };
 }
 
