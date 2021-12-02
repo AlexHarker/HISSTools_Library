@@ -476,7 +476,7 @@ namespace HISSTools
     
     BaseAudioFile::Error IAudioFile::parseWaveHeader(const char* fileType)
     {
-        char chunk[16];
+        char chunk[40];
         uint32_t chunkSize;
         
         // Check endianness
@@ -484,23 +484,39 @@ namespace HISSTools
         mHeaderEndianness = matchTag(fileType, "RIFX") ? Endianness::Big : Endianness::Little;
         mAudioEndianness = getHeaderEndianness();
         
-        // Search for the format chunk and read first 16 bytes (ignored any
-        // extended header info)
+        // Search for the format chunk and read the format chunk as needed, checking for a valid size
         
-        if (!(findChunk("fmt ", chunkSize) && readChunk(chunk, 16, chunkSize)))
+        if (!(findChunk("fmt ", chunkSize)) || (chunkSize != 16 && chunkSize != 18 && chunkSize != 40))
             return Error::BadFormat;
-        
-        // Check for supported formats
-        
-        if (getU16(chunk, getHeaderEndianness()) != 0x0001 && getU16(chunk, getHeaderEndianness()) != 0x0003)
-            return Error::UnsupportedWaveFormat;
-        
+
+        if (!readChunk(chunk, chunkSize, chunkSize))
+            return Error::BadFormat;
+                
         // Retrieve relevant data
+
+        uint16_t formatByte = getU16(chunk, getHeaderEndianness());
+        uint16_t bitDepth = getU16(chunk + 14, getHeaderEndianness());
         
-        NumericType type = getU16(chunk + 0, getHeaderEndianness()) == 0x0003 ? NumericType::Float : NumericType::Integer;
+        // WAVE_FORMAT_EXTENSIBLE
+        
+        if (formatByte == 0xFFFE)
+        {
+            formatByte = getU16(chunk + 24, getHeaderEndianness());
+                
+            constexpr unsigned char guid[14] = { 0x00,0x00,0x00,0x00,0x10,0x00,0x80,0x00,0x00,0xAA,0x00,0x38,0x9B,0x71 };
+       
+            if (std::memcmp(chunk + 26, &guid, 14) != 0)
+                return Error::UnsupportedWaveFormat;
+        }
+
+        // Check for a valid format byte (currently PCM or float only)
+
+        if (formatByte != 0x0001 && formatByte != 0x0003)
+            return Error::UnsupportedWaveFormat;
+
+        NumericType type = formatByte == 0x0003 ? NumericType::Float : NumericType::Integer;
         mNumChannels = getU16(chunk + 2, getHeaderEndianness());
         mSamplingRate = getU32(chunk + 4, getHeaderEndianness());
-        uint16_t bitDepth = getU16(chunk + 14, getHeaderEndianness());
         
         // Set PCM Format
         
