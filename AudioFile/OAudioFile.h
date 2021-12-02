@@ -1,7 +1,7 @@
 #ifndef _HISSTOOLS_OAUDIOFILE_
 #define _HISSTOOLS_OAUDIOFILE_
 
-#include "BaseAudioFile.h"
+#include "BaseAudioFile.hpp"
 #include <fstream>
 
 namespace HISSTools
@@ -13,32 +13,33 @@ namespace HISSTools
         OAudioFile(const std::string&, FileType, PCMFormat, uint16_t channels, double sr);
         OAudioFile(const std::string&, FileType, PCMFormat, uint16_t channels, double sr, Endianness);
         
-        ~OAudioFile();
+        ~OAudioFile() { close(); }
 
         void open(const std::string&, FileType, PCMFormat, uint16_t channels, double sr);
         void open(const std::string&, FileType, PCMFormat, uint16_t channels, double sr, Endianness);
-        void close();
-        bool isOpen();
-        void seek(FrameCount position = 0);
-        FrameCount getPosition();
-
-        void writeInterleaved(const double* input, FrameCount numFrames);
-        void writeInterleaved(const float* input, FrameCount numFrames);
         
-        void writeChannel(const double* input, FrameCount numFrames, uint16_t channel);
-        void writeChannel(const float* input, FrameCount numFrames, uint16_t channel);
-        void writeRaw(const char *input, FrameCount numFrames) { writePCMData(input, numFrames); }
+        bool isOpen() const { return mFile.is_open(); }
+        void close();
+        void seek(uintptr_t position = 0);
+        uintptr_t getPosition();
+
+        void writeInterleaved(const double* input, uintptr_t numFrames) { writeAudio(input, numFrames); }
+        void writeInterleaved(const float* input, uintptr_t numFrames)  { writeAudio(input, numFrames); }
+        
+        void writeChannel(const double* input, uintptr_t numFrames, uint16_t channel)   { writeAudio(input, numFrames, channel); }
+        void writeChannel(const float* input, uintptr_t numFrames, uint16_t channel)    {  writeAudio(input, numFrames, channel); }
+        void writeRaw(const char *input, uintptr_t numFrames)                           { writePCMData(input, numFrames); }
             
     protected:
         
-        ByteCount getHeaderSize() const;
+        uintptr_t getHeaderSize() const { return getPCMOffset() - 8; }
 
     private:
         
-        ByteCount positionInternal();
-        bool seekInternal(ByteCount position);
-        bool seekRelativeInternal(ByteCount offset);
-        bool writeInternal(const char* buffer, ByteCount bytes);
+        uintptr_t positionInternal();
+        bool seekInternal(uintptr_t position);
+        bool seekRelativeInternal(uintptr_t offset);
+        bool writeInternal(const char* buffer, uintptr_t bytes);
         
         bool putU64(uint64_t value, Endianness fileEndianness);
         bool putU32(uint32_t value, Endianness fileEndianness);
@@ -60,13 +61,13 @@ namespace HISSTools
         uint32_t inputToU32(double input, int32_t bitDepth);
         uint8_t inputToU8(double input);
         
-        bool resize(FrameCount numFrames);
+        bool resize(uintptr_t numFrames);
         bool updateHeader();
-        template <class T> void writeAudio(const T* input, FrameCount numFrames, int32_t channel = -1);
-        bool writePCMData(const char* input, FrameCount numFrames);
+        template <class T> void writeAudio(const T* input, uintptr_t numFrames, int32_t channel = -1);
+        bool writePCMData(const char* input, uintptr_t numFrames);
 
-        const char *getCompressionTag();
-        const char *getCompressionString();
+        const char *getCompressionTag() const;
+        const char *getCompressionString() const;
         
         //  Data
 
