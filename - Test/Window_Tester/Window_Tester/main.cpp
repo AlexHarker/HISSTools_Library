@@ -119,7 +119,7 @@ bool check_symmetry()
 
 void check_window(const char* wind, window_functions::window_generator<double> f, const window_functions::params &p)
 {
-    const static int size = 32768;
+    constexpr int size = 32768;
     double window[size];
     
     f(window, size, 0, size, p);
@@ -146,9 +146,9 @@ void check_window(const char* wind, window_functions::window_generator<double> f
 
 int main(int argc, const char * argv[])
 {
-    const static int size = 32768;
-    const static int iter = 1024;
-    const static int sym_iter = 32768;
+    constexpr int size = 32768;
+    constexpr int iter = 1024;
+    constexpr int sym_iter = 32768;
     double window[size];
 
     rand_engine.seed(std::random_device()());
@@ -203,7 +203,7 @@ int main(int argc, const char * argv[])
     
     gen(0, window, size, 0, size, params(4));
     
-    if (argc)
+    if (argc > 1)
     {
         HISSTools::OAudioFile file(argv[1], HISSTools::BaseAudioFile::kAudioFileWAVE, HISSTools::BaseAudioFile::kAudioFileFloat32, 1, 44100.0);
         
