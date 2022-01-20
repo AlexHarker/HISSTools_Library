@@ -430,17 +430,13 @@ namespace HISSTools
                     
                 case AIFFTag::Audio:
                 {
-                    // Audio data starts 8 bytes after this point in the file (2 x 32-bit values) + offset dealt with below
-                    
-                    mPCMOffset = positionInternal() + 8;
-                    
                     if (!readChunk(chunk, 4, chunkSize))
                         return Error::BadFormat;
                     
-                    // Account for offset value (ignore block size value that comes after that)
+                    // Audio data starts after a 32-bit block size value (ignored) plus an offset readh here
+
+                    mPCMOffset = positionInternal() + 4 + getU32(chunk, getHeaderEndianness());
                     
-                    mPCMOffset = getPCMOffset() + getU32(chunk, getHeaderEndianness());
-        
                     break;
                 }
                     
