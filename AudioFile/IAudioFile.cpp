@@ -288,7 +288,8 @@ namespace HISSTools
         
         enumeratedTag = AIFFTag::Unknown;
         
-        if (!readChunkHeader(tag, chunkSize)) return false;
+        if (!readChunkHeader(tag, chunkSize))
+            return false;
         
         if      (matchTag(tag, "FVER")) enumeratedTag = AIFFTag::Version;
         else if (matchTag(tag, "COMM")) enumeratedTag = AIFFTag::Common;
@@ -351,10 +352,9 @@ namespace HISSTools
         uint32_t formatCheck = 0;
         char chunk[22];
         uint32_t chunkSize;
-        uint16_t bitDepth;
-        NumericType type;
         
         mHeaderEndianness = Endianness::Big;
+    
         // Iterate over chunks
         
         while (getAIFFChunkHeader(tag, chunkSize))
@@ -388,10 +388,10 @@ namespace HISSTools
                     
                     mNumChannels = getU16(chunk + 0, getHeaderEndianness());
                     mNumFrames = getU32(chunk + 2, getHeaderEndianness());
-                    bitDepth = getU16(chunk + 6, getHeaderEndianness());
+                    uint16_t bitDepth = getU16(chunk + 6, getHeaderEndianness());
                     mSamplingRate = extendedToDouble(chunk + 8);
                     
-                    type = NumericType::Integer;
+                    NumericType type = NumericType::Integer;
                     mAudioEndianness = Endianness::Big;
                     
                     // If there are no frames then it is not required for there
