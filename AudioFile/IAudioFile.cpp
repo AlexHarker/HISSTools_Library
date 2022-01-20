@@ -513,8 +513,7 @@ namespace HISSTools
         if (!setPCMFormat(type, bitDepth))
             return Error::UnsupportedPCMFormat;
         
-        // Search for the data chunk and retrieve frame size and file offset
-        // to audio data
+        // Search for the data chunk and retrieve frame size and file offset to audio data
         
         if (!findChunk("data", chunkSize))
             return Error::BadFormat;
