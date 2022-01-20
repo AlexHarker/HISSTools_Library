@@ -355,16 +355,6 @@ namespace HISSTools
         NumericType type;
         
         mHeaderEndianness = Endianness::Big;
-        
-        if (matchTag(fileSubtype, "AIFC"))
-        {
-            mFileType = FileType::AIFC;
-            
-            // Require a version chunk
-            
-            formatValid |= static_cast<uint32_t>(AIFFTag::Version);
-        }
-        
         // Iterate over chunks
         
         while (getAIFFChunkHeader(tag, chunkSize))
@@ -412,6 +402,12 @@ namespace HISSTools
                     
                     if (matchTag(fileSubtype, "AIFC"))
                     {
+                        mFileType = FileType::AIFC;
+                        
+                        // Require a version chunk
+                        
+                        formatValid |= static_cast<uint32_t>(AIFFTag::Version);
+                        
                         // Set parameters based on format
                         
                         switch (getAIFCCompression(chunk + 18))
