@@ -74,7 +74,7 @@ namespace HISSTools
 
         //  PCM Format Helper
         
-        Error setPCMFormat(uint16_t bitDepth, NumericType format);
+        bool setPCMFormat(NumericType type, uint16_t bitDepth);
 
         //  AIFF Helpers
         

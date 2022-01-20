@@ -254,30 +254,25 @@ namespace HISSTools
     
     // PCM Format Helpers
 
-    BaseAudioFile::Error IAudioFile::setPCMFormat(uint16_t bitDepth, NumericType type)
+    bool IAudioFile::setPCMFormat(NumericType type, uint16_t bitDepth)
     {
-        PCMFormat format = static_cast<PCMFormat>(-1);
+        auto matchFormat = [&](NumericType t, uint16_t d, PCMFormat format)
+        {
+            if (!(type == t && bitDepth == d))
+                return false;
+                
+            mPCMFormat = format;
+            return true;
+        };
+        
+        if (matchFormat(NumericType::Integer,  8, PCMFormat::Int8))    return true;
+        if (matchFormat(NumericType::Integer, 16, PCMFormat::Int16))   return true;
+        if (matchFormat(NumericType::Integer, 24, PCMFormat::Int24))   return true;
+        if (matchFormat(NumericType::Integer, 32, PCMFormat::Int32))   return true;
+        if (matchFormat(NumericType::Float,   32, PCMFormat::Float32)) return true;
+        if (matchFormat(NumericType::Float,   64, PCMFormat::Float64)) return true;
 
-        if (type == NumericType::Integer)
-        {
-            if      (bitDepth == 8)     format = PCMFormat::Int8;
-            else if (bitDepth == 16)    format = PCMFormat::Int16;
-            else if (bitDepth == 24)    format = PCMFormat::Int24;
-            else if (bitDepth == 32)    format = PCMFormat::Int32;
-        }
-        
-        if (type == NumericType::Float)
-        {
-            if      (bitDepth == 32)    format = PCMFormat::Float32;
-            else if (bitDepth == 64)    format = PCMFormat::Float64;
-        }
-        
-        if (static_cast<int>(format) == -1)
-            return Error::UnsupportedPCMFormat;
-        
-        mPCMFormat = format;
-        
-        return Error::None;
+        return false;
     }
 
     // AIFF Helpers
@@ -427,9 +422,8 @@ namespace HISSTools
                     else
                         mFileType = FileType::AIFF;
                     
-                    Error error = setPCMFormat(bitDepth, type);
-                    if (error != Error::None)
-                        return error;
+                    if (!setPCMFormat(type, bitDepth))
+                        return Error::UnsupportedPCMFormat;
                     
                     break;
                 }
@@ -516,9 +510,8 @@ namespace HISSTools
         
         // Set PCM Format
         
-        Error error = setPCMFormat(bitDepth, type);
-        if (error != Error::None)
-            return error;
+        if (!setPCMFormat(type, bitDepth))
+            return Error::UnsupportedPCMFormat;
         
         // Search for the data chunk and retrieve frame size and file offset
         // to audio data
