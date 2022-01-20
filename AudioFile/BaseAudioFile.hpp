@@ -98,6 +98,7 @@ namespace HISSTools
             
             return errors;
         }
+        
         std::vector<Error> getErrors() const    { return extractErrorsFromFlags(getErrorFlags()); }
 
         static uint16_t findBitDepth(PCMFormat format)
