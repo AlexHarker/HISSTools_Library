@@ -9,61 +9,60 @@
 
 // Helper functors
 
-struct Pow2      { template <class T> T operator()(T a) const { return a * a; } };
-struct Pow3      { template <class T> T operator()(T a) const { return a * a * a; } };
-struct Pow4      { template <class T> T operator()(T a) const { return Pow2()(Pow2()(a)); } };
-struct Absolute  { template <class T> T operator()(T a) const { return std::abs(a); } };
-struct Logarithm { template <class T> T operator()(T a) const { return log(a); } };
+struct pow2      { template <class T> T operator()(T a) const { return a * a; } };
+struct pow3      { template <class T> T operator()(T a) const { return a * a * a; } };
+struct pow4      { template <class T> T operator()(T a) const { return pow2()(pow2()(a)); } };
+struct absolute  { template <class T> T operator()(T a) const { return std::abs(a); } };
+struct logarithm { template <class T> T operator()(T a) const { return log(a); } };
 
-struct Index     { template <class T> double operator[](T a) const { return static_cast<double>(a); } };
-struct LogIndex  { template <class T> double operator[](T a) const { return a ? log2(static_cast<double>(a)) : 0.0; } };
+struct indices      { template <class T> double operator[](T a) const { return static_cast<double>(a); } };
+struct log_indices  { template <class T> double operator[](T a) const { return a ? log2(static_cast<double>(a)) : 0.0; } };
 
 template <class T>
-struct LogWidth
+struct log_width
 {
-    LogWidth(T& data) : mData(data) {}
-    double operator[](size_t i) const { return i ? mData[i] * (log2(i + 0.5) - log2(i - 0.5)) : mData[i] * 0.0; }
-    const T mData;
-};
-
-
-template <class T, typename Op>
-struct ModifiedData
-{
-    ModifiedData(T& data) : mData(data) {}
-    double operator[](size_t i) const { return Op()(mData[i]); }
-    const T mData;
+    log_width(T& data) : m_data(data) {}
+    double operator[](size_t i) const { return i ? m_data[i] * (log2(i + 0.5) - log2(i - 0.5)) : m_data[i] * 0.0; }
+    const T m_data;
 };
 
 template <class T, typename Op>
-struct ModifiedDiffData
+struct modified_data
 {
-    ModifiedDiffData(T& data, double value) : mData(data), mValue(value) {}
-    double operator[](size_t i) const { return Op()(mData[i] - mValue); }
-    const T mData;
-    double mValue;
+    modified_data(T& data) : m_data(data) {}
+    double operator[](size_t i) const { return Op()(m_data[i]); }
+    const T m_data;
+};
+
+template <class T, typename Op>
+struct modified_diff_data
+{
+    modified_diff_data(T& data, double value) : m_data(data), m_value(value) {}
+    double operator[](size_t i) const { return Op()(m_data[i] - m_value); }
+    const T m_data;
+    double m_value;
 };
 
 template <typename Op>
-struct IndexDiffOp
+struct indices_diff_op
 {
-    IndexDiffOp(double value) : mValue(value) {}
-    double operator[](size_t i) const { return Op()(static_cast<double>(i) - mValue); }
-    double mValue;
+    indices_diff_op(double value) : m_value(value) {}
+    double operator[](size_t i) const { return Op()(static_cast<double>(i) - m_value); }
+    double m_value;
 };
 
 template <typename Op>
-struct LogIndexDiffOp
+struct log_indices_diff_op
 {
-    LogIndexDiffOp(double value) : mValue(value) {}
-    double operator[](size_t i) const { return Op()(LogIndex()[i] - mValue); }
-    double mValue;
+    log_indices_diff_op(double value) : m_value(value) {}
+    double operator[](size_t i) const { return Op()(log_indices()[i] - m_value); }
+    double m_value;
 };
 
 // Length
 
 template <class T>
-double statLength(const T input, size_t size)
+double stat_length(const T input, size_t size)
 {
     return static_cast<double>(size);
 }
@@ -71,13 +70,13 @@ double statLength(const T input, size_t size)
 // Min / Max Values
 
 template <class T>
-double statMin(const T input, size_t size)
+double stat_min(const T input, size_t size)
 {
     return size ? *(std::min_element(input, input + size)) : std::numeric_limits<double>::infinity();
 }
 
 template <class T>
-double statMax(const T input, size_t size)
+double stat_max(const T input, size_t size)
 {
     return size ? *(std::max_element(input, input + size)) : -std::numeric_limits<double>::infinity();
 }
@@ -85,7 +84,7 @@ double statMax(const T input, size_t size)
 // Counts
 
 template <class T, typename CountOp>
-double statCount(const T input, size_t size, CountOp op)
+double stat_count(const T input, size_t size, CountOp op)
 {
     size_t count = 0;
     
@@ -97,43 +96,43 @@ double statCount(const T input, size_t size, CountOp op)
 }
 
 template <class T, typename Op>
-struct FixedCompare
+struct fixed_compare
 {
-    FixedCompare(T value, Op op) : mValue(value) {}
-    bool operator()(T a) { return Op()(a, mValue); }
-    T mValue;
+    fixed_compare(T value) : m_value(value) {}
+    bool operator()(T a) { return Op()(a, m_value); }
+    T m_value;
 };
 
 template <class T, class U>
-double statCountAbove(const T input, U threshold, size_t size)
+double stat_count_above(const T input, U threshold, size_t size)
 {
-    return statCount(input, size, FixedCompare<U, std::greater<U>>(threshold));
+    return stat_count(input, size, fixed_compare<U, std::greater<U>>(threshold));
 }
 
 template <class T, class U>
-double statCountBelow(const T input, U threshold, size_t size)
+double stat_count_below(const T input, U threshold, size_t size)
 {
-    return statCount(input, size, FixedCompare<U, std::less<U>>(threshold));
+    return stat_count(input, size, fixed_compare<U, std::less<U>>(threshold));
 }
 
 // Ratios
 
 template <class T, class U>
-double statRatioAbove(const T input, U threshold, size_t size)
+double stat_ratio_above(const T input, U threshold, size_t size)
 {
-    return statCountAbove(input, threshold, size) / statLength(input, size);
+    return stat_count_above(input, threshold, size) / stat_length(input, size);
 }
 
 template <class T, class U>
-double statRatioBelow(const T input, U threshold, size_t size)
+double stat_ratio_below(const T input, U threshold, size_t size)
 {
-    return statCountBelow(input, threshold, size) / statLength(input, size);
+    return stat_count_below(input, threshold, size) / stat_length(input, size);
 }
 
 // Sums
 
 template <class T>
-double statSum(const T input, size_t size)
+double stat_sum(const T input, size_t size)
 {
     double sum = 0.0;
     
@@ -144,27 +143,27 @@ double statSum(const T input, size_t size)
 }
 
 template <class T>
-double statSumAbs(const T input, size_t size)
+double stat_sum_abs(const T input, size_t size)
 {
-    return statSum(ModifiedData<T, Absolute>(input), size);
+    return stat_sum(modified_data<T, absolute>(input), size);
 }
 
 template <class T>
-double statSumSquares(const T input, size_t size)
+double stat_sum_squares(const T input, size_t size)
 {
-    return statSum(ModifiedData<const T, Pow2>(input), size);
+    return stat_sum(modified_data<const T, pow2>(input), size);
 }
 
 template <class T>
-double statSumLogs(const T input, size_t size)
+double stat_sum_logs(const T input, size_t size)
 {
-    return statSum(ModifiedData<const T, Logarithm>(input), size);
+    return stat_sum(modified_data<const T, logarithm>(input), size);
 }
 
 // Weighted Sums
 
 template <class T, class U>
-double statWeightedSum(const T data, const U weights, size_t size)
+double stat_weighted_sum(const T data, const U weights, size_t size)
 {
     double sum = 0.0;
     
@@ -175,59 +174,59 @@ double statWeightedSum(const T data, const U weights, size_t size)
 }
 
 template <class T>
-double statWeightedSum(const T input, size_t size)
+double stat_weighted_sum(const T input, size_t size)
 {
-    return statWeightedSum(Index(), input, size);
+    return stat_weighted_sum(indices(), input, size);
 }
 
 template <class T>
-double statWeightedSumAbs(const T input, size_t size)
+double stat_weighted_sum_abs(const T input, size_t size)
 {
-    return statWeightedSum(Index(), ModifiedData<T, Absolute>(input), size);
+    return stat_weighted_sum(indices(), modified_data<T, absolute>(input), size);
 }
 
 template <class T>
-double statWeightedSumSquares(const T input, size_t size)
+double stat_weighted_sum_squares(const T input, size_t size)
 {
-    return statWeightedSum(Index(), ModifiedData<T, Pow2>(input), size);
+    return stat_weighted_sum(indices(), modified_data<T, pow2>(input), size);
 }
 
 template <class T>
-double statWeightedSumLogs(const T input, size_t size)
+double stat_weighted_sum_logs(const T input, size_t size)
 {
-    return statWeightedSum(Index(), ModifiedData<T, Logarithm>(input), size);
+    return stat_weighted_sum(indices(), modified_data<T, logarithm>(input), size);
 }
 
 // Weighted Sums (by weights)
 
 template <class T>
-double statWeightedSum(const T input, const T weights, size_t size)
+double stat_weighted_sum(const T input, const T weights, size_t size)
 {
-    return statWeightedSum(input, weights, size);
+    return stat_weighted_sum(input, weights, size);
 }
 
 template <class T>
-double statWeightedSumAbs(const T input, const T weights, size_t size)
+double stat_weighted_sum_abs(const T input, const T weights, size_t size)
 {
-    return statWeightedSum(ModifiedData<const T, Absolute>(input), weights, size);
+    return stat_weighted_sum(modified_data<const T, absolute>(input), weights, size);
 }
 
 template <class T>
-double statWeightedSumSquares(const T input, const T weights, size_t size)
+double stat_weighted_sum_squares(const T input, const T weights, size_t size)
 {
-    return statWeightedSum(ModifiedData<const T, Pow2>(input), weights, size);
+    return stat_weighted_sum(modified_data<const T, pow2>(input), weights, size);
 }
 
 template <class T>
-double statWeightedSumLogs(const T input, const T weights, size_t size)
+double stat_weighted_sum_logs(const T input, const T weights, size_t size)
 {
-    return statWeightedSum(ModifiedData<const T, Logarithm>(input), weights, size);
+    return stat_weighted_sum(modified_data<const T, logarithm>(input), weights, size);
 }
 
 // Product
 
 template <class T>
-double statProduct(const T input, size_t size)
+double stat_product(const T input, size_t size)
 {
     double product = 1.0;
     
@@ -240,46 +239,46 @@ double statProduct(const T input, size_t size)
 // Means
 
 template <class T>
-double statMean(const T input, size_t size)
+double stat_mean(const T input, size_t size)
 {
-    return statSum(input, size) / statLength(input, size);
+    return stat_sum(input, size) / stat_length(input, size);
 }
 
 template <class T>
-double statMeanSquares(const T input, size_t size)
+double stat_mean_squares(const T input, size_t size)
 {
-    return statSumSquares(input, size) / statLength(input, size);
+    return stat_sum_squares(input, size) / stat_length(input, size);
 }
 
 template <class T>
-double statGeometricMean(const T input, size_t size)
+double stat_geometric_mean(const T input, size_t size)
 {
-    return exp(statSumLogs(input, size) / statLength(input, size));
+    return exp(stat_sum_logs(input, size) / stat_length(input, size));
 }
 
 // Variance
 
 template <class T>
-double statVariance(const T input, size_t size)
+double stat_variance(const T input, size_t size)
 {
-    double mean = statMean(input, size);
-    return statSum(ModifiedDiffData<const T, Pow2>(input, mean), size) / statLength(input, size);
+    double mean = stat_mean(input, size);
+    return stat_sum(modified_diff_data<const T, pow2>(input, mean), size) / stat_length(input, size);
 }
                            
 // Standard Deviation
 
 template <class T>
-double statStandardDeviation(const T input, size_t size)
+double stat_standard_deviation(const T input, size_t size)
 {
-    return sqrt(statVariance(input, size));
+    return sqrt(stat_variance(input, size));
 }
 
 // PDF Percentile
 
 template <class T>
-double statPDFPercentile(const T input, double centile, size_t size)
+double stat_pdf_percentile(const T input, double centile, size_t size)
 {
-    double target = statSum(input, size) * std::min(100.0, std::max(centile, 0.0)) / 100.0;
+    double target = stat_sum(input, size) * std::min(100.0, std::max(centile, 0.0)) / 100.0;
     
     double sum = 0.0;
     
@@ -296,101 +295,101 @@ double statPDFPercentile(const T input, double centile, size_t size)
 // Shape
 
 template <class T>
-double statCentroid(const T input, size_t size)
+double stat_centroid(const T input, size_t size)
 {
-    return statWeightedSum(input, size) / statSum(input, size);
-}
-                        
-template <class T>
-double statSpread(const T input, size_t size)
-{
-    double centroid = statCentroid(input, size);
-    return sqrt(statWeightedSum(IndexDiffOp<Pow2>(centroid), input, size) / statSum(input, size));
+    return stat_weighted_sum(input, size) / stat_sum(input, size);
 }
 
 template <class T>
-double statSkewness(const T input, size_t size)
+double stat_spread(const T input, size_t size)
 {
-    double centroid = statCentroid(input, size);
-    double denominator = Pow3()(statSpread(input, size)) * statSum(input, size);
-    return denominator ? statWeightedSum(IndexDiffOp<Pow3>(centroid), input, size) / denominator : 0.0;
+    double centroid = stat_centroid(input, size);
+    return sqrt(stat_weighted_sum(indices_diff_op<pow2>(centroid), input, size) / stat_sum(input, size));
 }
 
 template <class T>
-double statKurtosis(const T input, size_t size)
+double stat_skewness(const T input, size_t size)
 {
-    double centroid = statCentroid(input, size);
-    double denominator = Pow4()(statSpread(input, size)) * statSum(input, size);;
-    return denominator ? statWeightedSum(IndexDiffOp<Pow4>(centroid), input, size) / denominator : std::numeric_limits<double>::infinity();
+    double centroid = stat_centroid(input, size);
+    double denominator = pow3()(stat_spread(input, size)) * stat_sum(input, size);
+    return denominator ? stat_weighted_sum(indices_diff_op<pow3>(centroid), input, size) / denominator : 0.0;
+}
+
+template <class T>
+double stat_kurtosis(const T input, size_t size)
+{
+    double centroid = stat_centroid(input, size);
+    double denominator = pow4()(stat_spread(input, size)) * stat_sum(input, size);
+    return denominator ? stat_weighted_sum(indices_diff_op<pow4>(centroid), input, size) / denominator : std::numeric_limits<double>::infinity();
 }
 
 // Log Shape
 
 template <class T>
-double statLogCentroid(const T input, size_t size)
+double stat_log_centroid(const T input, size_t size)
 {
-    return exp2(statWeightedSum(LogIndex(), LogWidth<T>(input), size) / (statSum(LogWidth<T>(input), size)));
+    return exp2(stat_weighted_sum(log_indices(), log_width<T>(input), size) / (stat_sum(log_width<T>(input), size)));
 }
 
 template <class T>
-double statLogSpread(const T input, size_t size)
+double stat_log_spread(const T input, size_t size)
 {
-    double centroid = statLogCentroid(input, size);
-    return sqrt(statWeightedSum(LogIndexDiffOp<Pow2>(log2(centroid)), LogWidth<T>(input), size) / (statSum(LogWidth<T>(input)), size));
+    double centroid = stat_log_centroid(input, size);
+    return sqrt(stat_weighted_sum(log_indices_diff_op<pow2>(log2(centroid)), log_width<T>(input), size) / (stat_sum(log_width<T>(input)), size));
 }
 
 template <class T>
-double statLogSkewness(const T input, size_t size)
+double stat_log_skewness(const T input, size_t size)
 {
-    double centroid = statLogCentroid(input, size);
-    double denominator = Pow3()(statLogSpread(input, size)) * statSum(LogWidth<T>(input), size);
-    return denominator ? statWeightedSum(LogIndexDiffOp<Pow3>(log2(centroid)), LogWidth<T>(input), size) / denominator : 0.0;
+    double centroid = stat_log_centroid(input, size);
+    double denominator = pow3()(stat_log_spread(input, size)) * stat_sum(log_width<T>(input), size);
+    return denominator ? stat_weighted_sum(log_indices_diff_op<pow3>(log2(centroid)), log_width<T>(input), size) / denominator : 0.0;
 }
 
 template <class T>
-double statLogKurtosis(const T input, size_t size)
+double stat_log_kurtosis(const T input, size_t size)
 {
-    double centroid = statCentroid(input, size);
-    double denominator = Pow4()(statLogSpread(input, size)) * statSum(LogWidth<T>(input), size);
-    return denominator ? statWeightedSum(LogIndexDiffOp<Pow4>(log2(centroid)), LogWidth<T>(input), size) / denominator : std::numeric_limits<double>::infinity();
+    double centroid = stat_centroid(input, size);
+    double denominator = pow4()(stat_log_spread(input, size)) * stat_sum(log_width<T>(input), size);
+    return denominator ? stat_weighted_sum(log_indices_diff_op<pow4>(log2(centroid)), log_width<T>(input), size) / denominator : std::numeric_limits<double>::infinity();
 }
 
 // Flatness
 
 template <class T>
-double statFlatness(const T input, size_t size)
+double stat_flatness(const T input, size_t size)
 {
-    return statGeometricMean(input, size) / statMean(input, size);
+    return stat_geometric_mean(input, size) / stat_mean(input, size);
 }
 
 // RMS
 
 template <class T>
-double statRMS(const T input, size_t size)
+double stat_rms(const T input, size_t size)
 {
-    return sqrt(statMeanSquares(input, size));
+    return sqrt(stat_mean_squares(input, size));
 }
 
 // Crest
 
 template <class T>
-double statCrest(const T input, size_t size)
+double stat_crest(const T input, size_t size)
 {
-    return statMax(input, size) / statRMS(input, size);
+    return stat_max(input, size) / stat_rms(input, size);
 }
 
 // Arg Min and Max
 
 template <class T>
-double statMaxPosition(const T input, size_t size)
+double stat_max_position(const T input, size_t size)
 {
     return size ? std::distance(input, std::max_element(input, input + size)) : -std::numeric_limits<double>::infinity();
 }
 
 template <class T>
-double statMinPosition(const T input, size_t size)
+double stat_min_position(const T input, size_t size)
 {
     return size ? std::distance(input, std::min_element(input, input + size)) : -std::numeric_limits<double>::infinity();
 }
 
-#endif /* Statistics_h */
+#endif /* STATISTICS_HPP */
