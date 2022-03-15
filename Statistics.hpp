@@ -60,6 +60,14 @@ namespace impl
         double operator[](size_t i) const { return Op()(log_indices()[i] - m_value); }
         double m_value;
     };
+
+    template <class T, typename Op>
+    struct fixed_compare
+    {
+        fixed_compare(T value) : m_value(value) {}
+        bool operator()(T a) { return Op()(a, m_value); }
+        T m_value;
+    };
 }
 
 // Length
@@ -84,6 +92,20 @@ double stat_max(const T input, size_t size)
     return size ? *(std::max_element(input, input + size)) : -std::numeric_limits<double>::infinity();
 }
 
+// Min and Max Positions
+
+template <class T>
+double stat_max_position(const T input, size_t size)
+{
+    return size ? std::distance(input, std::max_element(input, input + size)) : -std::numeric_limits<double>::infinity();
+}
+
+template <class T>
+double stat_min_position(const T input, size_t size)
+{
+    return size ? std::distance(input, std::min_element(input, input + size)) : -std::numeric_limits<double>::infinity();
+}
+
 // Counts
 
 template <class T, typename CountOp>
@@ -98,24 +120,16 @@ double stat_count(const T input, size_t size, CountOp op)
     return count;
 }
 
-template <class T, typename Op>
-struct fixed_compare
-{
-    fixed_compare(T value) : m_value(value) {}
-    bool operator()(T a) { return Op()(a, m_value); }
-    T m_value;
-};
-
 template <class T, class U>
 double stat_count_above(const T input, U threshold, size_t size)
 {
-    return stat_count(input, size, fixed_compare<U, std::greater<U>>(threshold));
+    return stat_count(input, size, impl::fixed_compare<U, std::greater<U>>(threshold));
 }
 
 template <class T, class U>
 double stat_count_below(const T input, U threshold, size_t size)
 {
-    return stat_count(input, size, fixed_compare<U, std::less<U>>(threshold));
+    return stat_count(input, size, impl::fixed_compare<U, std::less<U>>(threshold));
 }
 
 // Ratios
@@ -379,20 +393,6 @@ template <class T>
 double stat_crest(const T input, size_t size)
 {
     return stat_max(input, size) / stat_rms(input, size);
-}
-
-// Arg Min and Max
-
-template <class T>
-double stat_max_position(const T input, size_t size)
-{
-    return size ? std::distance(input, std::max_element(input, input + size)) : -std::numeric_limits<double>::infinity();
-}
-
-template <class T>
-double stat_min_position(const T input, size_t size)
-{
-    return size ? std::distance(input, std::min_element(input, input + size)) : -std::numeric_limits<double>::infinity();
 }
 
 #endif /* STATISTICS_HPP */
