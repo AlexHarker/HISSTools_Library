@@ -194,6 +194,16 @@ public:
         return calc_conv_corr_size(size1, size2, mode);
     }
     
+    uintptr_t required_fft_size(uintptr_t size1, uintptr_t size2) const
+    {
+        if (!size1 || !size2)
+            return 0;
+        
+        op_sizes sizes(size1, size2, EdgeMode::Linear);
+        
+        return sizes.fft();
+    }
+    
     static uintptr_t calc_fft_size_log2(uintptr_t size)
     {
         uintptr_t count = 0;
