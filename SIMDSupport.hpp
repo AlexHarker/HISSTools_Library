@@ -420,10 +420,10 @@ struct SIMDType<double, 1>
     SIMDType& operator *= (const SIMDType& b) { return (*this = *this * b); }
     SIMDType& operator /= (const SIMDType& b) { return (*this = *this / b); }
     
-    friend SIMDType sqrt(const SIMDType& a) { return sqrt(a.mVal); }
+    friend SIMDType sqrt(const SIMDType& a) { return std::sqrt(a.mVal); }
     
-    friend SIMDType round(const SIMDType& a) { return round(a.mVal); }
-    friend SIMDType trunc(const SIMDType& a) { return trunc(a.mVal); }
+    friend SIMDType round(const SIMDType& a) { return std::round(a.mVal); }
+    friend SIMDType trunc(const SIMDType& a) { return std::trunc(a.mVal); }
     
     friend SIMDType min(const SIMDType& a, const SIMDType& b) { return std::min(a.mVal, b.mVal); }
     friend SIMDType max(const SIMDType& a, const SIMDType& b) { return std::max(a.mVal, b.mVal); }
@@ -463,10 +463,10 @@ struct SIMDType<float, 1>
     SIMDType& operator *= (const SIMDType& b) { return (*this = *this * b); }
     SIMDType& operator /= (const SIMDType& b) { return (*this = *this / b); }
     
-    friend SIMDType sqrt(const SIMDType& a) { return sqrtf(a.mVal); }
+    friend SIMDType sqrt(const SIMDType& a) { return std::sqrt(a.mVal); }
     
-    friend SIMDType round(const SIMDType& a) { return roundf(a.mVal); }
-    friend SIMDType trunc(const SIMDType& a) { return truncf(a.mVal); }
+    friend SIMDType round(const SIMDType& a) { return std::round(a.mVal); }
+    friend SIMDType trunc(const SIMDType& a) { return std::trunc(a.mVal); }
     
     friend SIMDType min(const SIMDType& a, const SIMDType& b) { return std::min(a.mVal, b.mVal); }
     friend SIMDType max(const SIMDType& a, const SIMDType& b) { return std::max(a.mVal, b.mVal); }
