@@ -171,11 +171,18 @@ struct SIMDDenormals
 #if (SIMD_COMPILER_SUPPORT_LEVEL >= SIMD_COMPILER_SUPPORT_VEC128)
 #if defined SIMD_COMPILER_SUPPORT_NEON
 #if defined(__arm64) || defined(__aarch64__)
+    static constexpr unsigned long long ftz()
+    {
+        // __fpcr_flush_to_zero on apple, but better to be portable
+        
+        return 0x01000000ULL;
+    }
+    
     static denormal_flags flags()
     {
         fenv_t env;
         fegetenv(&env);
-        return make_flags(false, env.__fpcr & __fpcr_flush_to_zero);
+        return make_flags(false, env.__fpcr & ftz());
     }
     
     static void set(denormal_flags flags)
@@ -184,18 +191,31 @@ struct SIMDDenormals
         fegetenv(&env);
     
         if (flags.test(1))
-            env.__fpcr |= __fpcr_flush_to_zero;
+            env.__fpcr |= ftz();
         else
-            env.__fpcr ^= __fpcr_flush_to_zero;
+            env.__fpcr ^= ftz();
 
         fesetenv(&env);
     }
 #else
+    
+    static unsigned int& get_fpscr(fenv_t& env)
+    {
+        return env.__cw;
+    }
+    
+    static constexpr unsigned int ftz()
+    {
+        // __fpscr_flush_to_zero on apple, but better to be portable
+        
+        return 0x01000000U;
+    }
+    
     static denormal_flags flags()
     {
         fenv_t env;
         fegetenv(&env);
-        return make_flags(false, env.__fpscr & __fpscr_flush_to_zero);
+        return make_flags(false, get_fpscr(env) & ftz());
     }
     
     static void set(denormal_flags flags)
@@ -204,9 +224,9 @@ struct SIMDDenormals
         fegetenv(&env);
     
         if (flags.test(1))
-            env.__fpscr |= & __fpscr_flush_to_zero;
+            get_fpscr(env) |= ftz();
         else
-            env.__fpscr |= ^ __fpscr_flush_to_zero;
+            get_fpscr(env) ^= ftz();
             
         fesetenv(&env);
     }
