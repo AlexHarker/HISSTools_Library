@@ -9,7 +9,7 @@
 #include <cstdlib>
 #include <functional>
 
-#if defined(__arm__) || defined(__arm64)
+#if defined(__arm__) || defined(__arm64) || defined(__aarch64__)
 #include <arm_neon.h>
 #include <memory.h>
 #include <fenv.h>
@@ -81,10 +81,10 @@ struct SIMDLimits<float>
     static constexpr int byte_width = 32;
 };
 
-#elif defined(__SSE__) || defined(__arm__) || defined(__arm64)
+#elif defined(__SSE__) || defined(__arm__) || defined(__arm64) || defined(__aarch64__)
 #define SIMD_COMPILER_SUPPORT_LEVEL SIMD_COMPILER_SUPPORT_VEC128
 
-#if defined (__SSE__) || defined(__arm64)
+#if defined (__SSE__) || defined(__arm64) || defined(__aarch64__)
 template<>
 struct SIMDLimits<double>
 {
@@ -170,7 +170,7 @@ struct SIMDDenormals
     
 #if (SIMD_COMPILER_SUPPORT_LEVEL >= SIMD_COMPILER_SUPPORT_VEC128)
 #if defined SIMD_COMPILER_SUPPORT_NEON
-#if defined(__arm64)
+#if defined(__arm64) || defined(__aarch64__)
     static denormal_flags flags()
     {
         fenv_t env;
@@ -529,7 +529,7 @@ struct SIMDType<float, 2>
 
 #ifdef SIMD_COMPILER_SUPPORT_NEON /* Neon Intrinsics */
 
-#if defined(__arm64)
+#if defined(__arm64) || defined(__aarch64__)
 template<>
 struct SIMDType<double, 2> : public SIMDVector<double, float64x2_t, 2>
 {
@@ -613,7 +613,7 @@ public:
         return SIMDType<float, 2>(static_cast<float>(vals[0]), static_cast<float>(vals[1]));
     }
 };
-#endif /* defined (__arm64) */
+#endif /* defined (__arm64) || defined(__aarch64__) */
 
 template<>
 struct SIMDType<float, 4> : public SIMDVector<float, float32x4_t, 4>
