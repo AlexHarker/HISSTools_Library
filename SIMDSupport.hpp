@@ -646,15 +646,21 @@ struct SIMDType<float, 4> : public SIMDVector<float, float32x4_t, 4>
 {
 private:
     
-    template <int32x4_t Op(int32x4_t, int32x4_t)>
-    static SIMDType bitwise(const SIMDType& a, const SIMDType& b)
+    template <uint32x4_t Op(float32x4_t, float32x4_t)>
+    static SIMDType compare(const SIMDType& a, const SIMDType& b)
     {
-        return vreinterpretq_s32_f32(Op(vreinterpretq_s32_f32(a.mVal), vreinterpretq_s32_f32(b.mVal)));
+        return vreinterpretq_f32_u32(Op(a.mVal, b.mVal));
     }
     
-    static float32x4_t neq(float32x4_t a, float32x4_t b)
+    template <uint32x4_t Op(uint32x4_t, uint32x4_t)>
+    static SIMDType bitwise(const SIMDType& a, const SIMDType& b)
     {
-        return vreinterpretq_s32_f32(vmvnq_s32(vreinterpretq_s32_f32(vceqq_f32(a, b))));
+        return vreinterpretq_f32_u32(Op(vreinterpretq_u32_f32(a.mVal), vreinterpretq_u32_f32(b.mVal)));
+    }
+    
+    static float32x4_t neq(const SIMDType& a, const SIMDType& b)
+    {
+        return vreinterpretq_f32_u32(vmvnq_u32(vceqq_f32(a.mVal, b.mVal)));
     }
     
 public:
@@ -687,17 +693,17 @@ public:
     friend SIMDType sel(const SIMDType& a, const SIMDType& b, const SIMDType& c) { return and_not(c, a) | (b & c); }
     
     // N.B. - operand swap for and_not
-    friend SIMDType and_not(const SIMDType& a, const SIMDType& b) { return bitwise<vbicq_s32>(b, a); }
-    friend SIMDType operator & (const SIMDType& a, const SIMDType& b) { return bitwise<vandq_s32>(a, b); }
-    friend SIMDType operator | (const SIMDType& a, const SIMDType& b) { return bitwise<vorrq_s32>(a, b); }
-    friend SIMDType operator ^ (const SIMDType& a, const SIMDType& b) { return bitwise<veorq_s32>(a, b); }
+    friend SIMDType and_not(const SIMDType& a, const SIMDType& b) { return bitwise<vbicq_u32>(b, a); }
+    friend SIMDType operator & (const SIMDType& a, const SIMDType& b) { return bitwise<vandq_u32>(a, b); }
+    friend SIMDType operator | (const SIMDType& a, const SIMDType& b) { return bitwise<vorrq_u32>(a, b); }
+    friend SIMDType operator ^ (const SIMDType& a, const SIMDType& b) { return bitwise<veorq_u32>(a, b); }
     
-    friend SIMDType operator == (const SIMDType& a, const SIMDType& b) { return vceqq_f32(a.mVal, b.mVal); }
-    friend SIMDType operator != (const SIMDType& a, const SIMDType& b) { return neq(a.mVal, b.mVal); }
-    friend SIMDType operator > (const SIMDType& a, const SIMDType& b) { return vcgtq_f32(a.mVal, b.mVal); }
-    friend SIMDType operator < (const SIMDType& a, const SIMDType& b) { return vcltq_f32(a.mVal, b.mVal); }
-    friend SIMDType operator >= (const SIMDType& a, const SIMDType& b) { return vcgeq_f32(a.mVal, b.mVal); }
-    friend SIMDType operator <= (const SIMDType& a, const SIMDType& b) { return vcleq_f32(a.mVal, b.mVal); }
+    friend SIMDType operator == (const SIMDType& a, const SIMDType& b) { return compare<vceqq_f32>(a, b); }
+    friend SIMDType operator != (const SIMDType& a, const SIMDType& b) { return neq(a, b); }
+    friend SIMDType operator > (const SIMDType& a, const SIMDType& b) { return compare<vcgtq_f32>(a, b); }
+    friend SIMDType operator < (const SIMDType& a, const SIMDType& b) { return compare<vcltq_f32>(a, b); }
+    friend SIMDType operator >= (const SIMDType& a, const SIMDType& b) { return compare<vcgeq_f32>(a, b); }
+    friend SIMDType operator <= (const SIMDType& a, const SIMDType& b) { return compare<vcleq_f32>(a, b); }
     /*
     template <int z, int y, int x, int w>
     static SIMDType shuffle(const SIMDType& a, const SIMDType& b)
