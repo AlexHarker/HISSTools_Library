@@ -663,6 +663,55 @@ private:
         return vreinterpretq_f32_u32(vmvnq_u32(vceqq_f32(a.mVal, b.mVal)));
     }
     
+#if !defined(__arm64) && !defined(__aarch64__)
+    
+    // Helpers for single value iteration
+    
+    template <typename U, U Op(float), typename V>
+    static void iterate(V out[4], float temp[4], const float32x4_t& a)
+    {
+        vst1q_f32(temp, a);
+        
+        out[0] = Op(temp[0]);
+        out[1] = Op(temp[1]);
+        out[2] = Op(temp[2]);
+        out[3] = Op(temp[3]);
+    }
+    
+    template <float Op(float)>
+    static float32x4_t unary(const float32x4_t& a)
+    {
+        float vals[4];
+
+        iterate<float, Op>(vals, vals, a);
+        
+        return vld1q_f32(vals);
+    }
+    
+    static double cast_f64_f2(float a)                      { return static_cast<double>(a); }
+    
+    // Emulate these for 32 bit
+    
+    static float32x4_t vsqrtq_f32(const float32x4_t& a)     { return unary<std::sqrt>(a); }
+    static float32x4_t vrndq_f32(const float32x4_t& a)      { return unary<std::trunc>(a); }
+    
+    static float32x4_t vdivq_f32(const float32x4_t& a, const float32x4_t& b)
+    {
+        float vals_a[4], vals_b[4];
+        
+        vst1q_f32(vals_a, a);
+        vst1q_f32(vals_b, b);
+
+        vals_a[0] /= vals_b[0];
+        vals_a[1] /= vals_b[1];
+        vals_a[2] /= vals_b[2];
+        vals_a[3] /= vals_b[3];
+        
+        return vld1q_f32(vals_a);
+    }
+    
+#endif
+    
 public:
     
     SIMDType() {}
@@ -711,6 +760,7 @@ public:
         return _mm_shuffle_ps(a.mVal, b.mVal, ((z<<6)|(y<<4)|(x<<2)|w));
     }*/
     
+#if defined(__arm64) || defined(__aarch64__)
     operator SizedVector<double, 2, 4>() const
     {
         SizedVector<double, 2, 4> vec;
@@ -720,6 +770,17 @@ public:
         
         return vec;
     }
+#else
+    operator SizedVector<double, 1, 4>() const
+    {
+        float vals[4];
+        SizedVector<double, 1, 4> vec;
+        
+        iterate<double, cast_f64_f2>(vec.mData, vals, mVal);
+        
+        return vec;
+    }
+#endif
 };
 
 template<>
