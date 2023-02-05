@@ -302,15 +302,7 @@ bool HISSTools::PartitionedConvolve::process(const float *in, float *out, uintpt
         // Load input into buffer (twice) and output from the output buffer
         
         std::copy_n(in, loopSize, mFFTBuffers[0] + RWCounter);
-        
-        if ((hiCounter + loopSize) > FFTSize)
-        {
-            uintptr_t hi_loop = FFTSize - hiCounter;
-            std::copy_n(in, hi_loop, mFFTBuffers[1] + hiCounter);
-            std::copy_n(in + hi_loop, (loopSize - hi_loop), mFFTBuffers[1]);
-        }
-        else
-            std::copy_n(in, loopSize, mFFTBuffers[1] + hiCounter);
+        std::copy_n(in, loopSize, mFFTBuffers[1] + hiCounter);
         
         std::copy_n(mFFTBuffers[3] + RWCounter, loopSize, out);
         
