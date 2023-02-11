@@ -126,7 +126,7 @@ template <class T>
 T *allocate_aligned(size_t size)
 {
     void *mem;
-    posix_memalign(&mem, SIMDLimits<T>::byte_width, size * sizeof(T));
+    static_cast<void>(posix_memalign(&mem, SIMDLimits<T>::byte_width, size * sizeof(T)));
     return static_cast<T *>(mem);
 }
 
