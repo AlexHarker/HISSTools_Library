@@ -341,23 +341,33 @@ namespace HISSTools
         return true;
     }
     
-    IAudioFile::AifcCompression IAudioFile::getAIFCCompression(const char* tag) const
+    IAudioFile::AifcCompression IAudioFile::getAIFCCompression(const char* tag, uint16_t& bitDepth) const
     {
-        // FIX - finish this work (twos/sowt must be 16 bit?)
-        
         if (matchTag(tag, "NONE")) return AIFC_COMPRESSION_NONE;
         
-        if (matchTag(tag, "twos")) return AIFC_COMPRESSION_NONE;
+        if (matchTag(tag, "twos"))
+        {
+            bitDepth = 16;
+            return AIFC_COMPRESSION_NONE;
+        }
         
-        if (matchTag(tag, "sowt")) return AIFC_COMPRESSION_LITTLE_ENDIAN;
+        if (matchTag(tag, "sowt"))
+        {
+            bitDepth = 16;
+            return AIFC_COMPRESSION_LITTLE_ENDIAN;
+        }
         
-        if (matchTag(tag, "fl32")) return AIFC_COMPRESSION_FLOAT;
+        if (matchTag(tag, "fl32") || matchTag(tag, "FL32"))
+        {
+            bitDepth = 32;
+            return AIFC_COMPRESSION_FLOAT;
+        }
         
-        if (matchTag(tag, "FL32")) return AIFC_COMPRESSION_FLOAT;
-        
-        if (matchTag(tag, "fl64")) return AIFC_COMPRESSION_FLOAT;
-        
-        if (matchTag(tag, "FL64")) return AIFC_COMPRESSION_FLOAT;
+        if (matchTag(tag, "fl64") || matchTag(tag, "FL64"))
+        {
+            bitDepth = 32;
+            return AIFC_COMPRESSION_FLOAT;
+        }
         
         return AIFC_COMPRESSION_UNKNOWN;
     }
@@ -474,7 +484,7 @@ namespace HISSTools
                     {
                         // Set parameters based on format
                         
-                        switch (getAIFCCompression(chunk + 18))
+                        switch (getAIFCCompression(chunk + 18, bitDepth))
                         {
                             case AIFC_COMPRESSION_NONE:
                                 break;

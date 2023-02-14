@@ -92,7 +92,7 @@ namespace HISSTools
         //  AIFF Helpers
         
         bool getAIFFChunkHeader(AiffTag& enumeratedTag, uint32_t& chunkSize);
-        AifcCompression getAIFCCompression(const char* tag) const;
+        AifcCompression getAIFCCompression(const char* tag, uint16_t& bitDepth) const;
 
         //  Parse Headers
         
