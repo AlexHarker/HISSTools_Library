@@ -2,7 +2,7 @@
 #pragma once
 
 #include "ConvolveErrors.h"
-#include "PartitionedConvolve.h"
+#include "PartitionedConvolve.hpp"
 #include "TimeDomainConvolve.hpp"
 #include "../MemorySwap.hpp"
 #include "../SIMDSupport.hpp"
@@ -24,8 +24,8 @@ enum LatencyMode
 
 class MonoConvolve
 {
-    using PartPtr = MemorySwap<HISSTools::PartitionedConvolve>::Ptr;
-    using PartUniquePtr = std::unique_ptr<HISSTools::PartitionedConvolve>;
+    using PartPtr = MemorySwap<PartitionedConvolve>::Ptr;
+    using PartUniquePtr = std::unique_ptr<PartitionedConvolve>;
     
 public:
     
@@ -184,7 +184,7 @@ public:
         
         auto createPart = [](PartUniquePtr& obj, uint32_t& offset, uint32_t size, uint32_t next)
         {
-            obj.reset(new HISSTools::PartitionedConvolve(size, (next - size) >> 1, offset, (next - size) >> 1));
+            obj.reset(new PartitionedConvolve(size, (next - size) >> 1, offset, (next - size) >> 1));
             offset += (next - size) >> 1;
         };
         
@@ -216,7 +216,7 @@ public:
         
         mAllocator = [offset, largestSize](uintptr_t size)
         {
-            return new HISSTools::PartitionedConvolve(largestSize, std::max(size, uintptr_t(largestSize)) - offset, offset, 0);
+            return new PartitionedConvolve(largestSize, std::max(size, uintptr_t(largestSize)) - offset, offset, 0);
         };
         
         part4.equal(mAllocator, largeFree, maxLength);
@@ -268,7 +268,7 @@ private:
         }
     }
     
-    static void largeFree(HISSTools::PartitionedConvolve *largePartition)
+    static void largeFree(PartitionedConvolve *largePartition)
     {
         delete largePartition;
     }
@@ -291,16 +291,16 @@ private:
         return reinterpret_cast<uintptr_t>(ptr) % 16;
     }
     
-    MemorySwap<HISSTools::PartitionedConvolve>::AllocFunc mAllocator;
+    MemorySwap<PartitionedConvolve>::AllocFunc mAllocator;
     
     std::vector<uint32_t> mSizes;
     
     std::unique_ptr<TimeDomainConvolve> mTime1;
-    std::unique_ptr<HISSTools::PartitionedConvolve> mPart1;
-    std::unique_ptr<HISSTools::PartitionedConvolve> mPart2;
-    std::unique_ptr<HISSTools::PartitionedConvolve> mPart3;
+    std::unique_ptr<PartitionedConvolve> mPart1;
+    std::unique_ptr<PartitionedConvolve> mPart2;
+    std::unique_ptr<PartitionedConvolve> mPart3;
     
-    MemorySwap<HISSTools::PartitionedConvolve> mPart4;
+    MemorySwap<PartitionedConvolve> mPart4;
     
     uintptr_t mLength;
     
