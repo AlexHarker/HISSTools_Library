@@ -112,7 +112,7 @@ public:
         return part4.getSize() == length ? CONVOLVE_ERR_NONE : CONVOLVE_ERR_MEM_UNAVAILABLE;
     }
     
-    ConvolveError set(const float *input, uintptr_t length, bool requestResize);
+    ConvolveError set(const float *input, uintptr_t length, bool requestResize)
     {
         // Lock or resize first to ensure that audio finishes processing before we replace
         
@@ -136,9 +136,15 @@ public:
         return (length && !part4.get()) ? CONVOLVE_ERR_MEM_UNAVAILABLE : (length > part4.getSize()) ? CONVOLVE_ERR_MEM_ALLOC_TOO_SMALL : CONVOLVE_ERR_NONE;
     }
     
+    ConvolveError reset()
+    {
+        mReset = true;
+        return CONVOLVE_ERR_NONE;
+    }
+    
     // Process
     
-    void process(const float *in, float *temp, float *out, uintptr_t numSamples, bool accumulate = false);
+    void process(const float *in, float *temp, float *out, uintptr_t numSamples, bool accumulate = false)
     {
         PartPtr part4 = mPart4.attempt();
         
@@ -162,7 +168,7 @@ public:
         }
     }
     
-    / Set partiioning
+    // Set partiioning
     
     void setPartitions(uintptr_t maxLength, bool zeroLatency, uint32_t A, uint32_t B = 0, uint32_t C = 0, uint32_t D = 0)
     {
@@ -178,7 +184,7 @@ public:
         
         auto createPart = [](PartUniquePtr& obj, uint32_t& offset, uint32_t size, uint32_t next)
         {
-            obj.reset(new PartitionedConvolve(size, (next - size) >> 1, offset, (next - size) >> 1));
+            obj.reset(new HISSTools::PartitionedConvolve(size, (next - size) >> 1, offset, (next - size) >> 1));
             offset += (next - size) >> 1;
         };
         
@@ -201,7 +207,7 @@ public:
         
         // Allocate paritions in unique pointers
         
-        if (zeroLatency) mTime1.reset(new TimeDomainConvolve(0, mSizes[0] >> 1));
+        if (zeroLatency) mTime1.reset(new HISSTools::TimeDomainConvolve(0, mSizes[0] >> 1));
         if (numSizes() == 4) createPart(mPart1, offset, mSizes[0], mSizes[1]);
         if (numSizes() > 2) createPart(mPart2, offset, mSizes[numSizes() - 3], mSizes[numSizes() - 2]);
         if (numSizes() > 1) createPart(mPart3, offset, mSizes[numSizes() - 2], mSizes[numSizes() - 1]);
@@ -277,23 +283,22 @@ private:
         if (obj) obj->reset();
     }
     
-    
     template<class T>
     static bool isUnaligned(const T* ptr)
     {
         return reinterpret_cast<uintptr_t>(ptr) % 16;
     }
     
-    MemorySwap<PartitionedConvolve>::AllocFunc mAllocator;
+    MemorySwap<HISSTools::PartitionedConvolve>::AllocFunc mAllocator;
     
     std::vector<uint32_t> mSizes;
     
-    std::unique_ptr<TimeDomainConvolve> mTime1;
-    std::unique_ptr<PartitionedConvolve> mPart1;
-    std::unique_ptr<PartitionedConvolve> mPart2;
-    std::unique_ptr<PartitionedConvolve> mPart3;
+    std::unique_ptr<HISSTools::TimeDomainConvolve> mTime1;
+    std::unique_ptr<HISSTools::PartitionedConvolve> mPart1;
+    std::unique_ptr<HISSTools::PartitionedConvolve> mPart2;
+    std::unique_ptr<HISSTools::PartitionedConvolve> mPart3;
     
-    MemorySwap<PartitionedConvolve> mPart4;
+    MemorySwap<HISSTools::PartitionedConvolve> mPart4;
     
     uintptr_t mLength;
     

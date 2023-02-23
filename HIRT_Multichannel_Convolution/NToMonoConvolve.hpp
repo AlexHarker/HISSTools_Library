@@ -13,7 +13,7 @@ class NToMonoConvolve
     
 public:
     
-    NToMonoConvolve(uint32_t input_chans, uintptr_t maxLength, LatencyMode latency)
+    NToMonoConvolve(uint32_t inChans, uintptr_t maxLength, LatencyMode latency)
     : mNumInChans(inChans)
     {
         for (uint32_t i = 0; i < mNumInChans; i++)
@@ -32,7 +32,7 @@ public:
 
     ConvolveError reset(uint32_t inChan);
     
-    void process(const float * const* ins, float *out, float *temp, size_t numSamples, size_t active_in_chans)
+    void process(const float * const* ins, float *out, float *temp, size_t numSamples, size_t activeInChans)
     {
         // Zero output then convolve
         
@@ -45,7 +45,7 @@ public:
 private:
     
     template<typename Method, typename... Args>
-    ConvolveError doChannel(Method method, uint32_t inChan, Args...args);
+    ConvolveError doChannel(Method method, uint32_t inChan, Args...args)
     {
         if (inChan < mNumInChans)
             return (mConvolvers[inChan].*method)(args...);

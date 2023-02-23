@@ -52,7 +52,7 @@ public:
         mTemp2 = nullptr;
     }
     
-    Convolver(uint32_t numIO, LatencyMode latency);
+    Convolver(uint32_t numIO, LatencyMode latency)
     : mTemporaryMemory(0)
     {
         numIO = numIO < 1 ? 1 : numIO;
@@ -96,7 +96,7 @@ public:
     
     void clear(uint32_t inChan, uint32_t outChan, bool resize)
     {
-        set(inChan, outChan, nullptr, 0, resize);
+        set(inChan, outChan, static_cast<float *>(nullptr), 0, resize);
     }
     
     // DSP Engine Reset
@@ -130,7 +130,7 @@ public:
     
     // Resize and set IR
     
-    ConvolveError resize(uint32_t inChan, uint32_t outChan, uintptr_t impulseLength)
+    ConvolveError resize(uint32_t inChan, uint32_t outChan, uintptr_t length)
     {
         // For Parallel operation you must pass the same in/out channel
         
@@ -156,17 +156,17 @@ public:
     
     ConvolveError set(uint32_t inChan, uint32_t outChan, const double* input, uintptr_t length, bool resize)
     {
-        std::vector<float> inputFloat(impulseLength);
+        std::vector<float> inputFloat(length);
         
-        for (unsigned long i = 0; i < impulseLength; i++)
+        for (unsigned long i = 0; i < length; i++)
             inputFloat[i] = static_cast<float>(input[i]);
         
-        return set(inChan, outChan, inputFloat.data(), impulseLength, resize);
+        return set(inChan, outChan, inputFloat.data(), length, resize);
     }
     
     // DSP
     
-    void process(const double * const* ins, double** outs, size_t numIns, size_t numOuts, size_t numSamples)
+    void process(const float * const*  ins, float** outs, size_t numIns, size_t numOuts, size_t numSamples)
     {
         auto memPointer = mTemporaryMemory.grow((mNumIns + 2) * numSamples);
         tempSetup(memPointer.get(), memPointer.getSize());
@@ -184,7 +184,7 @@ public:
         }
     }
     
-    void process(const float * const*  ins, float** outs, size_t numIns, size_t numOuts, size_t numSamples)
+    void process(const double * const* ins, double** outs, size_t numIns, size_t numOuts, size_t numSamples)
     {
         auto memPointer = mTemporaryMemory.grow((mNumIns + 2) * numSamples);
         tempSetup(memPointer.get(), memPointer.getSize());
