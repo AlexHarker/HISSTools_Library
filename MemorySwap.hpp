@@ -6,7 +6,7 @@
 #include <atomic>
 #include <functional>
 
-#include "../ThreadLocks.hpp"
+#include "ThreadLocks.hpp"
 
 #ifdef _WIN32
 #include <malloc.h>

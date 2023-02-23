@@ -10,7 +10,6 @@
 
 class NToMonoConvolve
 {
-    
 public:
     
     NToMonoConvolve(uint32_t inChans, uintptr_t maxLength, LatencyMode latency)

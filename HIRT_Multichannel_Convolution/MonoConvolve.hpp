@@ -1,11 +1,11 @@
 
 #pragma once
 
-#include "PartitionedConvolve.h"
-#include "TimeDomainConvolve.h"
-#include "ConvolveSIMD.h"
 #include "ConvolveErrors.h"
-#include "MemorySwap.h"
+#include "PartitionedConvolve.h"
+#include "TimeDomainConvolve.hpp"
+#include "../MemorySwap.hpp"
+#include "../SIMDSupport.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -207,7 +207,7 @@ public:
         
         // Allocate paritions in unique pointers
         
-        if (zeroLatency) mTime1.reset(new HISSTools::TimeDomainConvolve(0, mSizes[0] >> 1));
+        if (zeroLatency) mTime1.reset(new TimeDomainConvolve(0, mSizes[0] >> 1));
         if (numSizes() == 4) createPart(mPart1, offset, mSizes[0], mSizes[1]);
         if (numSizes() > 2) createPart(mPart2, offset, mSizes[numSizes() - 3], mSizes[numSizes() - 2]);
         if (numSizes() > 1) createPart(mPart3, offset, mSizes[numSizes() - 2], mSizes[numSizes() - 1]);
@@ -257,12 +257,14 @@ private:
     template<class T>
     static void processAndSum(T *obj, const float *in, float *temp, float *out, uintptr_t numSamples, bool accumulate)
     {
+        using Vec = SIMDType<float, 4>;
+        
         if (obj && obj->process(in, accumulate ? temp : out, numSamples) && accumulate)
         {
             if ((numSamples % 4) || isUnaligned(out) || isUnaligned(temp))
                 sum(temp, out, numSamples);
             else
-                sum(reinterpret_cast<FloatVector *>(temp), reinterpret_cast<FloatVector *>(out), numSamples / FloatVector::size);
+                sum(reinterpret_cast<Vec *>(temp), reinterpret_cast<Vec *>(out), numSamples / Vec::size);
         }
     }
     
@@ -293,7 +295,7 @@ private:
     
     std::vector<uint32_t> mSizes;
     
-    std::unique_ptr<HISSTools::TimeDomainConvolve> mTime1;
+    std::unique_ptr<TimeDomainConvolve> mTime1;
     std::unique_ptr<HISSTools::PartitionedConvolve> mPart1;
     std::unique_ptr<HISSTools::PartitionedConvolve> mPart2;
     std::unique_ptr<HISSTools::PartitionedConvolve> mPart3;

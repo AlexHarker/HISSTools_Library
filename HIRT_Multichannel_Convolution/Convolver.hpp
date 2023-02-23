@@ -1,9 +1,9 @@
 
 #pragma once
 
-#include "MemorySwap.h"
+#include "../MemorySwap.hpp"
+#include "../SIMDSupport.hpp"
 #include "NToMonoConvolve.hpp"
-#include "ConvolveSIMD.h"
 #include "ConvolveErrors.h"
 
 #include <cstdint>
@@ -11,26 +11,6 @@
 
 class Convolver
 {
-    struct SIMDSettings
-    {
-        SIMDSettings()
-        {
-#if defined(__i386__) || defined(__x86_64__)
-            mOldMXCSR = _mm_getcsr();
-            _mm_setcsr(mOldMXCSR | 0x8040);
-#endif
-        }
-        
-        ~SIMDSettings()
-        {
-#if defined(__i386__) || defined(__x86_64__)
-            _mm_setcsr(mOldMXCSR);
-#endif
-        }
-        
-        unsigned int mOldMXCSR;
-    };
-    
 public:
     
     Convolver(uint32_t numIns, uint32_t numOuts, LatencyMode latency)
@@ -174,8 +154,8 @@ public:
         if (!memPointer.get())
             numIns = numOuts = 0;
         
-        SIMDSettings settings;
-        
+        SIMDDenormals denormalOff;
+
         for (size_t i = 0; i < numOuts; i++)
         {
             const float *n2nIn[1] = { ins[i] };
@@ -199,7 +179,7 @@ public:
             for (uintptr_t j = 0; j < numSamples; j++)
                 mInTemps[i][j] = static_cast<float>(ins[i][j]);
         
-        SIMDSettings settings;
+        SIMDDenormals denormalOff;
         
         for (uintptr_t i = 0; i < numOuts; i++)
         {
