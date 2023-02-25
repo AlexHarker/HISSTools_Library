@@ -109,7 +109,7 @@ public:
         if (part_4.get())
             part_4.get()->set_reset_offset(m_reset_offset);
         
-        return part_4.getSize() == length ? CONVOLVE_ERR_NONE : CONVOLVE_ERR_MEM_UNAVAILABLE;
+        return part_4.get_size() == length ? CONVOLVE_ERR_NONE : CONVOLVE_ERR_MEM_UNAVAILABLE;
     }
     
     ConvolveError set(const float *input, uintptr_t length, bool request_resize)
@@ -133,7 +133,7 @@ public:
             reset();
         }
         
-        return (length && !part4.get()) ? CONVOLVE_ERR_MEM_UNAVAILABLE : (length > part4.getSize()) ? CONVOLVE_ERR_MEM_ALLOC_TOO_SMALL : CONVOLVE_ERR_NONE;
+        return (length && !part4.get()) ? CONVOLVE_ERR_MEM_UNAVAILABLE : (length > part4.get_size()) ? CONVOLVE_ERR_MEM_ALLOC_TOO_SMALL : CONVOLVE_ERR_NONE;
     }
     
     ConvolveError reset()
@@ -148,7 +148,7 @@ public:
     {
         PartPtr part_4 = m_part_4.attempt();
         
-        if (m_length && m_length <= part_4.getSize())
+        if (m_length && m_length <= part_4.get_size())
         {
             if (m_reset)
             {

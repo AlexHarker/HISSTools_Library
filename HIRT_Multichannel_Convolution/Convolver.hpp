@@ -109,7 +109,7 @@ public:
     void process(const float * const*  ins, float** outs, size_t num_ins, size_t num_outs, size_t num_samples)
     {
         auto mem_pointer = m_temporary_memory.grow((m_num_ins + 2) * num_samples);
-        temp_setup(mem_pointer.get(), mem_pointer.getSize());
+        temp_setup(mem_pointer.get(), mem_pointer.get_size());
         
         if (!mem_pointer.get())
             num_ins = num_outs = 0;
@@ -127,7 +127,7 @@ public:
     void process(const double * const* ins, double** outs, size_t num_ins, size_t num_outs, size_t num_samples)
     {
         auto mem_pointer = m_temporary_memory.grow((m_num_ins + 2) * num_samples);
-        temp_setup(mem_pointer.get(), mem_pointer.getSize());
+        temp_setup(mem_pointer.get(), mem_pointer.get_size());
         
         if (!mem_pointer.get())
             num_ins = num_outs = 0;

@@ -34,21 +34,21 @@ public:
     public:
         
         Ptr(Ptr&& p)
-        : mOwner(p.mOwner), mPtr(p.mPtr), mSize(p.mSize)
+        : m_owner(p.m_owner), m_pointer(p.m_pointer), m_size(p.m_size)
         {
-            p.mOwner = nullptr;
-            p.mPtr = nullptr;
-            p.mSize = 0;
+            p.m_owner = nullptr;
+            p.m_pointer = nullptr;
+            p.m_size = 0;
         }
         
         ~Ptr() { clear(); }
         
         void clear()
         {
-            if (mOwner) mOwner->unlock();
-            mOwner = nullptr;
-            mPtr = nullptr;
-            mSize = 0;
+            if (m_owner) m_owner->unlock();
+            m_owner = nullptr;
+            m_pointer = nullptr;
+            m_size = 0;
         }
         
         void swap(T *ptr, uintptr_t size)
@@ -66,58 +66,60 @@ public:
             equal(&allocate, &deallocate, size);
         }
         
-        void grow(AllocFunc allocFunction, FreeFunc freeFunction, uintptr_t size)
+        void grow(AllocFunc alloc_function, FreeFunc free_function, uintptr_t size)
         {
-            updateAllocateIf(allocFunction, freeFunction, size, std::greater<uintptr_t>());
+            update_allocate_if(alloc_function, free_function, size, std::greater<uintptr_t>());
         }
         
-        void equal(AllocFunc allocFunction, FreeFunc freeFunction, uintptr_t size)
+        void equal(AllocFunc alloc_function, FreeFunc free_function, uintptr_t size)
         {
-            updateAllocateIf(allocFunction, freeFunction, size, std::not_equal_to<uintptr_t>());
+            update_allocate_if(alloc_function, free_function, size, std::not_equal_to<uintptr_t>());
         }
         
-        T *get() { return mPtr; }
-        uintptr_t getSize() { return mSize; }
+        T *get() { return m_pointer; }
+        uintptr_t get_size() { return m_size; }
         
     private:
         
         Ptr()
-        : mOwner(nullptr), mPtr(nullptr), mSize(0)
+        : m_owner(nullptr), m_pointer(nullptr), m_size(0)
         {}
         
         Ptr(MemorySwap *owner)
-        : mOwner(owner), mPtr(mOwner ? mOwner->mPtr : nullptr), mSize(mOwner ? mOwner->mSize : 0)
+        : m_owner(owner)
+        , m_pointer(m_owner ? m_owner->m_pointer : nullptr)
+        , m_size(m_owner ? m_owner->m_size : 0)
         {}
         
         Ptr(const Ptr& p) = delete;
         Ptr operator = (const Ptr& p) = delete;
         
         template<typename Op>
-        void updateAllocateIf(AllocFunc allocFunction, FreeFunc freeFunction, uintptr_t size, Op op)
+        void update_allocate_if(AllocFunc alloc_function, FreeFunc free_function, uintptr_t size, Op op)
         {
-            update(&MemorySwap::allocateIfLockHeld<Op>, allocFunction, freeFunction, size, op);
+            update(&MemorySwap::allocate_locked_if<Op>, alloc_function, free_function, size, op);
         }
         
         template<typename Op, typename ...Args>
         void update(Op op, Args...args)
         {
-            if (mOwner)
+            if (m_owner)
             {
-                (mOwner->*op)(args...);
-                mPtr = mOwner->mPtr;
-                mSize = mOwner->mSize;
+                (m_owner->*op)(args...);
+                m_pointer = m_owner->m_pointer;
+                m_size = m_owner->m_size;
             }
         }
         
-        MemorySwap *mOwner;
-        T *mPtr;
-        uintptr_t mSize;
+        MemorySwap *m_owner;
+        T *m_pointer;
+        uintptr_t m_size;
     };
     
     // Constructor (standard allocation)
     
     MemorySwap(uintptr_t size)
-    : mPtr(nullptr), mSize(0), mFreeFunction(nullptr)
+    : m_pointer(nullptr), m_size(0), m_free_function(nullptr)
     {
         if (size)
             set(allocate(size), size, &deallocate);
@@ -125,11 +127,11 @@ public:
     
     // Constructor (custom allocation)
     
-    MemorySwap(AllocFunc allocFunction, FreeFunc freeFunction, uintptr_t size)
-    : mPtr(nullptr), mSize(0), mFreeFunction(nullptr)
+    MemorySwap(AllocFunc alloc_function, FreeFunc free_function, uintptr_t size)
+    : m_pointer(nullptr), m_size(0), m_free_function(nullptr)
     {
         if (size)
-            set(allocFunction(size), size, freeFunction);
+            set(alloc_function(size), size, free_function);
     }
     
     ~MemorySwap()
@@ -141,22 +143,22 @@ public:
     MemorySwap& operator = (const MemorySwap&) = delete;
 
     MemorySwap(MemorySwap&& obj)
-    : mPtr(nullptr), mSize(0), mFreeFunction(nullptr)
+    : m_pointer(nullptr), m_size(0), m_free_function(nullptr)
     {
         *this = std::move(obj);
-        obj.mPtr = nullptr;
-        obj.mFreeFunction = nullptr;
+        obj.m_pointer = nullptr;
+        obj.m_free_function = nullptr;
     }
     
     MemorySwap& operator = (MemorySwap&& obj)
     {
         clear();
         obj.lock();
-        mPtr = obj.mPtr;
-        mSize = obj.mSize;
-        mFreeFunction = obj.mFreeFunction;
-        obj.mPtr = nullptr;
-        obj.mFreeFunction = nullptr;
+        m_pointer = obj.m_pointer;
+        m_size = obj.m_size;
+        m_free_function = obj.m_free_function;
+        obj.m_pointer = nullptr;
+        obj.m_free_function = nullptr;
         obj.unlock();
         
         return *this;
@@ -181,7 +183,7 @@ public:
     
     Ptr attempt()
     {
-        return tryLock() ? Ptr(this) : Ptr();
+        return try_lock() ? Ptr(this) : Ptr();
     }
     
     Ptr swap(T *ptr, uintptr_t size)
@@ -201,56 +203,56 @@ public:
         return equal(&allocate, &deallocate, size);
     }
     
-    Ptr grow(AllocFunc allocFunction, FreeFunc freeFunction, uintptr_t size)
+    Ptr grow(AllocFunc alloc_function, FreeFunc free_function, uintptr_t size)
     {
-        return allocateIf(allocFunction, freeFunction, size, std::greater<uintptr_t>());
+        return allocate_if(alloc_function, free_function, size, std::greater<uintptr_t>());
     }
     
-    Ptr equal(AllocFunc allocFunction, FreeFunc freeFunction, uintptr_t size)
+    Ptr equal(AllocFunc alloc_function, FreeFunc free_function, uintptr_t size)
     {
-        return allocateIf(allocFunction, freeFunction, size, std::not_equal_to<uintptr_t>());
+        return allocate_if(alloc_function, free_function, size, std::not_equal_to<uintptr_t>());
     }
     
 private:
     
     template<typename Op>
-    Ptr allocateIf(AllocFunc allocFunction, FreeFunc freeFunction, uintptr_t size, Op op)
+    Ptr allocate_if(AllocFunc alloc_function, FreeFunc free_function, uintptr_t size, Op op)
     {
         lock();
-        allocateIfLockHeld(allocFunction, freeFunction, size, op);
+        allocate_locked_if(alloc_function, free_function, size, op);
         return Ptr(this);
     }
     
     template<typename Op>
-    void allocateIfLockHeld(AllocFunc allocFunction, FreeFunc freeFunction, uintptr_t size, Op op)
+    void allocate_locked_if(AllocFunc alloc_function, FreeFunc free_function, uintptr_t size, Op op)
     {
-        if (op(size, mSize))
-            set(allocFunction(size), size, freeFunction);
+        if (op(size, m_size))
+            set(alloc_function(size), size, free_function);
     }
     
-    void set(T *ptr, uintptr_t size, FreeFunc freeFunction)
+    void set(T *ptr, uintptr_t size, FreeFunc free_function)
     {
-        if (mFreeFunction)
-            mFreeFunction(mPtr);
+        if (m_free_function)
+            m_free_function(m_pointer);
         
-        mPtr = ptr;
-        mSize = ptr ? size : 0;
-        mFreeFunction = freeFunction;
+        m_pointer = ptr;
+        m_size = ptr ? size : 0;
+        m_free_function = free_function;
     }
     
-    bool tryLock()
+    bool try_lock()
     {
-        return mLock.attempt();
+        return m_lock.attempt();
     }
     
     void lock()
     {
-        mLock.acquire();
+        m_lock.acquire();
     }
     
     void unlock()
     {
-        mLock.release();
+        m_lock.release();
     }
     
 #ifdef _WIN32
@@ -282,9 +284,9 @@ private:
     }
 #endif
     
-    thread_lock mLock;
+    thread_lock m_lock;
     
-    T *mPtr;
-    uintptr_t mSize;
-    FreeFunc mFreeFunction;
+    T *m_pointer;
+    uintptr_t m_size;
+    FreeFunc m_free_function;
 };
