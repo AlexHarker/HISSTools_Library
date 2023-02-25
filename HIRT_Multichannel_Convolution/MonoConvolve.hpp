@@ -22,16 +22,17 @@ enum LatencyMode
     kLatencyMedium,
 } ;
 
-class MonoConvolve
+template <class T>
+class convolve_mono
 {
-    using PartPtr = MemorySwap<PartitionedConvolve>::Ptr;
-    using PartUniquePtr = std::unique_ptr<PartitionedConvolve>;
+    using PartPtr = typename MemorySwap<convolve_partitioned<T>>::Ptr;
+    using PartUniquePtr = std::unique_ptr<convolve_partitioned<T>>;
     
 public:
     
     // Constructors
     
-    MonoConvolve(uintptr_t max_length, LatencyMode latency)
+    convolve_mono(uintptr_t max_length, LatencyMode latency)
     : m_allocator(nullptr)
     , m_part_4(0)
     , m_length(0)
@@ -47,7 +48,7 @@ public:
         }
     }
     
-    MonoConvolve(uintptr_t max_length, bool zero_latency, uint32_t A, uint32_t B = 0, uint32_t C = 0, uint32_t D = 0)
+    convolve_mono(uintptr_t max_length, bool zero_latency, uint32_t A, uint32_t B = 0, uint32_t C = 0, uint32_t D = 0)
     : m_allocator(nullptr)
     , m_part_4(0)
     , m_length(0)
@@ -60,10 +61,10 @@ public:
     
     // Moveable but not copyable
     
-    MonoConvolve(MonoConvolve& obj) = delete;
-    MonoConvolve& operator = (MonoConvolve& obj) = delete;
+    convolve_mono(convolve_mono& obj) = delete;
+    convolve_mono& operator = (convolve_mono& obj) = delete;
     
-    MonoConvolve(MonoConvolve&& obj)
+    convolve_mono(convolve_mono&& obj)
     : m_allocator(obj.m_allocator)
     , m_sizes(std::move(obj.m_sizes))
     , m_time(std::move(obj.m_time))
@@ -76,7 +77,7 @@ public:
     , m_reset(true)
     {}
     
-    MonoConvolve& operator = (MonoConvolve&& obj)
+    convolve_mono& operator = (convolve_mono&& obj)
     {
         m_allocator = obj.m_allocator;
         m_sizes = std::move(obj.m_sizes);
@@ -112,10 +113,10 @@ public:
         return part_4.get_size() == length ? CONVOLVE_ERR_NONE : CONVOLVE_ERR_MEM_UNAVAILABLE;
     }
     
-    template <class T>
-    ConvolveError set(const T *input, uintptr_t length, bool request_resize)
+    template <class U>
+    ConvolveError set(const U *input, uintptr_t length, bool request_resize)
     {
-        TypeConformedInput<float, T> typed_input(input, length);
+        TypeConformedInput<T, U> typed_input(input, length);
 
         // Lock or resize first to ensure that audio finishes processing before we replace
         
@@ -147,7 +148,7 @@ public:
     
     // Process
     
-    void process(const float *in, float *temp, float *out, uintptr_t num_samples, bool accumulate = false)
+    void process(const T *in, T *temp, T *out, uintptr_t num_samples, bool accumulate = false)
     {
         PartPtr part_4 = m_part_4.attempt();
         
@@ -187,7 +188,7 @@ public:
         
         auto create_part = [](PartUniquePtr& obj, uint32_t& offset, uint32_t size, uint32_t next)
         {
-            obj.reset(new PartitionedConvolve(size, (next - size) >> 1, offset, (next - size) >> 1));
+            obj.reset(new convolve_partitioned<T>(size, (next - size) >> 1, offset, (next - size) >> 1));
             offset += (next - size) >> 1;
         };
         
@@ -210,7 +211,7 @@ public:
         
         // Allocate paritions in unique pointers
         
-        if (zero_latency) m_time.reset(new TimeDomainConvolve(0, m_sizes[0] >> 1));
+        if (zero_latency) m_time.reset(new convolve_time_domain<T>(0, m_sizes[0] >> 1));
         if (num_sizes() == 4) create_part(m_part_1, offset, m_sizes[0], m_sizes[1]);
         if (num_sizes() > 2) create_part(m_part_2, offset, m_sizes[num_sizes() - 3], m_sizes[num_sizes() - 2]);
         if (num_sizes() > 1) create_part(m_part_3, offset, m_sizes[num_sizes() - 2], m_sizes[num_sizes() - 1]);
@@ -219,7 +220,7 @@ public:
         
         m_allocator = [offset, largestSize](uintptr_t size)
         {
-            return new PartitionedConvolve(largestSize, std::max(size, uintptr_t(largestSize)) - offset, offset, 0);
+            return new convolve_partitioned<T>(largestSize, std::max(size, uintptr_t(largestSize)) - offset, offset, 0);
         };
         
         part_4.equal(m_allocator, large_free, max_length);
@@ -250,17 +251,17 @@ private:
     
     // Utilities
     
-    template <class T>
-    static void sum(T *temp, T *out, uintptr_t N)
+    template <class U>
+    static void sum(U *temp, U *out, uintptr_t N)
     {
         for (uintptr_t i = 0; i < N; i++, out++, temp++)
             *out = *out + *temp;
     }
     
-    template<class T>
-    static void process_and_sum(T *obj, const float *in, float *temp, float *out, uintptr_t num_samples, bool accumulate)
+    template <class U>
+    static void process_and_sum(U *obj, const T *in, T *temp, T *out, uintptr_t num_samples, bool accumulate)
     {
-        using Vec = SIMDType<float, 4>;
+        using Vec = SIMDType<T, SIMDLimits<T>::max_size>;
         
         if (obj && obj->process(in, accumulate ? temp : out, num_samples) && accumulate)
         {
@@ -271,39 +272,39 @@ private:
         }
     }
     
-    static void large_free(PartitionedConvolve *large_partition)
+    static void large_free(convolve_partitioned<T> *large_partition)
     {
         delete large_partition;
     }
     
-    template <class T>
-    static void set_part(T *obj, const float *input, uintptr_t length)
+    template <class U>
+    static void set_part(U *obj, const T *input, uintptr_t length)
     {
         if (obj) obj->set(input, length);
     }
     
-    template <class T>
-    static void reset_part(T *obj)
+    template <class U>
+    static void reset_part(U *obj)
     {
         if (obj) obj->reset();
     }
     
-    template<class T>
-    static bool is_unaligned(const T* ptr)
+    template <class U>
+    static bool is_unaligned(const U* ptr)
     {
         return reinterpret_cast<uintptr_t>(ptr) % 16;
     }
     
-    MemorySwap<PartitionedConvolve>::AllocFunc m_allocator;
+    typename MemorySwap<convolve_partitioned<T>>::AllocFunc m_allocator;
     
     std::vector<uint32_t> m_sizes;
     
-    std::unique_ptr<TimeDomainConvolve> m_time;
-    std::unique_ptr<PartitionedConvolve> m_part_1;
-    std::unique_ptr<PartitionedConvolve> m_part_2;
-    std::unique_ptr<PartitionedConvolve> m_part_3;
+    std::unique_ptr<convolve_time_domain<T>> m_time;
+    std::unique_ptr<convolve_partitioned<T>> m_part_1;
+    std::unique_ptr<convolve_partitioned<T>> m_part_2;
+    std::unique_ptr<convolve_partitioned<T>> m_part_3;
     
-    MemorySwap<PartitionedConvolve> m_part_4;
+    MemorySwap<convolve_partitioned<T>> m_part_4;
     
     uintptr_t m_length;
     

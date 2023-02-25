@@ -11,11 +11,14 @@
 #include <Accelerate/Accelerate.h>
 #endif
 
-class TimeDomainConvolve
+template <class T>
+class convolve_time_domain
 {
+    static constexpr int vec_size = SIMDLimits<T>::max_size;
+
 public:
     
-    TimeDomainConvolve(uintptr_t offset, uintptr_t length)
+    convolve_time_domain(uintptr_t offset, uintptr_t length)
     {
         // Set default initial variables
         
@@ -24,16 +27,16 @@ public:
         
         // Allocate impulse buffer and input bufferr
         
-        m_impulse_buffer = allocate_aligned<float>(2048);
-        m_input_buffer = allocate_aligned<float>(8192);
+        m_impulse_buffer = allocate_aligned<T>(2048);
+        m_input_buffer = allocate_aligned<T>(8192);
         
         // Zero buffers
         
-        std::fill_n(m_impulse_buffer, 2048, 0.f);
-        std::fill_n(m_input_buffer, 8192, 0.f);
+        std::fill_n(m_impulse_buffer, 2048, T(0));
+        std::fill_n(m_input_buffer, 8192, T(0));
     }
     
-    ~TimeDomainConvolve()
+    ~convolve_time_domain()
     {
         deallocate_aligned(m_impulse_buffer);
         deallocate_aligned(m_input_buffer);
@@ -41,10 +44,10 @@ public:
     
     // Non-moveable and copyable
     
-    TimeDomainConvolve(TimeDomainConvolve& obj) = delete;
-    TimeDomainConvolve& operator = (TimeDomainConvolve& obj) = delete;
-    TimeDomainConvolve(TimeDomainConvolve&& obj) = delete;
-    TimeDomainConvolve& operator = (TimeDomainConvolve&& obj) = delete;
+    convolve_time_domain(convolve_time_domain& obj) = delete;
+    convolve_time_domain& operator = (convolve_time_domain& obj) = delete;
+    convolve_time_domain(convolve_time_domain&& obj) = delete;
+    convolve_time_domain& operator = (convolve_time_domain&& obj) = delete;
     
     ConvolveError set_length(uintptr_t length)
     {
@@ -58,10 +61,10 @@ public:
         m_offset = offset;
     }
     
-    template <class T>
-    ConvolveError set(const T *input, uintptr_t length)
+    template <class U>
+    ConvolveError set(const U *input, uintptr_t length)
     {
-        TypeConformedInput<float, T> typed_input(input, length);
+        TypeConformedInput<T, U> typed_input(input, length);
 
         m_impulse_length = 0;
         
@@ -72,7 +75,7 @@ public:
             m_impulse_length = std::min(length - m_offset, (m_length ? m_length : 2044));
             
             uintptr_t pad = padded_length(m_impulse_length) - m_impulse_length;
-            std::fill_n(m_impulse_buffer, pad, 0.f);
+            std::fill_n(m_impulse_buffer, pad, T(0));
             std::reverse_copy(typed_input.get() + m_offset, typed_input.get() + m_offset + m_impulse_length, m_impulse_buffer + pad);
         }
         
@@ -86,11 +89,11 @@ public:
         m_reset = true;
     }
     
-    bool process(const float *in, float *out, uintptr_t num_samples)
+    bool process(const T *in, T *out, uintptr_t num_samples)
     {
         if (m_reset)
         {
-            std::fill_n(m_input_buffer, 8192, 0.f);
+            std::fill_n(m_input_buffer, 8192, T(0));
             m_reset = false;
         }
         
@@ -135,6 +138,11 @@ private:
     {
         vDSP_conv(in + 1 - L,  1, impulse, 1, output, 1, N, L);
     }
+    
+    static void convolve(const double *in, const double *impulse, double *output, uintptr_t N, uintptr_t L)
+    {
+        vDSP_convD(in + 1 - L,  1, impulse, 1, output, 1, N, L);
+    }
 #else
     static uintptr_t padded_length(uintptr_t length)
     {
@@ -148,29 +156,28 @@ private:
         return values[0] + values[1] + values[2] + values[3];
     }
     
-    static void convolve(const float *in, const float *impulse, float *output, uintptr_t N, uintptr_t L)
+    static void convolve(const T *in, const T *impulse, T *output, uintptr_t N, uintptr_t L)
     {
-        using Vec = SIMDType<float, 4>;
-        constexpr int size = Vec::size;
+        using Vec = SIMDType<T, vec_size>;
         
         L = padded_length(L);
         
-        const Vec *impulse_vector = reinterpret_cast<const Vec *>(impulse);
+        const Vec *v_impulse = reinterpret_cast<const Vec *>(impulse);
         
         for (uintptr_t i = 0; i < N; i++)
         {
-            Vec accum(0.f);
+            Vec accum(T(0));
             
-            const float *input = in - L + 1 + i - size;
+            const T *input = in - L + 1 + i - vec_size;
             
             for (uintptr_t j = 0; j < L >> 2; j += 4)
             {
                 // Load vals
                 
-                accum += (impulse_vector[j + 0] * Vec(input += size));
-                accum += (impulse_vector[j + 1] * Vec(input += size));
-                accum += (impulse_vector[j + 2] * Vec(input += size));
-                accum += (impulse_vector[j + 3] * Vec(input += size));
+                accum += (v_impulse[j + 0] * Vec(input += vec_size));
+                accum += (v_impulse[j + 1] * Vec(input += vec_size));
+                accum += (v_impulse[j + 2] * Vec(input += vec_size));
+                accum += (v_impulse[j + 3] * Vec(input += vec_size));
             }
             
             *output++ = sum(accum);
@@ -180,8 +187,8 @@ private:
     
     // Internal buffers
     
-    float *m_impulse_buffer;
-    float *m_input_buffer;
+    T *m_impulse_buffer;
+    T *m_input_buffer;
     
     uintptr_t m_input_position;
     uintptr_t m_impulse_length;

@@ -10,7 +10,8 @@
 #include <cstdint>
 #include <random>
 
-class PartitionedConvolve
+template <class T>
+class convolve_partitioned
 {
     // N.B. MIN_FFT_SIZE_LOG2 should never be smaller than 4, as below code assumes loop unroll of vectors (4 vals) by 4 (== 16 or 2^4)
     // MAX_FFT_SIZE_LOG2 is perhaps conservative right now, but it is easy to increase this if necessary
@@ -18,9 +19,31 @@ class PartitionedConvolve
     static constexpr int MIN_FFT_SIZE_LOG2 = 5;
     static constexpr int MAX_FFT_SIZE_LOG2 = 20;
     
+    template <typename U>
+    struct Infer {};
+    
+    template <>
+    struct Infer<double>
+    {
+        using Split = FFT_SPLIT_COMPLEX_D;
+        using Setup = FFT_SETUP_D;
+        using Type = double;
+    };
+    
+    template <>
+    struct Infer<float>
+    {
+        using Split = FFT_SPLIT_COMPLEX_F;
+        using Setup = FFT_SETUP_F;
+        using Type = float;
+    };
+    
+    using Setup = typename Infer<T>::Setup;
+    using Split = typename Infer<T>::Split;
+    
 public:
     
-    PartitionedConvolve(uintptr_t max_fft_size, uintptr_t max_length, uintptr_t offset, uintptr_t length)
+    convolve_partitioned(uintptr_t max_fft_size, uintptr_t max_length, uintptr_t offset, uintptr_t length)
     : m_max_impulse_length(max_length)
     , m_fft_size_log2(0)
     , m_input_position(0)
@@ -52,14 +75,14 @@ public:
             m_max_impulse_length *= (max_fft_size >> 1);
         }
         
-        m_impulse_buffer.realp = allocate_aligned<float>(m_max_impulse_length * 4);
+        m_impulse_buffer.realp = allocate_aligned<T>(m_max_impulse_length * 4);
         m_impulse_buffer.imagp = m_impulse_buffer.realp + m_max_impulse_length;
         m_input_buffer.realp = m_impulse_buffer.imagp + m_max_impulse_length;
         m_input_buffer.imagp = m_input_buffer.realp + m_max_impulse_length;
         
         // Allocate fft and temporary buffers
         
-        m_fft_buffers[0] = allocate_aligned<float>(max_fft_size * 6);
+        m_fft_buffers[0] = allocate_aligned<T>(max_fft_size * 6);
         m_fft_buffers[1] = m_fft_buffers[0] + max_fft_size;
         m_fft_buffers[2] = m_fft_buffers[1] + max_fft_size;
         m_fft_buffers[3] = m_fft_buffers[2] + max_fft_size;
@@ -72,7 +95,7 @@ public:
         hisstools_create_setup(&m_fft_setup, m_max_fft_size_log2);
     }
     
-    ~PartitionedConvolve()
+    ~convolve_partitioned()
     {
         hisstools_destroy_setup(m_fft_setup);
         
@@ -84,10 +107,10 @@ public:
     
     // Non-moveable and copyable
     
-    PartitionedConvolve(PartitionedConvolve& obj) = delete;
-    PartitionedConvolve& operator = (PartitionedConvolve& obj) = delete;
-    PartitionedConvolve(PartitionedConvolve&& obj) = delete;
-    PartitionedConvolve& operator = (PartitionedConvolve&& obj) = delete;
+    convolve_partitioned(convolve_partitioned& obj) = delete;
+    convolve_partitioned& operator = (convolve_partitioned& obj) = delete;
+    convolve_partitioned(convolve_partitioned&& obj) = delete;
+    convolve_partitioned& operator = (convolve_partitioned&& obj) = delete;
     
     ConvolveError set_fft_size(uintptr_t fft_size)
     {
@@ -131,10 +154,10 @@ public:
         m_reset_offset = offset;
     }
     
-    template <class T>
-    ConvolveError set(const T *input, uintptr_t length)
+    template <class U>
+    ConvolveError set(const U *input, uintptr_t length)
     {
-        TypeConformedInput<float, T> typed_input(input, length);
+        TypeConformedInput<T, U> typed_input(input, length);
 
         ConvolveError error = CONVOLVE_ERR_NONE;
         
@@ -146,8 +169,8 @@ public:
         
         // Partition variables
         
-        float *buffer_temp_1 = (float *) m_partition_temp.realp;
-        FFT_SPLIT_COMPLEX_F buffer_temp_2;
+        T *buffer_temp_1 = m_partition_temp.realp;
+        Split buffer_temp_2;
         
         uintptr_t num_partitions;
         
@@ -174,7 +197,7 @@ public:
             // Get samples and zero pad
             
             std::copy_n(typed_input.get() + buffer_position, numSamps, buffer_temp_1);
-            std::fill_n(buffer_temp_1 + numSamps, fft_size - numSamps, 0.f);
+            std::fill_n(buffer_temp_1 + numSamps, fft_size - numSamps, T(0));
             
             // Do fft straight into position
             
@@ -193,10 +216,10 @@ public:
         m_reset_flag = true;
     }
     
-    bool process(const float *in, float *out, uintptr_t num_samples)
+    bool process(const T *in, T *out, uintptr_t num_samples)
     {
-        FFT_SPLIT_COMPLEX_F ir_temp;
-        FFT_SPLIT_COMPLEX_F in_temp;
+        Split ir_temp;
+        Split in_temp;
         
         // Scheduling variables
         
@@ -221,7 +244,7 @@ public:
         {
             // Reset fft buffers + accum buffer
             
-            std::fill_n(m_fft_buffers[0], get_max_fft_size() * 5, 0.f);
+            std::fill_n(m_fft_buffers[0], get_max_fft_size() * 5, T(0));
             
             // Reset fft rw_counter (randomly or by fixed amount)
             
@@ -304,7 +327,7 @@ public:
             
             if (fft_now)
             {
-                using Vec = SIMDType<float, 4>;
+                using Vec = SIMDType<T, SIMDLimits<T>::max_size>;
                 
                 // Do the fft into the input buffer, add first partition (needed now), do ifft, scale and store (overlap-save)
                 
@@ -316,8 +339,8 @@ public:
                 
                 // Clear accumulation buffer
                 
-                std::fill_n(m_accum_buffer.realp, fft_size_halved, 0.f);
-                std::fill_n(m_accum_buffer.imagp, fft_size_halved, 0.f);
+                std::fill_n(m_accum_buffer.realp, fft_size_halved, T(0));
+                std::fill_n(m_accum_buffer.imagp, fft_size_halved, T(0));
                 
                 // Update RWCounter
                 
@@ -344,9 +367,9 @@ private:
     uintptr_t get_fft_size()      { return uintptr_t(1) << m_fft_size_log2; }
     uintptr_t get_max_fft_size()  { return uintptr_t(1) << m_max_fft_size_log2; }
     
-    static void process_partition(FFT_SPLIT_COMPLEX_F in_1, FFT_SPLIT_COMPLEX_F in_2, FFT_SPLIT_COMPLEX_F out, uintptr_t num_bins)
+    static void process_partition(Split in_1, Split in_2, Split out, uintptr_t num_bins)
     {
-        using Vec = SIMDType<float, 4>;
+        using Vec = SIMDType<T, SIMDLimits<T>::max_size>;
         uintptr_t num_vecs = num_bins / Vec::size;
         
         Vec *i_real_1 = reinterpret_cast<Vec *>(in_1.realp);
@@ -356,15 +379,15 @@ private:
         Vec *o_real = reinterpret_cast<Vec *>(out.realp);
         Vec *o_imag = reinterpret_cast<Vec *>(out.imagp);
         
-        float nyquist_1 = in_1.imagp[0];
-        float nyquist_2 = in_2.imagp[0];
+        T nyquist_1 = in_1.imagp[0];
+        T nyquist_2 = in_2.imagp[0];
         
         // Do Nyquist Calculation and then zero these bins
         
         out.imagp[0] += nyquist_1 * nyquist_2;
         
-        in_1.imagp[0] = 0.f;
-        in_2.imagp[0] = 0.f;
+        in_1.imagp[0] = T(0);
+        in_2.imagp[0] = T(0);
         
         // Do other bins (loop unrolled)
         
@@ -412,14 +435,14 @@ private:
         return error;
     }
     
-    template <class T>
-    static void scale_store(float *out, float *temp, uintptr_t fft_size, bool offset)
+    template <class U>
+    static void scale_store(T *out, T *temp, uintptr_t fft_size, bool offset)
     {
-        T *out_ptr = reinterpret_cast<T *>(out + (offset ? fft_size >> 1: 0));
-        T *temp_ptr = reinterpret_cast<T *>(temp);
-        T scale(1.f / static_cast<float>(fft_size << 2));
+        U *out_ptr = reinterpret_cast<U *>(out + (offset ? fft_size >> 1: 0));
+        U *temp_ptr = reinterpret_cast<U *>(temp);
+        U scale(T(1) / static_cast<T>(fft_size << 2));
         
-        for (uintptr_t i = 0; i < (fft_size / (T::size * 2)); i++)
+        for (uintptr_t i = 0; i < (fft_size / (U::size * 2)); i++)
             *(out_ptr++) = *(temp_ptr++) * scale;
     }
     
@@ -440,7 +463,7 @@ private:
             return bit_count;
     }
     
-    static void offset_split_pointer(FFT_SPLIT_COMPLEX_F &complex_1, const FFT_SPLIT_COMPLEX_F &complex_2, uintptr_t offset)
+    static void offset_split_pointer(Split &complex_1, const Split &complex_2, uintptr_t offset)
     {
         complex_1.realp = complex_2.realp + offset;
         complex_1.imagp = complex_2.imagp + offset;
@@ -454,7 +477,7 @@ private:
     
     // FFT variables
     
-    FFT_SETUP_F m_fft_setup;
+    Setup m_fft_setup;
     
     uintptr_t m_max_fft_size_log2;
     uintptr_t m_fft_size_log2;
@@ -470,12 +493,12 @@ private:
     
     // Internal buffers
     
-    float *m_fft_buffers[4];
+    T *m_fft_buffers[4];
     
-    FFT_SPLIT_COMPLEX_F m_impulse_buffer;
-    FFT_SPLIT_COMPLEX_F m_input_buffer;
-    FFT_SPLIT_COMPLEX_F m_accum_buffer;
-    FFT_SPLIT_COMPLEX_F m_partition_temp;
+    Split m_impulse_buffer;
+    Split m_input_buffer;
+    Split m_accum_buffer;
+    Split m_partition_temp;
     
     // Flags
     
