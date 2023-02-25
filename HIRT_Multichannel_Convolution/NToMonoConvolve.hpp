@@ -12,47 +12,56 @@ class NToMonoConvolve
 {
 public:
     
-    NToMonoConvolve(uint32_t inChans, uintptr_t maxLength, LatencyMode latency)
-    : mNumInChans(inChans)
+    NToMonoConvolve(uint32_t in_chans, uintptr_t max_length, LatencyMode latency)
+    : m_num_in_chans(in_chans)
     {
-        for (uint32_t i = 0; i < mNumInChans; i++)
-            mConvolvers.emplace_back(maxLength, latency);
+        for (uint32_t i = 0; i < m_num_in_chans; i++)
+            m_convolvers.emplace_back(max_length, latency);
     }
     
-    ConvolveError resize(uint32_t inChan, uintptr_t impulse_length)
+    // Resize / set / reset
+    
+    ConvolveError resize(uint32_t in_chan, uintptr_t impulse_length)
     {
-        return doChannel(&MonoConvolve::resize, inChan, impulse_length);
+        return do_channel(&MonoConvolve::resize, in_chan, impulse_length);
     }
     
-    ConvolveError set(uint32_t inChan, const float *input, uintptr_t impulse_length, bool resize)
+    ConvolveError set(uint32_t in_chan, const float *input, uintptr_t impulse_length, bool resize)
     {
-        return doChannel(&MonoConvolve::set, inChan, input, impulse_length, resize);
+        return do_channel(&MonoConvolve::set, in_chan, input, impulse_length, resize);
     }
 
-    ConvolveError reset(uint32_t inChan);
+    ConvolveError reset(uint32_t in_chan)
+    {
+        return do_channel(&MonoConvolve::reset, in_chan);
+    }
     
-    void process(const float * const* ins, float *out, float *temp, size_t numSamples, size_t activeInChans)
+    // Process
+    
+    void process(const float * const* ins, float *out, float *temp, size_t num_samples, size_t active_in_chans)
     {
         // Zero output then convolve
         
-        std::fill_n(out, numSamples, 0.f);
+        std::fill_n(out, num_samples, 0.f);
         
-        for (uint32_t i = 0; i < mNumInChans && i < activeInChans ; i++)
-            mConvolvers[i].process(ins[i], temp, out, numSamples, true);
+        for (uint32_t i = 0; i < m_num_in_chans && i < active_in_chans ; i++)
+            m_convolvers[i].process(ins[i], temp, out, num_samples, true);
     }
     
 private:
     
+    // Utility to apply an operation to a channel
+    
     template<typename Method, typename... Args>
-    ConvolveError doChannel(Method method, uint32_t inChan, Args...args)
+    ConvolveError do_channel(Method method, uint32_t in_chan, Args...args)
     {
-        if (inChan < mNumInChans)
-            return (mConvolvers[inChan].*method)(args...);
+        if (in_chan < m_num_in_chans)
+            return (m_convolvers[in_chan].*method)(args...);
         else
             return CONVOLVE_ERR_IN_CHAN_OUT_OF_RANGE;
     }
     
-    std::vector<MonoConvolve> mConvolvers;
+    std::vector<MonoConvolve> m_convolvers;
     
-    uint32_t mNumInChans;
+    uint32_t m_num_in_chans;
 };

@@ -13,213 +13,196 @@ class Convolver
 {
 public:
     
-    Convolver(uint32_t numIns, uint32_t numOuts, LatencyMode latency)
-    : mTemporaryMemory(0)
+    Convolver(uint32_t num_ins, uint32_t num_outs, LatencyMode latency)
+    : m_num_ins(std::max(num_ins, 1U))
+    , m_num_outs(std::max(num_outs, 1U))
+    , m_parallel(false)
+    , m_temp_1(nullptr)
+    , m_temp_2(nullptr)
+    , m_temporary_memory(0)
     {
-        numIns = numIns < 1 ? 1 : numIns;
+        for (uint32_t i = 0; i < m_num_ins; i++)
+            m_in_temps.push_back(nullptr);
         
-        mN2M = true;
-        mNumIns = numIns;
-        mNumOuts = numOuts;
-        
-        for (uint32_t i = 0; i < numIns; i++)
-            mInTemps.push_back(nullptr);
-        
-        for (uint32_t i = 0; i < numOuts; i++)
-            mConvolvers.push_back(new NToMonoConvolve(numIns, 16384, latency));
-        
-        mTemp1 = nullptr;
-        mTemp2 = nullptr;
+        for (uint32_t i = 0; i < m_num_outs; i++)
+            m_convolvers.push_back(new NToMonoConvolve(m_num_ins, 16384, latency));
     }
     
-    Convolver(uint32_t numIO, LatencyMode latency)
-    : mTemporaryMemory(0)
+    Convolver(uint32_t num_io, LatencyMode latency)
+    : m_num_ins(std::max(num_io, 1U))
+    , m_num_outs(m_num_ins)
+    , m_parallel(true)
+    , m_temp_1(nullptr)
+    , m_temp_2(nullptr)
+    , m_temporary_memory(0)
     {
-        numIO = numIO < 1 ? 1 : numIO;
-        
-        mN2M = false;
-        mNumIns = numIO;
-        mNumOuts = numIO;
-        
-        for (uint32_t i = 0; i < numIO; i++)
+        for (uint32_t i = 0; i < m_num_ins; i++)
         {
-            mConvolvers.push_back(new NToMonoConvolve(1, 16384, latency));
-            mInTemps.push_back(nullptr);
+            m_convolvers.push_back(new NToMonoConvolve(1, 16384, latency));
+            m_in_temps.push_back(nullptr);
         }
-        
-        mTemp1 = nullptr;
-        mTemp2 = nullptr;
     }
     
     virtual ~Convolver() throw()
     {
-        for (uint32_t i = 0; i < mNumOuts; i++)
-            delete mConvolvers[i];
+        for (uint32_t i = 0; i < m_num_outs; i++)
+            delete m_convolvers[i];
     }
     
     // Clear IRs
     
     void clear(bool resize)
     {
-        if (mN2M)
-        {
-            for (uint32_t i = 0; i < mNumOuts; i++)
-                for (uint32_t j = 0; j < mNumIns; j++)
-                    clear(j, i, resize);
-        }
-        else
-        {
-            for (uint32_t i = 0; i < mNumOuts; i++)
-                clear(i, i, resize);
-        }
+        do_all(static_cast<void (Convolver::*)(uint32_t, uint32_t, bool)>(&Convolver::clear), resize);
     }
     
-    void clear(uint32_t inChan, uint32_t outChan, bool resize)
+    void clear(uint32_t in_chan, uint32_t out_chan, bool resize)
     {
-        set(inChan, outChan, static_cast<float *>(nullptr), 0, resize);
+        set(in_chan, out_chan, static_cast<float *>(nullptr), 0, resize);
     }
     
     // DSP Engine Reset
     
     void reset()
     {
-        if (mN2M)
-        {
-            for (uint32_t i = 0; i < mNumOuts; i++)
-                for (uint32_t j = 0; j < mNumIns; j++)
-                    reset(j, i);
-        }
-        else
-        {
-            for (uint32_t i = 0; i < mNumOuts; i++)
-                reset(i, i);
-        }
+        do_all(static_cast<ConvolveError (Convolver::*)(uint32_t, uint32_t)>(&Convolver::reset));
     }
     
-    ConvolveError reset(uint32_t inChan, uint32_t outChan)
+    ConvolveError reset(uint32_t in_chan, uint32_t out_chan)
     {
-        // For Parallel operation you must pass the same in/out channel
-        
-        if (!mN2M) inChan -= outChan;
-        
-        if (outChan < mNumOuts)
-            return mConvolvers[outChan]->reset(inChan);
+        if (out_chan < m_num_outs)
+            return m_convolvers[out_chan]->reset(offset_input(in_chan, out_chan));
         else
             return CONVOLVE_ERR_OUT_CHAN_OUT_OF_RANGE;
     }
     
     // Resize and set IR
     
-    ConvolveError resize(uint32_t inChan, uint32_t outChan, uintptr_t length)
+    ConvolveError resize(uint32_t in_chan, uint32_t out_chan, uintptr_t length)
     {
-        // For Parallel operation you must pass the same in/out channel
-        
-        if (!mN2M) inChan -= outChan;
-        
-        if (outChan < mNumOuts)
-            return mConvolvers[outChan]->resize(inChan, length);
+        if (out_chan < m_num_outs)
+            return m_convolvers[out_chan]->resize(offset_input(in_chan, out_chan), length);
         else
             return CONVOLVE_ERR_IN_CHAN_OUT_OF_RANGE;
     }
     
-    ConvolveError set(uint32_t inChan, uint32_t outChan, const float* input, uintptr_t length, bool resize)
-    {
-        // For Parallel operation you must pass the same in/out channel
-        
-        if (!mN2M) inChan -= outChan;
-        
-        if (outChan < mNumOuts)
-            return mConvolvers[outChan]->set(inChan, input, length, resize);
+    ConvolveError set(uint32_t in_chan, uint32_t out_chan, const float* input, uintptr_t length, bool resize)
+    {                
+        if (out_chan < m_num_outs)
+            return m_convolvers[out_chan]->set(offset_input(in_chan, out_chan), input, length, resize);
         else
             return CONVOLVE_ERR_OUT_CHAN_OUT_OF_RANGE;
     }
     
-    ConvolveError set(uint32_t inChan, uint32_t outChan, const double* input, uintptr_t length, bool resize)
+    ConvolveError set(uint32_t in_chan, uint32_t out_chan, const double* input, uintptr_t length, bool resize)
     {
-        std::vector<float> inputFloat(length);
+        std::vector<float> input_float(length);
         
         for (unsigned long i = 0; i < length; i++)
-            inputFloat[i] = static_cast<float>(input[i]);
+            input_float[i] = static_cast<float>(input[i]);
         
-        return set(inChan, outChan, inputFloat.data(), length, resize);
+        return set(offset_input(in_chan, out_chan), out_chan, input_float.data(), length, resize);
     }
     
     // DSP
     
-    void process(const float * const*  ins, float** outs, size_t numIns, size_t numOuts, size_t numSamples)
+    void process(const float * const*  ins, float** outs, size_t num_ins, size_t num_outs, size_t num_samples)
     {
-        auto memPointer = mTemporaryMemory.grow((mNumIns + 2) * numSamples);
-        tempSetup(memPointer.get(), memPointer.getSize());
+        auto mem_pointer = m_temporary_memory.grow((m_num_ins + 2) * num_samples);
+        temp_setup(mem_pointer.get(), mem_pointer.getSize());
         
-        if (!memPointer.get())
-            numIns = numOuts = 0;
+        if (!mem_pointer.get())
+            num_ins = num_outs = 0;
         
-        SIMDDenormals denormalOff;
+        SIMDDenormals denormal_handler;
 
-        for (size_t i = 0; i < numOuts; i++)
+        for (size_t i = 0; i < num_outs; i++)
         {
-            const float *n2nIn[1] = { ins[i] };
+            const float *parallel_in[1] = { ins[i] };
             
-            mConvolvers[i]->process(mN2M ? ins : n2nIn, outs[i], mTemp1, numSamples, mN2M ? numIns : 1);
+            m_convolvers[i]->process(m_parallel ? parallel_in : ins, outs[i], m_temp_1, num_samples, m_parallel ? 1 : num_ins);
         }
     }
     
-    void process(const double * const* ins, double** outs, size_t numIns, size_t numOuts, size_t numSamples)
+    void process(const double * const* ins, double** outs, size_t num_ins, size_t num_outs, size_t num_samples)
     {
-        auto memPointer = mTemporaryMemory.grow((mNumIns + 2) * numSamples);
-        tempSetup(memPointer.get(), memPointer.getSize());
+        auto mem_pointer = m_temporary_memory.grow((m_num_ins + 2) * num_samples);
+        temp_setup(mem_pointer.get(), mem_pointer.getSize());
         
-        if (!memPointer.get())
-            numIns = numOuts = 0;
+        if (!mem_pointer.get())
+            num_ins = num_outs = 0;
         
-        numIns = numIns > mNumIns ? mNumIns : numIns;
-        numOuts = numOuts > mNumOuts ? mNumOuts : numOuts;
+        num_ins = num_ins > m_num_ins ? m_num_ins : num_ins;
+        num_outs = num_outs > m_num_outs ? m_num_outs : num_outs;
         
-        for (uintptr_t i = 0; i < numIns; i++)
-            for (uintptr_t j = 0; j < numSamples; j++)
-                mInTemps[i][j] = static_cast<float>(ins[i][j]);
+        for (uintptr_t i = 0; i < num_ins; i++)
+            for (uintptr_t j = 0; j < num_samples; j++)
+                m_in_temps[i][j] = static_cast<float>(ins[i][j]);
         
-        SIMDDenormals denormalOff;
+        SIMDDenormals denormal_handler;
         
-        for (uintptr_t i = 0; i < numOuts; i++)
+        for (uintptr_t i = 0; i < num_outs; i++)
         {
-            const float *n2nIn[1] = { mInTemps[i] };
-            const float * const *inTemps = mInTemps.data();
+            const float *parallel_in[1] = { m_in_temps[i] };
+            const float * const *in_temps = m_in_temps.data();
             
-            mConvolvers[i]->process(mN2M ? inTemps : n2nIn, mTemp2, mTemp1, numSamples, mN2M ? numIns : 1);
+            m_convolvers[i]->process(m_parallel ? parallel_in : in_temps, m_temp_2, m_temp_1, num_samples, m_parallel ? 1 : num_ins);
             
-            for (uintptr_t j = 0; j < numSamples; j++)
-                outs[i][j] = mTemp2[j];
+            for (uintptr_t j = 0; j < num_samples; j++)
+                outs[i][j] = m_temp_2[j];
         }
     }
 
-    
 private:
     
-    void tempSetup(float* memPointer, uintptr_t maxFrameSize)
+    void temp_setup(float* mem_pointer, uintptr_t max_num_samples)
     {
-        maxFrameSize /= (mNumIns + 2);
-        mInTemps[0] = memPointer;
+        max_num_samples /= (m_num_ins + 2);
+        m_in_temps[0] = mem_pointer;
         
-        for (uint32_t i = 1; i < mNumIns; i++)
-            mInTemps[i] = mInTemps[0] + (i * maxFrameSize);
+        for (uint32_t i = 1; i < m_num_ins; i++)
+            m_in_temps[i] = m_in_temps[0] + (i * max_num_samples);
         
-        mTemp1 = mInTemps[mNumIns - 1] + maxFrameSize;
-        mTemp2 = mTemp1 + maxFrameSize;
+        m_temp_1 = m_in_temps[m_num_ins - 1] + max_num_samples;
+        m_temp_2 = m_temp_1 + max_num_samples;
+    }
+    
+    uint32_t offset_input(uint32_t in_chan, uint32_t out_chan)
+    {
+        // For Parallel operation you must pass the same in/out channel
+    
+        return m_parallel ? in_chan - out_chan : in_chan;
+    }
+    
+    // Utility to apply an operation to a channel
+        
+    template<typename Method, typename... Args>
+    void do_all(Method method, Args...args)
+    {
+        if (m_parallel)
+        {
+            for (uint32_t i = 0; i < m_num_outs; i++)
+                (this->*method)(i, i, args...);
+        }
+        else
+        {
+            for (uint32_t i = 0; i < m_num_outs; i++)
+                for (uint32_t j = 0; j < m_num_ins; j++)
+                    (this->*method)(j, i, args...);
+        }
     }
     
     // Data
     
-    uint32_t mNumIns;
-    uint32_t mNumOuts;
-    bool mN2M;
+    const uint32_t m_num_ins;
+    const uint32_t m_num_outs;
+    const bool m_parallel;
     
-    std::vector<float*> mInTemps;
-    float* mTemp1;
-    float* mTemp2;
+    std::vector<float*> m_in_temps;
+    float* m_temp_1;
+    float* m_temp_2;
     
-    MemorySwap<float> mTemporaryMemory;
+    MemorySwap<float> m_temporary_memory;
     
-    std::vector<NToMonoConvolve*> mConvolvers;
+    std::vector<NToMonoConvolve*> m_convolvers;
 };
-

@@ -19,26 +19,25 @@ public:
     {
         // Set default initial variables
         
-        setOffset(offset);
-        setLength(length);
+        set_offset(offset);
+        set_length(length);
         
         // Allocate impulse buffer and input bufferr
         
-        mImpulseBuffer = allocate_aligned<float>(2048);
-        mInputBuffer = allocate_aligned<float>(8192);
+        m_impulse_buffer = allocate_aligned<float>(2048);
+        m_input_buffer = allocate_aligned<float>(8192);
         
         // Zero buffers
         
-        std::fill_n(mImpulseBuffer, 2048, 0.f);
-        std::fill_n(mInputBuffer, 8192, 0.f);
+        std::fill_n(m_impulse_buffer, 2048, 0.f);
+        std::fill_n(m_input_buffer, 8192, 0.f);
     }
     
     ~TimeDomainConvolve()
     {
-        deallocate_aligned(mImpulseBuffer);
-        deallocate_aligned(mInputBuffer);
+        deallocate_aligned(m_impulse_buffer);
+        deallocate_aligned(m_input_buffer);
     }
-
     
     // Non-moveable and copyable
     
@@ -47,78 +46,78 @@ public:
     TimeDomainConvolve(TimeDomainConvolve&& obj) = delete;
     TimeDomainConvolve& operator = (TimeDomainConvolve&& obj) = delete;
     
-    ConvolveError setLength(uintptr_t length)
+    ConvolveError set_length(uintptr_t length)
     {
-        mLength = std::min(length, uintptr_t(2044));
+        m_length = std::min(length, uintptr_t(2044));
         
         return length > 2044 ? CONVOLVE_ERR_TIME_LENGTH_OUT_OF_RANGE : CONVOLVE_ERR_NONE;
     }
     
-    void setOffset(uintptr_t offset)
+    void set_offset(uintptr_t offset)
     {
-        mOffset = offset;
+        m_offset = offset;
     }
     
     ConvolveError set(const float *input, uintptr_t length)
     {
-        mImpulseLength = 0;
+        m_impulse_length = 0;
         
-        if (input && length > mOffset)
+        if (input && length > m_offset)
         {
             // Calculate impulse length
             
-            mImpulseLength = std::min(length - mOffset, (mLength ? mLength : 2044));
+            m_impulse_length = std::min(length - m_offset, (m_length ? m_length : 2044));
             
-            uintptr_t pad = padded_length(mImpulseLength) - mImpulseLength;
-            std::fill_n(mImpulseBuffer, pad, 0.f);
-            std::reverse_copy(input + mOffset, input + mOffset + mImpulseLength, mImpulseBuffer + pad);
+            uintptr_t pad = padded_length(m_impulse_length) - m_impulse_length;
+            std::fill_n(m_impulse_buffer, pad, 0.f);
+            std::reverse_copy(input + m_offset, input + m_offset + m_impulse_length, m_impulse_buffer + pad);
         }
         
         reset();
         
-        return (!mLength && (length - mOffset) > 2044) ? CONVOLVE_ERR_TIME_IMPULSE_TOO_LONG : CONVOLVE_ERR_NONE;
+        return (!m_length && (length - m_offset) > 2044) ? CONVOLVE_ERR_TIME_IMPULSE_TOO_LONG : CONVOLVE_ERR_NONE;
     }
     
     void reset()
     {
-        mReset = true;
+        m_reset = true;
     }
     
-    bool process(const float *in, float *out, uintptr_t numSamples)
+    bool process(const float *in, float *out, uintptr_t num_samples)
     {
-        if (mReset)
+        if (m_reset)
         {
-            std::fill_n(mInputBuffer, 8192, 0.f);
-            mReset = false;
+            std::fill_n(m_input_buffer, 8192, 0.f);
+            m_reset = false;
         }
         
-        uintptr_t currentLoop;
+        uintptr_t current_loop;
         
-        while ((currentLoop = (mInputPosition + numSamples) > 4096 ? (4096 - mInputPosition) : ((numSamples > 2048) ? 2048 : numSamples)))
+        while ((current_loop = (m_input_position + num_samples) > 4096 ? (4096 - m_input_position) : ((num_samples > 2048) ? 2048 : num_samples)))
         {
             // Copy input twice (allows us to read input out in one go)
             
-            std::copy_n(in, currentLoop, mInputBuffer + mInputPosition);
-            std::copy_n(in, currentLoop, mInputBuffer + mInputPosition + 4096);
+            std::copy_n(in, current_loop, m_input_buffer + m_input_position);
+            std::copy_n(in, current_loop, m_input_buffer + m_input_position + 4096);
             
             // Advance pointer
             
-            mInputPosition += currentLoop;
-            if (mInputPosition >= 4096)
-                mInputPosition -= 4096;
+            m_input_position += current_loop;
+            if (m_input_position >= 4096)
+                m_input_position -= 4096;
             
             // Do convolution
             
-            convolve(mInputBuffer + 4096 + (mInputPosition - currentLoop), mImpulseBuffer, out, currentLoop, mImpulseLength);
+            convolve(m_input_buffer + 4096 + (m_input_position - current_loop), m_impulse_buffer, out, current_loop, m_impulse_length);
             
             // Updates
             
-            in += currentLoop;
-            out += currentLoop;
-            numSamples -= currentLoop;
+            in += current_loop;
+            out += current_loop;
+            num_samples -= current_loop;
         }
         
-        return mImpulseLength;
+        return m_impulse_length;
     }
     
 private:
@@ -178,16 +177,16 @@ private:
     
     // Internal buffers
     
-    float *mImpulseBuffer;
-    float *mInputBuffer;
+    float *m_impulse_buffer;
+    float *m_input_buffer;
     
-    uintptr_t mInputPosition;
-    uintptr_t mImpulseLength;
+    uintptr_t m_input_position;
+    uintptr_t m_impulse_length;
     
-    uintptr_t mOffset;
-    uintptr_t mLength;
+    uintptr_t m_offset;
+    uintptr_t m_length;
     
     // Flags
     
-    bool mReset;
+    bool m_reset;
 };
