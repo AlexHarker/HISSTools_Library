@@ -58,8 +58,11 @@ public:
         m_offset = offset;
     }
     
-    ConvolveError set(const float *input, uintptr_t length)
+    template <class T>
+    ConvolveError set(const T *input, uintptr_t length)
     {
+        TypeConformedInput<float, T> typed_input(input, length);
+
         m_impulse_length = 0;
         
         if (input && length > m_offset)
@@ -70,7 +73,7 @@ public:
             
             uintptr_t pad = padded_length(m_impulse_length) - m_impulse_length;
             std::fill_n(m_impulse_buffer, pad, 0.f);
-            std::reverse_copy(input + m_offset, input + m_offset + m_impulse_length, m_impulse_buffer + pad);
+            std::reverse_copy(typed_input.get() + m_offset, typed_input.get() + m_offset + m_impulse_length, m_impulse_buffer + pad);
         }
         
         reset();

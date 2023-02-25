@@ -21,14 +21,17 @@ public:
     
     // Resize / set / reset
     
-    ConvolveError resize(uint32_t in_chan, uintptr_t impulse_length)
+    ConvolveError resize(uint32_t in_chan, uintptr_t length)
     {
-        return do_channel(&MonoConvolve::resize, in_chan, impulse_length);
+        return do_channel(&MonoConvolve::resize, in_chan, length);
     }
     
-    ConvolveError set(uint32_t in_chan, const float *input, uintptr_t impulse_length, bool resize)
+    template <class T>
+    ConvolveError set(uint32_t in_chan, const T *input, uintptr_t length, bool resize)
     {
-        return do_channel(&MonoConvolve::set, in_chan, input, impulse_length, resize);
+        TypeConformedInput<float, T> typed_input(input, length);
+
+        return do_channel(&MonoConvolve::set<T>, in_chan, typed_input.get(), length, resize);
     }
 
     ConvolveError reset(uint32_t in_chan)

@@ -86,22 +86,15 @@ public:
             return CONVOLVE_ERR_IN_CHAN_OUT_OF_RANGE;
     }
     
-    ConvolveError set(uint32_t in_chan, uint32_t out_chan, const float* input, uintptr_t length, bool resize)
-    {                
+    template <class T>
+    ConvolveError set(uint32_t in_chan, uint32_t out_chan, const T* input, uintptr_t length, bool resize)
+    {
+        TypeConformedInput<float, T> typed_input(input, length);
+        
         if (out_chan < m_num_outs)
-            return m_convolvers[out_chan]->set(offset_input(in_chan, out_chan), input, length, resize);
+            return m_convolvers[out_chan]->set(offset_input(in_chan, out_chan), typed_input.get(), length, resize);
         else
             return CONVOLVE_ERR_OUT_CHAN_OUT_OF_RANGE;
-    }
-    
-    ConvolveError set(uint32_t in_chan, uint32_t out_chan, const double* input, uintptr_t length, bool resize)
-    {
-        std::vector<float> input_float(length);
-        
-        for (unsigned long i = 0; i < length; i++)
-            input_float[i] = static_cast<float>(input[i]);
-        
-        return set(offset_input(in_chan, out_chan), out_chan, input_float.data(), length, resize);
     }
     
     // DSP

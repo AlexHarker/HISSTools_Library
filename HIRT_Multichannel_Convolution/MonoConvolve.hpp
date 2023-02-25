@@ -112,8 +112,11 @@ public:
         return part_4.get_size() == length ? CONVOLVE_ERR_NONE : CONVOLVE_ERR_MEM_UNAVAILABLE;
     }
     
-    ConvolveError set(const float *input, uintptr_t length, bool request_resize)
+    template <class T>
+    ConvolveError set(const T *input, uintptr_t length, bool request_resize)
     {
+        TypeConformedInput<float, T> typed_input(input, length);
+
         // Lock or resize first to ensure that audio finishes processing before we replace
         
         m_length = 0;
@@ -121,11 +124,11 @@ public:
         
         if (part4.get())
         {
-            set_part(m_time.get(), input, length);
-            set_part(m_part_1.get(), input, length);
-            set_part(m_part_2.get(), input, length);
-            set_part(m_part_3.get(), input, length);
-            set_part(part4.get(), input, length);
+            set_part(m_time.get(), typed_input.get(), length);
+            set_part(m_part_1.get(), typed_input.get(), length);
+            set_part(m_part_2.get(), typed_input.get(), length);
+            set_part(m_part_3.get(), typed_input.get(), length);
+            set_part(part4.get(), typed_input.get(), length);
             
             part4.get()->set_reset_offset(m_reset_offset);
             

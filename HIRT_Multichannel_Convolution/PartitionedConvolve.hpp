@@ -131,8 +131,11 @@ public:
         m_reset_offset = offset;
     }
     
-    ConvolveError set(const float *input, uintptr_t length)
+    template <class T>
+    ConvolveError set(const T *input, uintptr_t length)
     {
+        TypeConformedInput<float, T> typed_input(input, length);
+
         ConvolveError error = CONVOLVE_ERR_NONE;
         
         // FFT variables / attributes
@@ -170,7 +173,7 @@ public:
             
             // Get samples and zero pad
             
-            std::copy_n(input + buffer_position, numSamps, buffer_temp_1);
+            std::copy_n(typed_input.get() + buffer_position, numSamps, buffer_temp_1);
             std::fill_n(buffer_temp_1 + numSamps, fft_size - numSamps, 0.f);
             
             // Do fft straight into position

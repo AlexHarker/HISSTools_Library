@@ -1,6 +1,9 @@
 
 #pragma once
 
+#include <algorithm>
+#include <vector>
+
 enum ConvolveError
 {
 	CONVOLVE_ERR_NONE = 0,
@@ -16,4 +19,35 @@ enum ConvolveError
 	CONVOLVE_ERR_FFT_SIZE_MAX_NON_POWER_OF_TWO,
 	CONVOLVE_ERR_FFT_SIZE_OUT_OF_RANGE,
 	CONVOLVE_ERR_FFT_SIZE_NON_POWER_OF_TWO,
+};
+
+template <class T, class U>
+class TypeConformedInput
+{
+public:
+    
+    TypeConformedInput(const U *input, uintptr_t length)
+    : m_vector(length)
+    {
+        for (uintptr_t i = 0; i < length; i++)
+            m_vector[i] = static_cast<T>(input[i]);
+    }
+        
+    const T *get() const { return m_vector.data(); }
+    
+    std::vector<T> m_vector;
+};
+
+template <class T>
+class TypeConformedInput<T, T>
+{
+public:
+    
+    TypeConformedInput(const T *input, uintptr_t length)
+    : m_input(input)
+    {}
+    
+    const T *get() const { return m_input; }
+
+    const T *m_input;
 };
