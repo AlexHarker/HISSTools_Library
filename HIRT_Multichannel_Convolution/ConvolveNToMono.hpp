@@ -1,8 +1,8 @@
 
 #pragma once
 	
-#include "MonoConvolve.hpp"
-#include "ConvolveErrors.h"
+#include "ConvolveUtilities.hpp"
+#include "ConvolveMono.hpp"
 
 #include <algorithm>
 #include <cstdint>

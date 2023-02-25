@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include "ConvolveErrors.h"
+#include "ConvolveUtilities.hpp"
 #include "../SIMDSupport.hpp"
 
 #include <cstdint>

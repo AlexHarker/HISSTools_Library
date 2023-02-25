@@ -1,9 +1,9 @@
 
 #pragma once
 
-#include "ConvolveErrors.h"
-#include "PartitionedConvolve.hpp"
-#include "TimeDomainConvolve.hpp"
+#include "ConvolveUtilities.hpp"
+#include "ConvolveTimeDomain.hpp"
+#include "ConvolvePartitioned.hpp"
 #include "../MemorySwap.hpp"
 #include "../SIMDSupport.hpp"
 
@@ -25,7 +25,7 @@ enum LatencyMode
 template <class T>
 class convolve_mono
 {
-    using PartPtr = typename MemorySwap<convolve_partitioned<T>>::Ptr;
+    using PartPtr = typename memory_swap<convolve_partitioned<T>>::Ptr;
     using PartUniquePtr = std::unique_ptr<convolve_partitioned<T>>;
     
 public:
@@ -295,7 +295,7 @@ private:
         return reinterpret_cast<uintptr_t>(ptr) % 16;
     }
     
-    typename MemorySwap<convolve_partitioned<T>>::AllocFunc m_allocator;
+    typename memory_swap<convolve_partitioned<T>>::AllocFunc m_allocator;
     
     std::vector<uint32_t> m_sizes;
     
@@ -304,7 +304,7 @@ private:
     std::unique_ptr<convolve_partitioned<T>> m_part_2;
     std::unique_ptr<convolve_partitioned<T>> m_part_3;
     
-    MemorySwap<convolve_partitioned<T>> m_part_4;
+    memory_swap<convolve_partitioned<T>> m_part_4;
     
     uintptr_t m_length;
     

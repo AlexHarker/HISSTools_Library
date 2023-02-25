@@ -17,7 +17,7 @@
 // All memory assignments are aligned in order that the memory is suitable for vector ops etc.
 
 template<class T>
-class MemorySwap
+class memory_swap
 {
     
 public:
@@ -29,7 +29,7 @@ public:
     
     class Ptr
     {
-        friend MemorySwap;
+        friend memory_swap;
         
     public:
         
@@ -53,7 +53,7 @@ public:
         
         void swap(T *ptr, uintptr_t size)
         {
-            update(&MemorySwap::set, ptr, size, nullptr);
+            update(&memory_swap::set, ptr, size, nullptr);
         }
         
         void grow(uintptr_t size)
@@ -85,7 +85,7 @@ public:
         : m_owner(nullptr), m_pointer(nullptr), m_size(0)
         {}
         
-        Ptr(MemorySwap *owner)
+        Ptr(memory_swap *owner)
         : m_owner(owner)
         , m_pointer(m_owner ? m_owner->m_pointer : nullptr)
         , m_size(m_owner ? m_owner->m_size : 0)
@@ -97,7 +97,7 @@ public:
         template<typename Op>
         void update_allocate_if(AllocFunc alloc_function, FreeFunc free_function, uintptr_t size, Op op)
         {
-            update(&MemorySwap::allocate_locked_if<Op>, alloc_function, free_function, size, op);
+            update(&memory_swap::allocate_locked_if<Op>, alloc_function, free_function, size, op);
         }
         
         template<typename Op, typename ...Args>
@@ -111,14 +111,14 @@ public:
             }
         }
         
-        MemorySwap *m_owner;
+        memory_swap *m_owner;
         T *m_pointer;
         uintptr_t m_size;
     };
     
     // Constructor (standard allocation)
     
-    MemorySwap(uintptr_t size)
+    memory_swap(uintptr_t size)
     : m_pointer(nullptr), m_size(0), m_free_function(nullptr)
     {
         if (size)
@@ -127,22 +127,22 @@ public:
     
     // Constructor (custom allocation)
     
-    MemorySwap(AllocFunc alloc_function, FreeFunc free_function, uintptr_t size)
+    memory_swap(AllocFunc alloc_function, FreeFunc free_function, uintptr_t size)
     : m_pointer(nullptr), m_size(0), m_free_function(nullptr)
     {
         if (size)
             set(alloc_function(size), size, free_function);
     }
     
-    ~MemorySwap()
+    ~memory_swap()
     {
         clear();
     }
     
-    MemorySwap(const MemorySwap&) = delete;
-    MemorySwap& operator = (const MemorySwap&) = delete;
+    memory_swap(const memory_swap&) = delete;
+    memory_swap& operator = (const memory_swap&) = delete;
 
-    MemorySwap(MemorySwap&& obj)
+    memory_swap(memory_swap&& obj)
     : m_pointer(nullptr), m_size(0), m_free_function(nullptr)
     {
         *this = std::move(obj);
@@ -150,7 +150,7 @@ public:
         obj.m_free_function = nullptr;
     }
     
-    MemorySwap& operator = (MemorySwap&& obj)
+    memory_swap& operator = (memory_swap&& obj)
     {
         clear();
         obj.lock();

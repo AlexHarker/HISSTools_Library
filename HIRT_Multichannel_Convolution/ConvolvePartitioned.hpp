@@ -3,7 +3,7 @@
 
 #include "../HISSTools_FFT/HISSTools_FFT.h"
 
-#include "ConvolveErrors.h"
+#include "ConvolveUtilities.hpp"
 #include "../SIMDSupport.hpp"
 
 #include <algorithm>

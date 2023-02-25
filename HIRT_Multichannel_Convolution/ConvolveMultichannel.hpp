@@ -3,8 +3,8 @@
 
 #include "../MemorySwap.hpp"
 #include "../SIMDSupport.hpp"
-#include "NToMonoConvolve.hpp"
-#include "ConvolveErrors.h"
+#include "ConvolveUtilities.hpp"
+#include "ConvolveNToMono.hpp"
 
 #include <cstdint>
 #include <vector>
@@ -196,7 +196,7 @@ private:
     T* m_temp_1;
     T* m_temp_2;
     
-    MemorySwap<T> m_temporary_memory;
+    memory_swap<T> m_temporary_memory;
     
     std::vector<convolve_n_to_mono<T>*> m_convolvers;
 };
