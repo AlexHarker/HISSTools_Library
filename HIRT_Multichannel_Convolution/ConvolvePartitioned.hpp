@@ -13,8 +13,8 @@
 template <class T>
 class convolve_partitioned
 {
-    // N.B. MIN_FFT_SIZE_LOG2 should never be smaller than 4, as below code assumes loop unroll of vectors (4 vals) by 4 (== 16 or 2^4)
-    // MAX_FFT_SIZE_LOG2 is perhaps conservative right now, but it is easy to increase this if necessary
+    // N.B. MIN_FFT_SIZE_LOG2 needs to take account of the loop unrolling of vectors by 4
+    // MAX_FFT_SIZE_LOG2 is perhaps conservative right now
     
     static constexpr int MIN_FFT_SIZE_LOG2 = 5;
     static constexpr int MAX_FFT_SIZE_LOG2 = 20;
@@ -269,7 +269,7 @@ public:
         
         while (samples_remaining > 0)
         {
-            // Calculate how many IO samples to deal with this loop (depending on whether there is an fft to do before the end of the signal block)
+            // Calculate how many IO samples to deal with this loop (depending on when the next fft is due)
             
             uintptr_t till_next_fft = (fft_size_halved - (rw_counter & hop_mask));
             uintptr_t loop_size = samples_remaining < till_next_fft ? samples_remaining : till_next_fft;
@@ -292,7 +292,7 @@ public:
             bool fft_now = !(rw_counter & hop_mask);
             
             // Work loop and scheduling - this is where most of the convolution is done
-            // How many partitions to do this block? (make sure that all partitions are done before we need to do the next fft)
+            // How many partitions to do this block? (make sure all partitions are done before the next fft)
             
             if (fft_now)
                 num_partitions_to_do = (m_valid_partitions - m_partitions_done) - 1;
@@ -301,7 +301,7 @@ public:
             
             while (num_partitions_to_do > 0)
             {
-                // Calculate buffer wraparounds (if wraparound is in the middle of this set of partitions this loop will run again)
+                // Calculate wraparounds (if wraparound is within this set of partitions this loop will run again)
                 
                 uintptr_t next_partition = (m_last_partition < m_num_partitions) ? m_last_partition : 0;
                 m_last_partition = std::min(m_num_partitions, next_partition + num_partitions_to_do);
@@ -329,7 +329,8 @@ public:
             {
                 using Vec = SIMDType<T, SIMDLimits<T>::max_size>;
                 
-                // Do the fft into the input buffer, add first partition (needed now), do ifft, scale and store (overlap-save)
+                // Do the fft into the input buffer and add first partition (needed now)
+                // Then do ifft, scale and store (overlap-save)
                 
                 offset_split_pointer(in_temp, m_input_buffer, (m_input_position * fft_size_halved));
                 hisstools_rfft(m_fft_setup, m_fft_buffers[(rw_counter == fft_size) ? 1 : 0], &in_temp, fft_size, m_fft_size_log2);

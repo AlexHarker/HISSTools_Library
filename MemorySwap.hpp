@@ -12,8 +12,9 @@
 #include <malloc.h>
 #endif
 
-// FIX - locks around memory assignment - can be made more efficient by avoiding this at which point spinlocks will be justified....
-// Follow the HISSTools C++ design for this....  use separate freeing locks so the memory is always freed in the assignment thread
+// FIX - locks around memory assignment - can be made more efficient by avoiding this
+// Consider following the HISSTools C++ design for this....
+// Use separate freeing locks so the memory is always freed in the assignment thread
 // All memory assignments are aligned in order that the memory is suitable for vector ops etc.
 
 template<class T>
@@ -179,7 +180,7 @@ public:
         return Ptr(this);
     }
     
-    // This non-blocking routine will attempt to get the pointer but fail if the pointer is being  accessed in another thread
+    // This non-blocking routine attempts to lock the pointer but fails if it is in another thread
     
     Ptr attempt()
     {
