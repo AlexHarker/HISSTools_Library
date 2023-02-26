@@ -272,11 +272,6 @@ private:
         }
     }
     
-    static void large_free(convolve_partitioned<T> *large_partition)
-    {
-        delete large_partition;
-    }
-    
     template <class U>
     static void set_part(U *obj, const T *input, uintptr_t length)
     {
@@ -293,6 +288,11 @@ private:
     static bool is_unaligned(const U* ptr)
     {
         return reinterpret_cast<uintptr_t>(ptr) % 16;
+    }
+    
+    static void large_free(convolve_partitioned<T> *large_partition)
+    {
+        delete large_partition;
     }
     
     typename memory_swap<convolve_partitioned<T>>::AllocFunc m_allocator;
