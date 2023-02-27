@@ -120,7 +120,7 @@ public:
             m_convolvers[i]->process(use_ins, outs[i], num_samples, m_parallel ? 1 : num_ins);
         }
     }
-    
+    /*
     void process(const double * const* ins, double** outs, size_t num_ins, size_t num_outs, size_t num_samples)
     {
         auto mem_pointer = m_temporary_memory.grow((m_num_ins + 2) * num_samples);
@@ -149,7 +149,7 @@ public:
             for (uintptr_t j = 0; j < num_samples; j++)
                 outs[i][j] = m_temp_2[j];
         }
-    }
+    }*/
 
 private:
     
