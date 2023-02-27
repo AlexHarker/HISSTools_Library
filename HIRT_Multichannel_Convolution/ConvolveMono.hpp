@@ -25,6 +25,8 @@ enum LatencyMode
 template <class T>
 class convolve_mono
 {
+    using CT = convolve_time_domain<T>;
+    using CP = convolve_partitioned<T>;
     using PartPtr = typename memory_swap<convolve_partitioned<T>>::Ptr;
     using PartUniquePtr = std::unique_ptr<convolve_partitioned<T>>;
     
@@ -125,14 +127,8 @@ public:
         
         if (part4.get())
         {
-            set_part(m_time.get(), typed_input.get(), length);
-            set_part(m_part_1.get(), typed_input.get(), length);
-            set_part(m_part_2.get(), typed_input.get(), length);
-            set_part(m_part_3.get(), typed_input.get(), length);
-            set_part(part4.get(), typed_input.get(), length);
-            
+            for_all(&CT::template set<T>, &CP::template set<T>, part4, typed_input.get(), length);
             part4.get()->set_reset_offset(m_reset_offset);
-            
             m_length = length;
             reset();
         }
@@ -154,7 +150,7 @@ public:
     
     // Process
     
-    void process(const T *in, T *temp, T *out, uintptr_t num_samples, bool accumulate = false)
+    void process(const T *in, T *out, uintptr_t num_samples, bool accumulate = false)
     {
         PartPtr part_4 = m_part_4.attempt();
         
@@ -162,19 +158,17 @@ public:
         {
             if (m_reset)
             {
-                reset_part(m_time.get());
-                reset_part(m_part_1.get());
-                reset_part(m_part_2.get());
-                reset_part(m_part_3.get());
-                reset_part(part_4.get());
+                for_all(&CT::reset, &CP::reset, part_4);
                 m_reset = false;
             }
             
-            process_and_sum(m_time.get(), in, temp, out, num_samples, accumulate);
-            process_and_sum(m_part_1.get(), in, temp, out, num_samples, accumulate || m_time);
-            process_and_sum(m_part_2.get(), in, temp, out, num_samples, accumulate || m_part_1);
-            process_and_sum(m_part_3.get(), in, temp, out, num_samples, accumulate || m_part_2);
-            process_and_sum(part_4.get(), in, temp, out, num_samples, accumulate || m_part_3);
+            //for_all(&CT::process, &CP::process, part_4, in, out, num_samples, accumulate);
+            
+            if (m_time) m_time->process(in, out, num_samples, accumulate);
+            if (m_part_1) m_part_1->process(in, out, num_samples, accumulate || m_time);
+            if (m_part_2) m_part_2->process(in, out, num_samples, accumulate || m_part_1);
+            if (m_part_3) m_part_3->process(in, out, num_samples, accumulate || m_part_2);
+            if (part_4.get()) part_4.get()->process(in, out, num_samples, accumulate || m_part_3);
         }
     }
     
@@ -262,43 +256,14 @@ private:
     
     // Utilities
     
-    template <class U>
-    static void sum(U *temp, U *out, uintptr_t N)
+    template <typename TimeMethod, typename PartMethod, typename ...Args>
+    void for_all(TimeMethod time_method, PartMethod part_method, PartPtr& part_4, Args... args)
     {
-        for (uintptr_t i = 0; i < N; i++, out++, temp++)
-            *out = *out + *temp;
-    }
-    
-    template <class U>
-    static void process_and_sum(U *obj, const T *in, T *temp, T *out, uintptr_t num_samples, bool accumulate)
-    {
-        using Vec = SIMDType<T, SIMDLimits<T>::max_size>;
-        
-        if (obj && obj->process(in, accumulate ? temp : out, num_samples) && accumulate)
-        {
-            if ((num_samples % 4) || is_unaligned(out) || is_unaligned(temp))
-                sum(temp, out, num_samples);
-            else
-                sum(reinterpret_cast<Vec *>(temp), reinterpret_cast<Vec *>(out), num_samples / Vec::size);
-        }
-    }
-    
-    template <class U>
-    static void set_part(U *obj, const T *input, uintptr_t length)
-    {
-        if (obj) obj->set(input, length);
-    }
-    
-    template <class U>
-    static void reset_part(U *obj)
-    {
-        if (obj) obj->reset();
-    }
-    
-    template <class U>
-    static bool is_unaligned(const U* ptr)
-    {
-        return reinterpret_cast<uintptr_t>(ptr) % 16;
+        if (m_time) (m_time.get()->*time_method)(args...);
+        if (m_part_1) (m_part_1.get()->*part_method)(args...);
+        if (m_part_2) (m_part_2.get()->*part_method)(args...);
+        if (m_part_3) (m_part_3.get()->*part_method)(args...);
+        if (part_4.get()) (part_4.get()->*part_method)(args...);
     }
     
     static void large_free(convolve_partitioned<T> *large_partition)

@@ -91,7 +91,7 @@ public:
         m_reset = true;
     }
     
-    bool process(const T *in, T *out, uintptr_t num_samples)
+    bool process(const T *in, T *out, uintptr_t num_samples, bool accumulate = false)
     {
         auto loop_size = [&]()
         {
@@ -123,7 +123,7 @@ public:
             // Do convolution
             
             T * input_pointer = m_input_buffer + 4096 + (m_input_position - current_loop);
-            convolve(input_pointer, m_impulse_buffer, out, current_loop, m_impulse_length);
+            convolve(input_pointer, m_impulse_buffer, out, current_loop, m_impulse_length, accumulate);
             
             // Updates
             
@@ -151,6 +151,21 @@ private:
     static void convolve(const double *in, const double *impulse, double *output, uintptr_t N, uintptr_t L)
     {
         vDSP_convD(in + 1 - L,  1, impulse, 1, output, 1, N, L);
+    }
+    
+    static void convolve(const T *in, const T *impulse, T *output, uintptr_t N, uintptr_t L, bool accumulate)
+    {
+        if (accumulate)
+        {
+            T temp[N];
+            
+            convolve(in, impulse, temp, N, L);
+            
+            for (uintptr_t i = 0; i < N; i++)
+                output[i] += temp[i];
+        }
+        else
+            convolve(in, impulse, output, N, L);
     }
 #else
     static uintptr_t padded_length(uintptr_t length)

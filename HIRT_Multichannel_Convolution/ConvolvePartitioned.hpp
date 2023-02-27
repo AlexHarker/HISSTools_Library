@@ -214,7 +214,7 @@ public:
         m_reset_flag = true;
     }
     
-    bool process(const T *in, T *out, uintptr_t num_samples)
+    bool process(const T *in, T *out, uintptr_t num_samples, bool accumulate = false)
     {
         Split ir_temp;
         Split in_temp;
@@ -278,7 +278,13 @@ public:
             std::copy_n(in, loop_size, m_fft_buffers[0] + rw_counter);
             std::copy_n(in, loop_size, m_fft_buffers[1] + hi_counter);
             
-            std::copy_n(m_fft_buffers[3] + rw_counter, loop_size, out);
+            if (accumulate)
+            {
+                for (uintptr_t i = 0; i < loop_size; i++)
+                    out[i] += *(m_fft_buffers[3] + rw_counter + i);
+            }
+            else
+                std::copy_n(m_fft_buffers[3] + rw_counter, loop_size, out);
             
             // Updates to pointers and counters
             

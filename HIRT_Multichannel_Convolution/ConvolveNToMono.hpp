@@ -42,14 +42,10 @@ public:
     
     // Process
     
-    void process(const T * const* ins, T *out, T *temp, size_t num_samples, size_t active_in_chans)
+    void process(const T * const* ins, T *out, size_t num_samples, size_t active_in_chans, bool accumulate = false)
     {
-        // Zero output then convolve
-        
-        std::fill_n(out, num_samples, T(0));
-        
         for (uint32_t i = 0; i < m_num_in_chans && i < active_in_chans ; i++)
-            m_convolvers[i].process(ins[i], temp, out, num_samples, true);
+            m_convolvers[i].process(ins[i], out, num_samples, accumulate || i);
     }
     
 private:

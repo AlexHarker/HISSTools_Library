@@ -117,7 +117,7 @@ public:
             const T *parallel_in[1] = { ins[i] };
             const T * const *use_ins = m_parallel ? parallel_in : ins;
             
-            m_convolvers[i]->process(use_ins, outs[i], m_temp_1, num_samples, m_parallel ? 1 : num_ins);
+            m_convolvers[i]->process(use_ins, outs[i], num_samples, m_parallel ? 1 : num_ins);
         }
     }
     
@@ -144,7 +144,7 @@ public:
             const T * const *in_temps = m_in_temps.data();
             const T * const *use_ins = m_parallel ? parallel_in : in_temps;
             
-            m_convolvers[i]->process(use_ins, m_temp_2, m_temp_1, num_samples, m_parallel ? 1 : num_ins);
+            m_convolvers[i]->process(use_ins, m_temp_2, num_samples, m_parallel ? 1 : num_ins);
             
             for (uintptr_t j = 0; j < num_samples; j++)
                 outs[i][j] = m_temp_2[j];
