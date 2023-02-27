@@ -70,13 +70,15 @@ public:
         
         if (input && length > m_offset)
         {
-            // Calculate impulse length
+            // Calculate impulse length and pad
             
             m_impulse_length = std::min(length - m_offset, (m_length ? m_length : 2044));
-            
             uintptr_t pad = padded_length(m_impulse_length) - m_impulse_length;
+
+            const T *offset_input = typed_input.get() + m_offset;
+                        
             std::fill_n(m_impulse_buffer, pad, T(0));
-            std::reverse_copy(typed_input.get() + m_offset, typed_input.get() + m_offset + m_impulse_length, m_impulse_buffer + pad);
+            std::reverse_copy(offset_input, offset_input + m_impulse_length, m_impulse_buffer + pad);
         }
         
         reset();
@@ -91,15 +93,21 @@ public:
     
     bool process(const T *in, T *out, uintptr_t num_samples)
     {
+        auto loop_size = [&]()
+        {
+            if ((m_input_position + num_samples) > 4096)
+                return 4096 - m_input_position;
+            
+            return std::min(uintptr_t(2048), num_samples);
+        };
+        
         if (m_reset)
         {
             std::fill_n(m_input_buffer, 8192, T(0));
             m_reset = false;
         }
-        
-        uintptr_t current_loop;
-        
-        while ((current_loop = (m_input_position + num_samples) > 4096 ? (4096 - m_input_position) : ((num_samples > 2048) ? 2048 : num_samples)))
+                
+        while (uintptr_t current_loop = loop_size())
         {
             // Copy input twice (allows us to read input out in one go)
             
@@ -114,7 +122,8 @@ public:
             
             // Do convolution
             
-            convolve(m_input_buffer + 4096 + (m_input_position - current_loop), m_impulse_buffer, out, current_loop, m_impulse_length);
+            T * input_pointer = m_input_buffer + 4096 + (m_input_position - current_loop);
+            convolve(input_pointer, m_impulse_buffer, out, current_loop, m_impulse_length);
             
             // Updates
             

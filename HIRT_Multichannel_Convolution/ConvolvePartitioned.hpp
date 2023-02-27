@@ -161,19 +161,11 @@ public:
 
         ConvolveError error = CONVOLVE_ERR_NONE;
         
-        // FFT variables / attributes
+        // FFT variables
         
-        uintptr_t buffer_position;
         uintptr_t fft_size = get_fft_size();
         uintptr_t fft_size_halved = fft_size >> 1;
-        
-        // Partition variables
-        
-        T *buffer_temp_1 = m_partition_temp.realp;
-        Split buffer_temp_2;
-        
-        uintptr_t num_partitions;
-        
+           
         // Calculate how much of the buffer to load
         
         length = (!input || length <= m_offset) ? 0 : length - m_offset;
@@ -187,17 +179,23 @@ public:
         
         // Partition / load the impulse
         
-        for (buffer_position = m_offset, buffer_temp_2 = m_impulse_buffer, num_partitions = 0; length > 0; buffer_position += fft_size_halved, num_partitions++)
+        uintptr_t num_partitions = 0;
+        uintptr_t buffer_position = m_offset;
+
+        T *buffer_temp_1;
+        Split buffer_temp_2 = m_impulse_buffer;
+
+        for (; length > 0; buffer_position += fft_size_halved, num_partitions++)
         {
             // Get samples up to half the fft size
             
-            uintptr_t numSamps = (length > fft_size_halved) ? fft_size_halved : length;
-            length -= numSamps;
+            uintptr_t num_samples = std::min(fft_size_halved, length);
+            length -= num_samples;
             
             // Get samples and zero pad
             
-            std::copy_n(typed_input.get() + buffer_position, numSamps, buffer_temp_1);
-            std::fill_n(buffer_temp_1 + numSamps, fft_size - numSamps, T(0));
+            std::copy_n(typed_input.get() + buffer_position, num_samples, buffer_temp_1);
+            std::fill_n(buffer_temp_1 + num_samples, fft_size - num_samples, T(0));
             
             // Do fft straight into position
             
@@ -238,7 +236,7 @@ public:
         if  (!m_num_partitions)
             return false;
         
-        // If we need to reset everything we do that here - happens when the fft size changes, or a new buffer is loaded
+        // Reset everything here if needed - happens when the fft size changes, or a new buffer is loaded
         
         if (m_reset_flag)
         {
@@ -289,7 +287,8 @@ public:
             in += loop_size;
             out += loop_size;
             
-            bool fft_now = !(rw_counter & hop_mask);
+            uintptr_t fft_counter = rw_counter & hop_mask;
+            bool fft_now = !fft_counter;
             
             // Work loop and scheduling - this is where most of the convolution is done
             // How many partitions to do this block? (make sure all partitions are done before the next fft)
@@ -297,7 +296,7 @@ public:
             if (fft_now)
                 num_partitions_to_do = (m_valid_partitions - m_partitions_done) - 1;
             else
-                num_partitions_to_do = (((m_valid_partitions - 1) * (rw_counter & hop_mask)) / fft_size_halved) - m_partitions_done;
+                num_partitions_to_do = (((m_valid_partitions - 1) * fft_counter) / fft_size_halved) - m_partitions_done;
             
             while (num_partitions_to_do > 0)
             {
@@ -332,8 +331,10 @@ public:
                 // Do the fft into the input buffer and add first partition (needed now)
                 // Then do ifft, scale and store (overlap-save)
                 
+                T *fft_input = m_fft_buffers[(rw_counter == fft_size) ? 1 : 0];
+                
                 offset_split_pointer(in_temp, m_input_buffer, (m_input_position * fft_size_halved));
-                hisstools_rfft(m_fft_setup, m_fft_buffers[(rw_counter == fft_size) ? 1 : 0], &in_temp, fft_size, m_fft_size_log2);
+                hisstools_rfft(m_fft_setup, fft_input, &in_temp, fft_size, m_fft_size_log2);
                 process_partition(in_temp, m_impulse_buffer, m_accum_buffer, fft_size_halved);
                 hisstools_rifft(m_fft_setup, &m_accum_buffer, m_fft_buffers[2], m_fft_size_log2);
                 scale_store<Vec>(m_fft_buffers[3], m_fft_buffers[2], fft_size, (rw_counter != fft_size));

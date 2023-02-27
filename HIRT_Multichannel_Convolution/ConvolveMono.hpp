@@ -137,7 +137,13 @@ public:
             reset();
         }
         
-        return (length && !part4.get()) ? CONVOLVE_ERR_MEM_UNAVAILABLE : (length > part4.get_size()) ? CONVOLVE_ERR_MEM_ALLOC_TOO_SMALL : CONVOLVE_ERR_NONE;
+        if (length && !part4.get())
+            return CONVOLVE_ERR_MEM_UNAVAILABLE;
+        
+        if (length > part4.get_size())
+            return CONVOLVE_ERR_MEM_ALLOC_TOO_SMALL;
+        
+        return CONVOLVE_ERR_NONE;
     }
     
     ConvolveError reset()
@@ -174,7 +180,12 @@ public:
     
     // Set partiioning
     
-    void set_partitions(uintptr_t max_length, bool zero_latency, uint32_t A, uint32_t B = 0, uint32_t C = 0, uint32_t D = 0)
+    void set_partitions(uintptr_t max_length,
+                        bool zero_latency,
+                        uint32_t A,
+                        uint32_t B = 0,
+                        uint32_t C = 0,
+                        uint32_t D = 0)
     {
         // Utilities
         
@@ -207,7 +218,7 @@ public:
         PartPtr part_4 = m_part_4.access();
         
         uint32_t offset = zero_latency ? m_sizes[0] >> 1 : 0;
-        uint32_t largestSize = m_sizes[num_sizes() - 1];
+        uint32_t final_size = m_sizes[num_sizes() - 1];
         
         // Allocate paritions in unique pointers
         
@@ -218,9 +229,9 @@ public:
         
         // Allocate the final resizeable partition
         
-        m_allocator = [offset, largestSize](uintptr_t size)
+        m_allocator = [offset, final_size](uintptr_t size)
         {
-            return new convolve_partitioned<T>(largestSize, std::max(size, uintptr_t(largestSize)) - offset, offset, 0);
+            return new convolve_partitioned<T>(final_size, std::max(size, uintptr_t(final_size)) - offset, offset, 0);
         };
         
         part_4.equal(m_allocator, large_free, max_length);

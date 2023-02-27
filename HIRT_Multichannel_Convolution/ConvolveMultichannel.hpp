@@ -12,6 +12,8 @@
 template <class T>
 class convolve_multichannel
 {
+    using CM = convolve_multichannel;
+    
 public:
     
     convolve_multichannel(uint32_t num_ins, uint32_t num_outs, LatencyMode latency)
@@ -54,7 +56,7 @@ public:
     
     void clear(bool resize)
     {
-        do_all(static_cast<void (convolve_multichannel::*)(uint32_t, uint32_t, bool)>(&convolve_multichannel::clear), resize);
+        do_all(static_cast<void (CM::*)(uint32_t, uint32_t, bool)>(&CM::clear), resize);
     }
     
     void clear(uint32_t in_chan, uint32_t out_chan, bool resize)
@@ -66,7 +68,7 @@ public:
     
     void reset()
     {
-        do_all(static_cast<ConvolveError (convolve_multichannel::*)(uint32_t, uint32_t)>(&convolve_multichannel::reset));
+        do_all(static_cast<ConvolveError (CM::*)(uint32_t, uint32_t)>(&CM::reset));
     }
     
     ConvolveError reset(uint32_t in_chan, uint32_t out_chan)
@@ -100,7 +102,7 @@ public:
     
     // DSP
     
-    void process(const T * const*  ins, T** outs, size_t num_ins, size_t num_outs, size_t num_samples)
+    void process(const T * const* ins, T** outs, size_t num_ins, size_t num_outs, size_t num_samples)
     {
         auto mem_pointer = m_temporary_memory.grow((m_num_ins + 2) * num_samples);
         temp_setup(mem_pointer.get(), mem_pointer.get_size());
@@ -113,8 +115,9 @@ public:
         for (size_t i = 0; i < num_outs; i++)
         {
             const T *parallel_in[1] = { ins[i] };
+            const T * const *use_ins = m_parallel ? parallel_in : ins;
             
-            m_convolvers[i]->process(m_parallel ? parallel_in : ins, outs[i], m_temp_1, num_samples, m_parallel ? 1 : num_ins);
+            m_convolvers[i]->process(use_ins, outs[i], m_temp_1, num_samples, m_parallel ? 1 : num_ins);
         }
     }
     
@@ -139,8 +142,9 @@ public:
         {
             const T *parallel_in[1] = { m_in_temps[i] };
             const T * const *in_temps = m_in_temps.data();
+            const T * const *use_ins = m_parallel ? parallel_in : in_temps;
             
-            m_convolvers[i]->process(m_parallel ? parallel_in : in_temps, m_temp_2, m_temp_1, num_samples, m_parallel ? 1 : num_ins);
+            m_convolvers[i]->process(use_ins, m_temp_2, m_temp_1, num_samples, m_parallel ? 1 : num_ins);
             
             for (uintptr_t j = 0; j < num_samples; j++)
                 outs[i][j] = m_temp_2[j];
