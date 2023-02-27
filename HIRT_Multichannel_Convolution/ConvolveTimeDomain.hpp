@@ -20,6 +20,7 @@ public:
     
     convolve_time_domain(uintptr_t offset, uintptr_t length)
     : m_input_position(0)
+    , m_impulse_length(0)
     {
         // Set default initial variables
         
