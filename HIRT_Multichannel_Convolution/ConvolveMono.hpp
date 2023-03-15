@@ -5,7 +5,6 @@
 #include "ConvolveTimeDomain.hpp"
 #include "ConvolvePartitioned.hpp"
 #include "../MemorySwap.hpp"
-#include "../SIMDSupport.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -22,13 +21,13 @@ enum class LatencyMode
     Medium,
 } ;
 
-template <class T>
+template <class T, class IO = T>
 class convolve_mono
 {
-    using CT = convolve_time_domain<T>;
-    using CP = convolve_partitioned<T>;
-    using PartPtr = typename memory_swap<convolve_partitioned<T>>::Ptr;
-    using PartUniquePtr = std::unique_ptr<convolve_partitioned<T>>;
+    using CT = convolve_time_domain<T, IO>;
+    using CP = convolve_partitioned<T, IO>;
+    using PartPtr = typename memory_swap<CP>::Ptr;
+    using PartUniquePtr = std::unique_ptr<CP>;
     
 public:
     
@@ -150,7 +149,7 @@ public:
     
     // Process
     
-    void process(const T *in, T *out, uintptr_t num_samples, bool accumulate = false)
+    void process(const IO *in, IO *out, uintptr_t num_samples, bool accumulate = false)
     {
         PartPtr part_4 = m_part_4.attempt();
         
@@ -191,7 +190,7 @@ public:
         
         auto create_part = [](PartUniquePtr& obj, uint32_t& offset, uint32_t size, uint32_t next)
         {
-            obj.reset(new convolve_partitioned<T>(size, (next - size) >> 1, offset, (next - size) >> 1));
+            obj.reset(new CP(size, (next - size) >> 1, offset, (next - size) >> 1));
             offset += (next - size) >> 1;
         };
         
@@ -214,7 +213,7 @@ public:
         
         // Allocate paritions in unique pointers
         
-        if (zero_latency) m_time.reset(new convolve_time_domain<T>(0, m_sizes[0] >> 1));
+        if (zero_latency) m_time.reset(new CT(0, m_sizes[0] >> 1));
         if (num_sizes() == 4) create_part(m_part_1, offset, m_sizes[0], m_sizes[1]);
         if (num_sizes() > 2) create_part(m_part_2, offset, m_sizes[num_sizes() - 3], m_sizes[num_sizes() - 2]);
         if (num_sizes() > 1) create_part(m_part_3, offset, m_sizes[num_sizes() - 2], m_sizes[num_sizes() - 1]);
@@ -223,7 +222,7 @@ public:
         
         m_allocator = [offset, final_size](uintptr_t size)
         {
-            return new convolve_partitioned<T>(final_size, std::max(size, uintptr_t(final_size)) - offset, offset, 0);
+            return new CP(final_size, std::max(size, uintptr_t(final_size)) - offset, offset, 0);
         };
         
         part_4.equal(m_allocator, large_free, max_length);
@@ -264,21 +263,21 @@ private:
         if (part_4.get()) (part_4.get()->*part_method)(args...);
     }
     
-    static void large_free(convolve_partitioned<T> *large_partition)
+    static void large_free(CP *large_partition)
     {
         delete large_partition;
     }
     
-    typename memory_swap<convolve_partitioned<T>>::AllocFunc m_allocator;
+    typename memory_swap<CP>::AllocFunc m_allocator;
     
     std::vector<uint32_t> m_sizes;
     
-    std::unique_ptr<convolve_time_domain<T>> m_time;
-    std::unique_ptr<convolve_partitioned<T>> m_part_1;
-    std::unique_ptr<convolve_partitioned<T>> m_part_2;
-    std::unique_ptr<convolve_partitioned<T>> m_part_3;
+    std::unique_ptr<CT> m_time;
+    std::unique_ptr<CP> m_part_1;
+    std::unique_ptr<CP> m_part_2;
+    std::unique_ptr<CP> m_part_3;
     
-    memory_swap<convolve_partitioned<T>> m_part_4;
+    memory_swap<CP> m_part_4;
     
     uintptr_t m_length;
     

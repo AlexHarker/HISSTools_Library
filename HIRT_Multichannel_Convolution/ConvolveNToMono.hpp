@@ -8,23 +8,54 @@
 #include <cstdint>
 #include <vector>
 
-template <class T>
+template <class T, class IO = T>
 class convolve_n_to_mono
 {
+    using CN = convolve_n_to_mono;
+
 public:
     
+    // Constructor
+    
     convolve_n_to_mono(uint32_t in_chans, uintptr_t max_length, LatencyMode latency)
-    : m_num_in_chans(in_chans)
     {
-        for (uint32_t i = 0; i < m_num_in_chans; i++)
+        for (uint32_t i = 0; i < in_chans; i++)
             m_convolvers.emplace_back(max_length, latency);
     }
     
-    // Resize / set / reset
+    // Channels
+    
+    uint32_t get_num_ins() const { return static_cast<uint32_t>(m_convolvers.size()); }
+    
+    // Clear IRs
+    
+    void clear(bool resize)
+    {
+        for_all(static_cast<void (CN::*)(uint32_t, uint32_t, bool)>(&CN::clear), resize);
+    }
+    
+    void clear(uint32_t in_chan, bool resize)
+    {
+        set<T>(in_chan, nullptr, 0, resize);
+    }
+    
+    // Reset
+    
+    void reset()
+    {
+        for_all(static_cast<void (CN::*)(uint32_t, uint32_t, bool)>(&CN::clear));
+    }
+    
+    ConvolveError reset(uint32_t in_chan)
+    {
+        return do_channel(&convolve_mono<T, IO>::reset, in_chan);
+    }
+    
+    // Resize and set IR
     
     ConvolveError resize(uint32_t in_chan, uintptr_t length)
     {
-        return do_channel(&convolve_mono<T>::resize, in_chan, length);
+        return do_channel(&convolve_mono<T, IO>::resize, in_chan, length);
     }
     
     template <class U>
@@ -32,19 +63,16 @@ public:
     {
         conformed_input<T, U> typed_input(input, length);
 
-        return do_channel(&convolve_mono<T>::template set<T>, in_chan, typed_input.get(), length, resize);
+        return do_channel(&convolve_mono<T, IO>::template set<T>, in_chan, typed_input.get(), length, resize);
     }
 
-    ConvolveError reset(uint32_t in_chan)
-    {
-        return do_channel(&convolve_mono<T>::reset, in_chan);
-    }
-    
     // Process
     
-    void process(const T * const* ins, T *out, size_t num_samples, size_t active_in_chans, bool accumulate = false)
+    void process(const IO * const* ins, IO *out, uintptr_t num_samples, uint32_t num_ins, bool accumulate = false)
     {
-        for (uint32_t i = 0; i < m_num_in_chans && i < active_in_chans ; i++)
+        num_ins = std::min(num_ins, get_num_ins());
+
+        for (uint32_t i = 0; i < num_ins; i++)
             m_convolvers[i].process(ins[i], out, num_samples, accumulate || i);
     }
     
@@ -55,13 +83,20 @@ private:
     template <typename Method, typename... Args>
     ConvolveError do_channel(Method method, uint32_t in_chan, Args...args)
     {
-        if (in_chan < m_num_in_chans)
+        if (in_chan < get_num_ins())
             return (m_convolvers[in_chan].*method)(args...);
         else
             return ConvolveError::InChanOutOfRange;
     }
     
-    std::vector<convolve_mono<T>> m_convolvers;
+    // Utility to apply an operation to all convolvers
     
-    uint32_t m_num_in_chans;
+    template <typename Method, typename... Args>
+    void for_all(Method method, Args...args)
+    {
+        for (uint32_t i = 0; i < get_num_ins(); i++)
+            (this->*method)(i, args...);
+    }
+    
+    std::vector<convolve_mono<T, IO>> m_convolvers;
 };
