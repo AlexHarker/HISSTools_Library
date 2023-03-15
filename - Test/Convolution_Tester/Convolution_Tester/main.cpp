@@ -100,10 +100,10 @@ std::vector<T> random_vector(int length)
     return v;
 }
 
-template <class T, class IO>
+template <template <class, class> class Convolver, class T, class IO>
 void test_time_domain(int block_size, int num_blocks, int ir_length, const char *str)
 {
-    convolve_time_domain<T, IO> convolver;
+    Convolver<T, IO> convolver;
     
     std::vector<IO> in = random_vector<IO>(block_size * num_blocks);
     std::vector<T> ir = random_vector<T>(ir_length);
@@ -125,10 +125,10 @@ void test_time_domain(int block_size, int num_blocks, int ir_length, const char 
     t.finish(str);
 }
 
-template <class T, class IO>
+template <template <class, class> class Convolver, class T, class IO>
 void test_what_happens(int block_size, int ir_length)
 {
-    convolve_time_domain<T, IO> convolver;
+    Convolver<T, IO> convolver;
     
     std::vector<IO> in(block_size, IO(1));
     std::vector<T> ir(ir_length, IO(1));
@@ -144,12 +144,21 @@ void test_what_happens(int block_size, int ir_length)
 
 int main(int argc, const char * argv[])
 {
-    test_what_happens<double, double>(64, 512);
-    test_what_happens<float, float>(64, 512);
+    test_what_happens<convolve_time_domain, double, double>(64, 512);
+    test_what_happens<convolve_time_domain, float, float>(64, 512);
     
-    test_time_domain<double, double>(256, 10000, 1024, "Test double double -");
-    test_time_domain<double, float>(256, 10000, 1024, "Test double float  -");
-    test_time_domain<float, double>(256, 10000, 1024, "Test float  double -");
-    test_time_domain<float, float>(256, 10000, 1024, "Test float  float  -");
+    test_time_domain<convolve_time_domain, double, double>(256, 10000, 1024, "Test double double -");
+    test_time_domain<convolve_time_domain, double, float>(256, 10000, 1024, "Test double float  -");
+    test_time_domain<convolve_time_domain, float, double>(256, 10000, 1024, "Test float  double -");
+    test_time_domain<convolve_time_domain, float, float>(256, 10000, 1024, "Test float  float  -");
+    
+    test_what_happens<convolve_partitioned, double, double>(64, 512);
+    test_what_happens<convolve_partitioned, float, float>(64, 512);
+    
+    test_time_domain<convolve_partitioned, double, double>(256, 10000, 131072, "Test double double -");
+    test_time_domain<convolve_partitioned, double, float>(256, 10000, 131072, "Test double float  -");
+    test_time_domain<convolve_partitioned, float, double>(256, 10000, 131072, "Test float  double -");
+    test_time_domain<convolve_partitioned, float, float>(256, 10000, 131072, "Test float  float  -");
+    
     return 0;
 }
