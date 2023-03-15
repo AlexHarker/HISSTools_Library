@@ -175,13 +175,6 @@ private:
         return ((length + 15) >> 4) << 4;
     }
     
-    static float sum(const SIMDType<float, 4>& vec)
-    {
-        float values[4];
-        vec.store(values);
-        return values[0] + values[1] + values[2] + values[3];
-    }
-    
     static void convolve(const T *in, const T *impulse, T *output, uintptr_t N, uintptr_t L)
     {
         using Vec = SIMDType<T, vec_size>;
