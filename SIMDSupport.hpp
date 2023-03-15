@@ -1183,6 +1183,45 @@ struct SIMDType<float, 16> : public SIMDVector<float, __m512, 16>
 
 // ********************** Common Functionality ********************** //
 
+// Vector Summing for all types
+
+namespace impl
+{
+    template <class ST, int N, int M>
+    struct partial_sum
+    {
+        using T = typename ST::scalar_type;
+        
+        T operator()(const T values[ST::size])
+        {
+            constexpr int O = N / 2;
+            
+            return partial_sum<ST, O, M>()(values) + partial_sum<ST, O, M + O>()(values);
+        }
+    };
+
+    template <class ST, int M>
+    struct partial_sum<ST, 1, M>
+    {
+        using T = typename ST::scalar_type;
+
+        T operator()(const T values[ST::size])
+        {
+            return values[M];
+        }
+    };
+}
+
+template <class T, int  N>
+T sum(const SIMDType<T,  N>& vec)
+{
+    T values[N];
+    
+    vec.store(values);
+    
+    return impl::partial_sum<SIMDType<T,  N>, N, 0>()(values);
+}
+
 // Select Functionality for all types
 
 template <class T, int N>
