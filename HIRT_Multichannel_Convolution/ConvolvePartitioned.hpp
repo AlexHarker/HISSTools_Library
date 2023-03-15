@@ -16,6 +16,8 @@ class convolve_partitioned
     // N.B. MIN_FFT_SIZE_LOG2 needs to take account of the loop unrolling of vectors by 4
     // MAX_FFT_SIZE_LOG2 is perhaps conservative right now
     
+    using VecType = SIMDType<T, SIMDLimits<T>::max_size>;
+
     static constexpr int MIN_FFT_SIZE_LOG2 = 5;
     static constexpr int MAX_FFT_SIZE_LOG2 = 20;
     
@@ -331,8 +333,6 @@ public:
             
             if (fft_now)
             {
-                using Vec = SIMDType<T, SIMDLimits<T>::max_size>;
-                
                 // Do the fft into the input buffer and add first partition (needed now)
                 // Then do ifft, scale and store (overlap-save)
                 
@@ -342,7 +342,7 @@ public:
                 hisstools_rfft(m_fft_setup, fft_input, &in_temp, fft_size, m_fft_size_log2);
                 process_partition(in_temp, m_impulse_buffer, m_accum_buffer, fft_size_halved);
                 hisstools_rifft(m_fft_setup, &m_accum_buffer, m_fft_buffers[2], m_fft_size_log2);
-                scale_store<Vec>(m_fft_buffers[3], m_fft_buffers[2], fft_size, (rw_counter != fft_size));
+                scale_store<VecType>(m_fft_buffers[3], m_fft_buffers[2], fft_size, (rw_counter != fft_size));
                 
                 // Clear accumulation buffer
                 
@@ -374,15 +374,14 @@ private:
     
     static void process_partition(Split in_1, Split in_2, Split out, uintptr_t num_bins)
     {
-        using Vec = SIMDType<T, SIMDLimits<T>::max_size>;
-        uintptr_t num_vecs = num_bins / Vec::size;
+        uintptr_t num_vecs = num_bins / VecType::size;
         
-        Vec *i_real_1 = reinterpret_cast<Vec *>(in_1.realp);
-        Vec *i_imag_1 = reinterpret_cast<Vec *>(in_1.imagp);
-        Vec *i_real_2 = reinterpret_cast<Vec *>(in_2.realp);
-        Vec *i_imag_2 = reinterpret_cast<Vec *>(in_2.imagp);
-        Vec *o_real = reinterpret_cast<Vec *>(out.realp);
-        Vec *o_imag = reinterpret_cast<Vec *>(out.imagp);
+        VecType *i_real_1 = reinterpret_cast<VecType *>(in_1.realp);
+        VecType *i_imag_1 = reinterpret_cast<VecType *>(in_1.imagp);
+        VecType *i_real_2 = reinterpret_cast<VecType *>(in_2.realp);
+        VecType *i_imag_2 = reinterpret_cast<VecType *>(in_2.imagp);
+        VecType *o_real = reinterpret_cast<VecType *>(out.realp);
+        VecType *o_imag = reinterpret_cast<VecType *>(out.imagp);
         
         T nyquist_1 = in_1.imagp[0];
         T nyquist_2 = in_2.imagp[0];

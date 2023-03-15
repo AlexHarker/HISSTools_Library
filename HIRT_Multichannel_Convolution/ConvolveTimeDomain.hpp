@@ -24,15 +24,15 @@ class convolve_time_domain
         return i;
     }
         
-    static constexpr int vec_size = SIMDLimits<T>::max_size;
+    using VecType = SIMDType<T, SIMDLimits<T>::max_size>;
+
     static constexpr int loop_unroll_size = 4;
+    static constexpr int vec_size_shift = ilog2(VecType::size);
+    static constexpr int padding_resolution = loop_unroll_size * VecType::size;
+    static constexpr int padding_shift = ilog2(padding_resolution);
     static constexpr int max_impulse_length = 2048;
     static constexpr int max_buffer_length = 4096;
     static constexpr int allocation_length = max_buffer_length * 2;
-    static constexpr int vec_size_shift = ilog2(vec_size);
-    static constexpr int padding_shift = ilog2(loop_unroll_size * vec_size);
-    
-    using VecType = SIMDType<T, vec_size>;
 
 public:
     
@@ -121,17 +121,23 @@ public:
             return std::min(uintptr_t(max_impulse_length), num_samples);
         };
         
+        // Reset
+        
         if (m_reset)
         {
             std::fill_n(m_input_buffer, allocation_length , T(0));
             m_reset = false;
         }
              
+        // Early exit if we are not accumulating and there's no impulse
+        
         if (!m_impulse_length && !accumulate)
         {
             std::fill_n(out, num_samples, IO(0));
             return;
         }
+        
+        // Main loop
         
         while (uintptr_t current_loop = loop_size())
         {
@@ -204,7 +210,7 @@ private:
         inline void unroll(VecType *accum, const T*& input, const VecType *impulse, uintptr_t idx)
         {
             loop_unroll<M, M>().multiply(accum, input, impulse[idx]);
-            recurse().unroll(accum, input += vec_size, impulse, ++idx);
+            recurse().unroll(accum, input += VecType::size, impulse, ++idx);
         }
         
         template <void Func(IO&, IO)>
@@ -280,7 +286,7 @@ private:
     
     static uintptr_t padded_length(uintptr_t length)
     {
-        return ((length + (loop_unroll_size * vec_size - 1)) >> padding_shift) << padding_shift;
+        return ((length + (padding_resolution - 1)) >> padding_shift) << padding_shift;
     }
     
     // Internal buffers
