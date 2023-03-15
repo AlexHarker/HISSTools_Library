@@ -354,16 +354,43 @@ private:
     uintptr_t get_fft_size()      { return uintptr_t(1) << m_fft_size_log2; }
     uintptr_t get_max_fft_size()  { return uintptr_t(1) << m_max_fft_size_log2; }
     
+    // Struct to deal with loop unrolling of complex muliplication
+    
+    template <int N>
+    struct loop_unroll
+    {
+        using VT = VecType;
+        using CVT = const VecType;
+        using recurse = loop_unroll<N - 1>;
+        
+        inline void multiply(VT *& out_r, VT *& out_i, CVT *in_r1, CVT *in_i1, CVT *in_r2, CVT *in_i2, uintptr_t i)
+        {
+            *out_r++ += (in_r1[i] * in_r2[i]) - (in_i1[i] * in_i2[i]);
+            *out_i++ += (in_r1[i] * in_i2[i]) + (in_i1[i] * in_r2[i]);
+            
+            recurse().multiply(out_r, out_i, in_r1, in_i1, in_r2, in_i2, ++i);
+        }
+    };
+    
+    template <>
+    struct loop_unroll<0>
+    {
+        template <typename...Args>
+        void multiply(Args...) {}
+    };
+
+    // Process a Partition
+    
     static void process_partition(Split in_1, Split in_2, Split out, uintptr_t num_bins)
     {
         uintptr_t num_vecs = num_bins / VecType::size;
         
-        VecType *i_real_1 = reinterpret_cast<VecType *>(in_1.realp);
-        VecType *i_imag_1 = reinterpret_cast<VecType *>(in_1.imagp);
-        VecType *i_real_2 = reinterpret_cast<VecType *>(in_2.realp);
-        VecType *i_imag_2 = reinterpret_cast<VecType *>(in_2.imagp);
-        VecType *o_real = reinterpret_cast<VecType *>(out.realp);
-        VecType *o_imag = reinterpret_cast<VecType *>(out.imagp);
+        const VecType *in_r1 = reinterpret_cast<const VecType *>(in_1.realp);
+        const VecType *in_i1 = reinterpret_cast<const VecType *>(in_1.imagp);
+        const VecType *in_r2 = reinterpret_cast<const VecType *>(in_2.realp);
+        const VecType *in_i2 = reinterpret_cast<const VecType *>(in_2.imagp);
+        VecType *out_r = reinterpret_cast<VecType *>(out.realp);
+        VecType *out_i = reinterpret_cast<VecType *>(out.imagp);
         
         T nyquist_1 = in_1.imagp[0];
         T nyquist_2 = in_2.imagp[0];
@@ -378,16 +405,7 @@ private:
         // Do other bins (loop unrolled)
         
         for (uintptr_t i = 0; i + (loop_unroll_size - 1) < num_vecs; i += loop_unroll_size)
-        {
-            *o_real++ += (i_real_1[i + 0] * i_real_2[i + 0]) - (i_imag_1[i + 0] * i_imag_2[i + 0]);
-            *o_imag++ += (i_real_1[i + 0] * i_imag_2[i + 0]) + (i_imag_1[i + 0] * i_real_2[i + 0]);
-            *o_real++ += (i_real_1[i + 1] * i_real_2[i + 1]) - (i_imag_1[i + 1] * i_imag_2[i + 1]);
-            *o_imag++ += (i_real_1[i + 1] * i_imag_2[i + 1]) + (i_imag_1[i + 1] * i_real_2[i + 1]);
-            *o_real++ += (i_real_1[i + 2] * i_real_2[i + 2]) - (i_imag_1[i + 2] * i_imag_2[i + 2]);
-            *o_imag++ += (i_real_1[i + 2] * i_imag_2[i + 2]) + (i_imag_1[i + 2] * i_real_2[i + 2]);
-            *o_real++ += (i_real_1[i + 3] * i_real_2[i + 3]) - (i_imag_1[i + 3] * i_imag_2[i + 3]);
-            *o_imag++ += (i_real_1[i + 3] * i_imag_2[i + 3]) + (i_imag_1[i + 3] * i_real_2[i + 3]);
-        }
+            loop_unroll<loop_unroll_size>().multiply(out_r, out_i, in_r1, in_i1, in_r2, in_i2, i);
         
         // Replace nyquist bins
         
