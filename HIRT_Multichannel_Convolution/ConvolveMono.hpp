@@ -161,9 +161,7 @@ public:
                 for_all(&CT::reset, &CP::reset, part_4);
                 m_reset = false;
             }
-            
-            //for_all(&CT::process, &CP::process, part_4, in, out, num_samples, accumulate);
-            
+                        
             if (m_time) m_time->process(in, out, num_samples, accumulate);
             if (m_part_1) m_part_1->process(in, out, num_samples, accumulate || m_time);
             if (m_part_2) m_part_2->process(in, out, num_samples, accumulate || m_part_1);
