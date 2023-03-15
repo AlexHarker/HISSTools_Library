@@ -26,7 +26,10 @@ class convolve_partitioned
     
 public:
     
-    convolve_partitioned(uintptr_t max_fft_size, uintptr_t max_length, uintptr_t offset, uintptr_t length)
+    convolve_partitioned(uintptr_t max_fft_size = 16384,
+                         uintptr_t max_length = 131072,
+                         uintptr_t offset = 0,
+                         uintptr_t length = 0)
     : m_max_impulse_length(max_length)
     , m_fft_size_log2(0)
     , m_input_position(0)
