@@ -10,7 +10,7 @@
 #include <cstdint>
 #include <random>
 
-template <class T>
+template <class T, class IO = T>
 class convolve_partitioned
 {
     // N.B. MIN_FFT_SIZE_LOG2 needs to take account of the loop unrolling of vectors by 4
@@ -214,7 +214,7 @@ public:
         m_reset_flag = true;
     }
     
-    bool process(const T *in, T *out, uintptr_t num_samples, bool accumulate = false)
+    void process(const IO *in, IO *out, uintptr_t num_samples, bool accumulate = false)
     {
         Split ir_temp;
         Split in_temp;
@@ -234,8 +234,10 @@ public:
         uintptr_t samples_remaining = num_samples;
         
         if  (!m_num_partitions)
-            return false;
-        
+        {
+            std::fill_n(out, accumulate ? 0 : num_samples, IO(0));
+            return;
+        }
         // Reset everything here if needed - happens when the fft size changes, or a new buffer is loaded
         
         if (m_reset_flag)
@@ -275,16 +277,13 @@ public:
             
             // Load input into buffer (twice) and output from the output buffer
             
-            std::copy_n(in, loop_size, m_fft_buffers[0] + rw_counter);
-            std::copy_n(in, loop_size, m_fft_buffers[1] + hi_counter);
+            impl::copy_cast_n(in, loop_size, m_fft_buffers[0] + rw_counter);
+            impl::copy_cast_n(in, loop_size, m_fft_buffers[1] + hi_counter);
             
             if (accumulate)
-            {
-                for (uintptr_t i = 0; i < loop_size; i++)
-                    out[i] += *(m_fft_buffers[3] + rw_counter + i);
-            }
+                impl::add_cast_n(m_fft_buffers[3] + rw_counter, loop_size, out);
             else
-                std::copy_n(m_fft_buffers[3] + rw_counter, loop_size, out);
+                impl::copy_cast_n(m_fft_buffers[3] + rw_counter, loop_size, out);
             
             // Updates to pointers and counters
             
@@ -366,8 +365,6 @@ public:
         // Write counter back into the object
         
         m_rw_counter = rw_counter;
-        
-        return true;
     }
 
 private:

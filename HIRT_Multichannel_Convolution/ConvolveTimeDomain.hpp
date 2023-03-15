@@ -4,6 +4,7 @@
 #include "ConvolveUtilities.hpp"
 #include "../SIMDSupport.hpp"
 
+#include <array>
 #include <cstdint>
 #include <algorithm>
 
@@ -11,10 +12,27 @@
 #include <Accelerate/Accelerate.h>
 #endif
 
-template <class T>
+template <class T, class IO = T>
 class convolve_time_domain
 {
+    static constexpr int ilog2(int x)
+    {
+        int i = 0;
+        
+        for (x >>= 1; x; i++, x >>= 1);
+        
+        return i;
+    }
+        
     static constexpr int vec_size = SIMDLimits<T>::max_size;
+    static constexpr int loop_unroll_size = 4;
+    static constexpr int max_impulse_length = 2048;
+    static constexpr int max_buffer_length = 4096;
+    static constexpr int allocation_length = max_buffer_length * 2;
+    static constexpr int vec_size_shift = ilog2(vec_size);
+    static constexpr int padding_shift = ilog2(loop_unroll_size * vec_size);
+    
+    using VecType = SIMDType<T, vec_size>;
 
 public:
     
@@ -27,15 +45,15 @@ public:
         set_offset(offset);
         set_length(length);
         
-        // Allocate impulse buffer and input bufferr
+        // Allocate impulse buffer and input buffer
         
-        m_impulse_buffer = allocate_aligned<T>(2048);
-        m_input_buffer = allocate_aligned<T>(8192);
+        m_impulse_buffer = allocate_aligned<T>(max_impulse_length);
+        m_input_buffer = allocate_aligned<T>(allocation_length);
         
         // Zero buffers
         
-        std::fill_n(m_impulse_buffer, 2048, T(0));
-        std::fill_n(m_input_buffer, 8192, T(0));
+        std::fill_n(m_impulse_buffer, max_impulse_length, T(0));
+        std::fill_n(m_input_buffer, allocation_length, T(0));
     }
     
     ~convolve_time_domain()
@@ -53,9 +71,9 @@ public:
     
     ConvolveError set_length(uintptr_t length)
     {
-        m_length = std::min(length, uintptr_t(2044));
+        m_length = std::min(length, uintptr_t(max_impulse_length));
         
-        return length > 2044 ? ConvolveError::TimeLengthOutOfRange : ConvolveError::None;
+        return length > max_impulse_length ? ConvolveError::TimeLengthOutOfRange : ConvolveError::None;
     }
     
     void set_offset(uintptr_t offset)
@@ -74,7 +92,7 @@ public:
         {
             // Calculate impulse length and pad
             
-            m_impulse_length = std::min(length - m_offset, (m_length ? m_length : 2044));
+            m_impulse_length = std::min(length - m_offset, (m_length ? m_length : max_impulse_length));
             uintptr_t pad = padded_length(m_impulse_length) - m_impulse_length;
 
             const T *offset_input = typed_input.get() + m_offset;
@@ -85,7 +103,7 @@ public:
         
         reset();
         
-        return (!m_length && (length - m_offset) > 2044) ? ConvolveError::TimeImpulseTooLong : ConvolveError::None;
+        return (!m_length && (length - m_offset) > max_impulse_length) ? ConvolveError::TimeImpulseTooLong : ConvolveError::None;
     }
     
     void reset()
@@ -93,38 +111,44 @@ public:
         m_reset = true;
     }
     
-    bool process(const T *in, T *out, uintptr_t num_samples, bool accumulate = false)
+    void process(const IO *in, IO *out, uintptr_t num_samples, bool accumulate = false)
     {
         auto loop_size = [&]()
         {
-            if ((m_input_position + num_samples) > 4096)
-                return 4096 - m_input_position;
+            if ((m_input_position + num_samples) > max_buffer_length)
+                return max_buffer_length - m_input_position;
             
-            return std::min(uintptr_t(2048), num_samples);
+            return std::min(uintptr_t(max_impulse_length), num_samples);
         };
         
         if (m_reset)
         {
-            std::fill_n(m_input_buffer, 8192, T(0));
+            std::fill_n(m_input_buffer, allocation_length , T(0));
             m_reset = false;
         }
-                
+             
+        if (!m_impulse_length && !accumulate)
+        {
+            std::fill_n(out, num_samples, IO(0));
+            return;
+        }
+        
         while (uintptr_t current_loop = loop_size())
         {
             // Copy input twice (allows us to read input out in one go)
             
-            std::copy_n(in, current_loop, m_input_buffer + m_input_position);
-            std::copy_n(in, current_loop, m_input_buffer + m_input_position + 4096);
+            impl::copy_cast_n(in, current_loop, m_input_buffer + m_input_position);
+            impl::copy_cast_n(in, current_loop, m_input_buffer + m_input_position + max_buffer_length);
             
             // Advance pointer
             
             m_input_position += current_loop;
-            if (m_input_position >= 4096)
-                m_input_position -= 4096;
+            if (m_input_position >= max_buffer_length)
+                m_input_position -= max_buffer_length;
             
             // Do convolution
             
-            T * input_pointer = m_input_buffer + 4096 + (m_input_position - current_loop);
+            T * input_pointer = m_input_buffer + max_buffer_length + (m_input_position - current_loop);
             convolve(input_pointer, m_impulse_buffer, out, current_loop, m_impulse_length, accumulate);
             
             // Updates
@@ -133,18 +157,11 @@ public:
             out += current_loop;
             num_samples -= current_loop;
         }
-        
-        return m_impulse_length;
     }
     
 private:
     
 #if defined __APPLE__ && !defined NO_APPLE_ACCELERATE
-    static uintptr_t padded_length(uintptr_t length)
-    {
-        return length;
-    }
-    
     static void convolve(const float *in, const float *impulse, float *output, uintptr_t N, uintptr_t L)
     {
         vDSP_conv(in + 1 - L,  1, impulse, 1, output, 1, N, L);
@@ -155,54 +172,116 @@ private:
         vDSP_convD(in + 1 - L,  1, impulse, 1, output, 1, N, L);
     }
     
-    static void convolve(const T *in, const T *impulse, T *output, uintptr_t N, uintptr_t L, bool accumulate)
+    template <void Func(IO&, IO), class U>
+    static void convolve(const T *in, const T *impulse, U *output, uintptr_t N, uintptr_t L)
     {
-        if (accumulate)
-        {
-            T temp[N];
-            
-            convolve(in, impulse, temp, N, L);
-            
-            for (uintptr_t i = 0; i < N; i++)
-                output[i] += temp[i];
-        }
-        else
-            convolve(in, impulse, output, N, L);
-    }
-#else
-    static uintptr_t padded_length(uintptr_t length)
-    {
-        return ((length + 15) >> 4) << 4;
+        T temp[N];
+        
+        convolve(in, impulse, temp, N, L);
+        impl::loop_cast_n<IO, Func>(temp, N, output);
     }
     
-    static void convolve(const T *in, const T *impulse, T *output, uintptr_t N, uintptr_t L)
+    template <>
+    static void convolve<impl::copy_to_result<IO>, T>(const T *in, const T *impulse, T *output, uintptr_t N, uintptr_t L)
     {
-        using Vec = SIMDType<T, vec_size>;
-        
-        L = padded_length(L);
-        
-        const Vec *v_impulse = reinterpret_cast<const Vec *>(impulse);
-        
-        for (uintptr_t i = 0; i < N; i++)
-        {
-            Vec accum(T(0));
-            
-            const T *input = in - L + 1 + i - vec_size;
-            
-            for (uintptr_t j = 0; j < L >> 2; j += 4)
-            {
-                // Load vals
-                
-                accum += (v_impulse[j + 0] * Vec(input += vec_size));
-                accum += (v_impulse[j + 1] * Vec(input += vec_size));
-                accum += (v_impulse[j + 2] * Vec(input += vec_size));
-                accum += (v_impulse[j + 3] * Vec(input += vec_size));
-            }
-            
-            *output++ = sum(accum);
-        }
+        convolve(in, impulse, output, N, L);
     }
 #endif
+  
+    // Struct to deal with loop unrolling (across multiplications / samples / storage
+    
+    template <int N, int M = 0>
+    struct loop_unroll
+    {
+        using recurse = loop_unroll<N - 1, M>;
+        
+        inline void multiply(VecType *accum, const T* input, const VecType& impulse)
+        {
+            *accum += VecType(input) * impulse;
+            recurse().multiply(++accum, ++input, impulse);
+        }
+        
+        inline void unroll(VecType *accum, const T*& input, const VecType *impulse, uintptr_t idx)
+        {
+            loop_unroll<M, M>().multiply(accum, input, impulse[idx]);
+            recurse().unroll(accum, input += vec_size, impulse, ++idx);
+        }
+        
+        template <void Func(IO&, IO)>
+        inline void store(IO *& output, VecType *accum)
+        {
+            Func(*output, static_cast<IO>(sum(*accum)));
+            recurse().template store<Func>(++output, ++accum);
+        }
+    };
+    
+    template <int M>
+    struct loop_unroll<0, M>
+    {
+        template <typename...Args>
+        void multiply(Args...) {}
+        
+        template <typename...Args>
+        void unroll(Args...) {}
+        
+        template <void Func(IO&, IO), typename...Args>
+        void store(Args...) {}
+    };
+
+    // Convolution Functions
+    
+    template <void Func(IO&, IO), int UR>
+    static void convolve_unrolled(const T *in,
+                                       const VecType *impulse,
+                                       IO *output,
+                                       uintptr_t& idx,
+                                       uintptr_t N,
+                                       uintptr_t L)
+    {
+        for (; (idx + (UR - 1)) < N; idx += UR)
+        {
+            std::array<VecType, UR> accum;
+            accum.fill(T(0));
+            
+            const T *input = in - L + 1 + idx;
+                        
+            for (uintptr_t j = 0; j < (L >> vec_size_shift); j += loop_unroll_size)
+                loop_unroll<loop_unroll_size, UR>().unroll(accum.data(), input, impulse, j);
+            
+            loop_unroll<UR>().template store<Func>(output, accum.data());
+        }
+    }
+    
+    // U and V will always evaluate to T and IO, but templating solves clashes with more explicit apple versions above
+    
+    template <void Func(IO&, IO), class U, class V>
+    static void convolve(const U *in, const U *impulse, V *output, uintptr_t N, uintptr_t L)
+    {
+        const VecType *v_impulse = reinterpret_cast<const VecType *>(impulse);
+
+        uintptr_t idx = 0;
+                       
+        // Unroll against samples for efficiency (by 4 then cleanup by 2 and 1)
+        
+        convolve_unrolled<Func, 4>(in, v_impulse, output, idx, N, L);
+        convolve_unrolled<Func, 2>(in, v_impulse, output, idx, N, L);
+        convolve_unrolled<Func, 1>(in, v_impulse, output, idx, N, L);
+    }
+    
+    static void convolve(const T *in, const T *impulse, IO *output, uintptr_t N, uintptr_t L, bool accumulate)
+    {
+        L = padded_length(L);
+
+        if (accumulate)
+            convolve<impl::add_to_result<IO>>(in, impulse, output, N, L);
+        else
+            convolve<impl::copy_to_result<IO>>(in, impulse, output, N, L);
+    }
+    
+    static uintptr_t padded_length(uintptr_t length)
+    {
+        return ((length + (loop_unroll_size * vec_size - 1)) >> padding_shift) << padding_shift;
+    }
     
     // Internal buffers
     
