@@ -18,7 +18,7 @@ class convolve_time_domain
 
 public:
     
-    convolve_time_domain(uintptr_t offset, uintptr_t length)
+    convolve_time_domain(uintptr_t offset = 0, uintptr_t length = 0)
     : m_input_position(0)
     , m_impulse_length(0)
     {
