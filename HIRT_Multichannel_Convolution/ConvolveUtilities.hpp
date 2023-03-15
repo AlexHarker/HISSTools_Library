@@ -1,11 +1,32 @@
 
 #pragma once
 
+#include "../HISSTools_FFT/HISSTools_FFT.h"
+
 #include <algorithm>
 #include <vector>
 
 namespace impl
 {
+    template <typename U>
+    struct Infer {};
+
+    template <>
+    struct Infer<double>
+    {
+        using Split = FFT_SPLIT_COMPLEX_D;
+        using Setup = FFT_SETUP_D;
+        using Type = double;
+    };
+
+    template <>
+    struct Infer<float>
+    {
+        using Split = FFT_SPLIT_COMPLEX_F;
+        using Setup = FFT_SETUP_F;
+        using Type = float;
+    };
+
     template <class T>
     void add_to_result(T& result, T value)  { result += value; }
 
@@ -29,6 +50,17 @@ namespace impl
     void copy_cast_n(T *first, Size count, U *result)
     {
         loop_cast_n<U, copy_to_result<U>>(first, count, result);
+    }
+
+    template <class T>
+    static constexpr T ilog2(T x)
+    {
+        T bit_shift = x;
+        T bit_count = 0;
+    
+        for (; bit_shift; bit_count++, bit_shift >>= T(1));
+    
+        return x == T(1) << (bit_count - T(1)) ? bit_count - T(1) : bit_count;
     }
 }
 

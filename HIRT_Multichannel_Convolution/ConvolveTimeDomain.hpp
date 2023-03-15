@@ -15,21 +15,12 @@
 template <class T, class IO = T>
 class convolve_time_domain
 {
-    static constexpr int ilog2(int x)
-    {
-        int i = 0;
-        
-        for (x >>= 1; x; i++, x >>= 1);
-        
-        return i;
-    }
-        
     using VecType = SIMDType<T, SIMDLimits<T>::max_size>;
 
     static constexpr int loop_unroll_size = 4;
-    static constexpr int vec_size_shift = ilog2(VecType::size);
+    static constexpr int vec_size_shift = impl::ilog2(VecType::size);
     static constexpr int padding_resolution = loop_unroll_size * VecType::size;
-    static constexpr int padding_shift = ilog2(padding_resolution);
+    static constexpr int padding_shift = impl::ilog2(padding_resolution);
     static constexpr int max_impulse_length = 2048;
     static constexpr int max_buffer_length = 4096;
     static constexpr int allocation_length = max_buffer_length * 2;

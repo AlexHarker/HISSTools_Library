@@ -13,35 +13,16 @@
 template <class T, class IO = T>
 class convolve_partitioned
 {
-    // N.B. MIN_FFT_SIZE_LOG2 needs to take account of the loop unrolling of vectors by 4
-    // MAX_FFT_SIZE_LOG2 is perhaps conservative right now
+    // N.B. fixed_min_fft_size_log2 must take into account of the loop unrolling of vectors
+    // N.B. fixed_max_fft_size_log2 is perhaps conservative right now
     
     using VecType = SIMDType<T, SIMDLimits<T>::max_size>;
-
-    static constexpr int MIN_FFT_SIZE_LOG2 = 5;
-    static constexpr int MAX_FFT_SIZE_LOG2 = 20;
+    using Setup = typename impl::Infer<T>::Setup;
+    using Split = typename impl::Infer<T>::Split;
     
-    template <typename U>
-    struct Infer {};
-    
-    template <>
-    struct Infer<double>
-    {
-        using Split = FFT_SPLIT_COMPLEX_D;
-        using Setup = FFT_SETUP_D;
-        using Type = double;
-    };
-    
-    template <>
-    struct Infer<float>
-    {
-        using Split = FFT_SPLIT_COMPLEX_F;
-        using Setup = FFT_SETUP_F;
-        using Type = float;
-    };
-    
-    using Setup = typename Infer<T>::Setup;
-    using Split = typename Infer<T>::Split;
+    static constexpr int loop_unroll_size = 4;
+    static constexpr int fixed_min_fft_size_log2 = impl::ilog2(VecType::size * loop_unroll_size);
+    static constexpr int fixed_max_fft_size_log2 = 20;
     
 public:
     
@@ -100,9 +81,7 @@ public:
     ~convolve_partitioned()
     {
         hisstools_destroy_setup(m_fft_setup);
-        
-        // FIX - try to do better here...
-        
+                
         deallocate_aligned(m_impulse_buffer.realp);
         deallocate_aligned(m_fft_buffers[0]);
     }
@@ -120,7 +99,7 @@ public:
         
         ConvolveError error = ConvolveError::None;
         
-        if (fft_size_log2 < MIN_FFT_SIZE_LOG2 || fft_size_log2 > m_max_fft_size_log2)
+        if (fft_size_log2 < fixed_min_fft_size_log2 || fft_size_log2 > m_max_fft_size_log2)
             return ConvolveError::FFTSizeOutOfRange;
         
         if (fft_size != (uintptr_t(1) << fft_size_log2))
@@ -395,7 +374,7 @@ private:
         
         // Do other bins (loop unrolled)
         
-        for (uintptr_t i = 0; i + 3 < num_vecs; i += 4)
+        for (uintptr_t i = 0; i + (loop_unroll_size - 1) < num_vecs; i += loop_unroll_size)
         {
             *o_real++ += (i_real_1[i + 0] * i_real_2[i + 0]) - (i_imag_1[i + 0] * i_imag_2[i + 0]);
             *o_imag++ += (i_real_1[i + 0] * i_imag_2[i + 0]) + (i_imag_1[i + 0] * i_real_2[i + 0]);
@@ -419,16 +398,16 @@ private:
         
         ConvolveError error = ConvolveError::None;
         
-        if (max_fft_size_log2 > MAX_FFT_SIZE_LOG2)
+        if (max_fft_size_log2 > fixed_max_fft_size_log2)
         {
             error = ConvolveError::FFTSizeOutOfRange;
-            max_fft_size_log2 = MAX_FFT_SIZE_LOG2;
+            max_fft_size_log2 = fixed_max_fft_size_log2;
         }
         
-        if (max_fft_size_log2 && max_fft_size_log2 < MIN_FFT_SIZE_LOG2)
+        if (max_fft_size_log2 && max_fft_size_log2 < fixed_min_fft_size_log2)
         {
             error = ConvolveError::FFTSizeOutOfRange;
-            max_fft_size_log2 = MIN_FFT_SIZE_LOG2;
+            max_fft_size_log2 = fixed_min_fft_size_log2;
         }
         
         if (max_fft_size != (uintptr_t(1) << max_fft_size_log2))
@@ -448,23 +427,6 @@ private:
         
         for (uintptr_t i = 0; i < (fft_size / (U::size * 2)); i++)
             *(out_ptr++) = *(temp_ptr++) * scale;
-    }
-    
-    static uintptr_t log2(uintptr_t value)
-    {
-        uintptr_t bit_shift = value;
-        uintptr_t bit_count = 0;
-        
-        while (bit_shift)
-        {
-            bit_shift >>= 1U;
-            bit_count++;
-        }
-        
-        if (value == uintptr_t(1) << (bit_count - 1U))
-            return bit_count - 1U;
-        else
-            return bit_count;
     }
     
     static void offset_split_pointer(Split &complex_1, const Split &complex_2, uintptr_t offset)
