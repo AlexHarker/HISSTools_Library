@@ -66,7 +66,7 @@ public:
     template <class U>
     ConvolveError set(const U *input, uintptr_t length)
     {
-        TypeConformedInput<T, U> typed_input(input, length);
+        conformed_input<T, U> typed_input(input, length);
 
         m_impulse_length = 0;
         

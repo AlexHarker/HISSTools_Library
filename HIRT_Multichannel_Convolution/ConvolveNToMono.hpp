@@ -30,7 +30,7 @@ public:
     template <class U>
     ConvolveError set(uint32_t in_chan, const U *input, uintptr_t length, bool resize)
     {
-        TypeConformedInput<T, U> typed_input(input, length);
+        conformed_input<T, U> typed_input(input, length);
 
         return do_channel(&convolve_mono<T>::template set<T>, in_chan, typed_input.get(), length, resize);
     }

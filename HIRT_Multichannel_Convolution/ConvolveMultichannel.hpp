@@ -92,7 +92,7 @@ public:
     template <class U>
     ConvolveError set(uint32_t in_chan, uint32_t out_chan, const U* input, uintptr_t length, bool resize)
     {
-        TypeConformedInput<T, U> typed_input(input, length);
+        conformed_input<T, U> typed_input(input, length);
         
         if (out_chan < m_num_outs)
             return m_convolvers[out_chan]->set(offset_input(in_chan, out_chan), typed_input.get(), length, resize);

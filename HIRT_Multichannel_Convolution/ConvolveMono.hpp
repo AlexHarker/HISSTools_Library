@@ -118,7 +118,7 @@ public:
     template <class U>
     ConvolveError set(const U *input, uintptr_t length, bool request_resize)
     {
-        TypeConformedInput<T, U> typed_input(input, length);
+        conformed_input<T, U> typed_input(input, length);
 
         // Lock or resize first to ensure that audio finishes processing before we replace
         

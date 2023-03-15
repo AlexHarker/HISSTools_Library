@@ -22,11 +22,9 @@ enum ConvolveError
 };
 
 template <class T, class U>
-class TypeConformedInput
+struct conformed_input
 {
-public:
-    
-    TypeConformedInput(const U *input, uintptr_t length)
+    conformed_input(const U *input, uintptr_t length)
     : m_vector(length)
     {
         for (uintptr_t i = 0; i < length; i++)
@@ -35,19 +33,21 @@ public:
         
     const T *get() const { return m_vector.data(); }
     
+private:
+    
     std::vector<T> m_vector;
 };
 
 template <class T>
-class TypeConformedInput<T, T>
+struct conformed_input<T, T>
 {
-public:
-    
-    TypeConformedInput(const T *input, uintptr_t length)
+    conformed_input(const T *input, uintptr_t length)
     : m_input(input)
     {}
     
     const T *get() const { return m_input; }
+
+private:
 
     const T *m_input;
 };
