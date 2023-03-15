@@ -4,6 +4,34 @@
 #include <algorithm>
 #include <vector>
 
+namespace impl
+{
+    template <class T>
+    void add_to_result(T& result, T value)  { result += value; }
+
+    template <class T>
+    void copy_to_result(T& result, T value) { result = value; }
+
+    template <class U, void Func(U&, U), class T, class Size>
+    void loop_cast_n(T *first, Size count, U *result)
+    {
+        for (Size i = 0; i != count; ++i, ++result, ++first)
+            Func(*result, static_cast<U>(*first));
+    }
+
+    template <class T, class Size, class U>
+    void add_cast_n(T *first, Size count, U *result)
+    {
+        loop_cast_n<U, add_to_result<U>>(first, count, result);
+    }
+
+    template <class T, class Size, class U>
+    void copy_cast_n(T *first, Size count, U *result)
+    {
+        loop_cast_n<U, copy_to_result<U>>(first, count, result);
+    }
+}
+
 enum class ConvolveError
 {
 	None = 0,
