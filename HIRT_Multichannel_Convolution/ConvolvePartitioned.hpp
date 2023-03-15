@@ -379,7 +379,7 @@ private:
         void multiply(Args...) {}
     };
 
-    // Process a Partition
+    // Process a partition
     
     static void process_partition(Split in_1, Split in_2, Split out, uintptr_t num_bins)
     {

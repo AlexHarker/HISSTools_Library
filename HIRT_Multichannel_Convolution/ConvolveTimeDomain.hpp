@@ -225,7 +225,7 @@ private:
         void store(Args...) {}
     };
 
-    // Convolution Functions
+    // Convolution functions
     
     template <void Func(IO&, IO), int UR>
     static void convolve_unrolled(const T *in,
