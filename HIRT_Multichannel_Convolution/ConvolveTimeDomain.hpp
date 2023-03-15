@@ -7,7 +7,7 @@
 #include <cstdint>
 #include <algorithm>
 
-#ifdef __APPLE__
+#if defined __APPLE__ && !defined NO_APPLE_ACCELERATE
 #include <Accelerate/Accelerate.h>
 #endif
 
@@ -139,7 +139,7 @@ public:
     
 private:
     
-#ifdef __APPLE__
+#if defined __APPLE__ && !defined NO_APPLE_ACCELERATE
     static uintptr_t padded_length(uintptr_t length)
     {
         return length;
