@@ -201,7 +201,6 @@ struct SIMDDenormals
         fesetenv(&env);
     }
 #else
-    
     static unsigned int& get_fpscr(fenv_t& env)
     {
         return env.__cw;
@@ -234,7 +233,6 @@ struct SIMDDenormals
         fesetenv(&env);
     }
 #endif
-       
 #else
     static denormal_flags flags()
     {
