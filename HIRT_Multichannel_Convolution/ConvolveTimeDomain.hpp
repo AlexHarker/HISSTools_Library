@@ -185,7 +185,7 @@ private:
     }
 #endif
   
-    // Struct to deal with loop unrolling (across multiplications / samples / storage
+    // Struct to deal with loop unrolling (across multiplications / samples / storage)
     
     template <int N, int M = 0>
     struct loop_unroll
