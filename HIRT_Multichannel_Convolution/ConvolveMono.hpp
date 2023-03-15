@@ -15,11 +15,11 @@
 #include <stdexcept>
 #include <vector>
 
-enum LatencyMode
+enum class LatencyMode
 {
-    kLatencyZero,
-    kLatencyShort,
-    kLatencyMedium,
+    Zero,
+    Short,
+    Medium,
 } ;
 
 template <class T>
@@ -44,9 +44,9 @@ public:
     {
         switch (latency)
         {
-            case kLatencyZero:      set_partitions(max_length, true, 256, 1024, 4096, 16384);     break;
-            case kLatencyShort:     set_partitions(max_length, false, 256, 1024, 4096, 16384);    break;
-            case kLatencyMedium:    set_partitions(max_length, false, 1024, 4096, 16384);         break;
+            case LatencyMode::Zero:     set_partitions(max_length, true, 256, 1024, 4096, 16384);     break;
+            case LatencyMode::Short:    set_partitions(max_length, false, 256, 1024, 4096, 16384);    break;
+            case LatencyMode::Medium:   set_partitions(max_length, false, 1024, 4096, 16384);         break;
         }
     }
     
@@ -112,7 +112,7 @@ public:
         if (part_4.get())
             part_4.get()->set_reset_offset(m_reset_offset);
         
-        return part_4.get_size() == length ? CONVOLVE_ERR_NONE : CONVOLVE_ERR_MEM_UNAVAILABLE;
+        return part_4.get_size() == length ? ConvolveError::None : ConvolveError::MemUnavailable;
     }
     
     template <class U>
@@ -134,18 +134,18 @@ public:
         }
         
         if (length && !part4.get())
-            return CONVOLVE_ERR_MEM_UNAVAILABLE;
+            return ConvolveError::MemUnavailable;
         
         if (length > part4.get_size())
-            return CONVOLVE_ERR_MEM_ALLOC_TOO_SMALL;
+            return ConvolveError::MemAllocTooSmall;
         
-        return CONVOLVE_ERR_NONE;
+        return ConvolveError::None;
     }
     
     ConvolveError reset()
     {
         m_reset = true;
-        return CONVOLVE_ERR_NONE;
+        return ConvolveError::None;
     }
     
     // Process

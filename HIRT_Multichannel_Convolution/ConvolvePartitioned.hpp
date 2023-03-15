@@ -116,13 +116,13 @@ public:
     {
         uintptr_t fft_size_log2 = log2(fft_size);
         
-        ConvolveError error = CONVOLVE_ERR_NONE;
+        ConvolveError error = ConvolveError::None;
         
         if (fft_size_log2 < MIN_FFT_SIZE_LOG2 || fft_size_log2 > m_max_fft_size_log2)
-            return CONVOLVE_ERR_FFT_SIZE_OUT_OF_RANGE;
+            return ConvolveError::FFTSizeOutOfRange;
         
         if (fft_size != (uintptr_t(1) << fft_size_log2))
-            error = CONVOLVE_ERR_FFT_SIZE_NON_POWER_OF_TWO;
+            error = ConvolveError::FFTSizeNonPowerOfTwo;
         
         // Set fft variables iff the fft size has actually actually changed
         
@@ -141,7 +141,7 @@ public:
     {
         m_length = std::min(length, m_max_impulse_length);
         
-        return (length > m_max_impulse_length) ? CONVOLVE_ERR_PARTITION_LENGTH_TOO_LARGE : CONVOLVE_ERR_NONE;
+        return (length > m_max_impulse_length) ? ConvolveError::PartitionLengthTooLarge : ConvolveError::None;
     }
     
     void set_offset(uintptr_t offset)
@@ -159,7 +159,7 @@ public:
     {
         conformed_input<T, U> typed_input(input, length);
 
-        ConvolveError error = CONVOLVE_ERR_NONE;
+        ConvolveError error = ConvolveError::None;
         
         // FFT variables
         
@@ -174,7 +174,7 @@ public:
         if (length > m_max_impulse_length)
         {
             length = m_max_impulse_length;
-            error = CONVOLVE_ERR_MEM_ALLOC_TOO_SMALL;
+            error = ConvolveError::MemAllocTooSmall;
         }
         
         // Partition / load the impulse
@@ -421,22 +421,22 @@ private:
     {
         uintptr_t max_fft_size_log2 = log2(max_fft_size);
         
-        ConvolveError error = CONVOLVE_ERR_NONE;
+        ConvolveError error = ConvolveError::None;
         
         if (max_fft_size_log2 > MAX_FFT_SIZE_LOG2)
         {
-            error = CONVOLVE_ERR_FFT_SIZE_MAX_TOO_LARGE;
+            error = ConvolveError::FFTSizeOutOfRange;
             max_fft_size_log2 = MAX_FFT_SIZE_LOG2;
         }
         
         if (max_fft_size_log2 && max_fft_size_log2 < MIN_FFT_SIZE_LOG2)
         {
-            error = CONVOLVE_ERR_FFT_SIZE_MAX_TOO_SMALL;
+            error = ConvolveError::FFTSizeOutOfRange;
             max_fft_size_log2 = MIN_FFT_SIZE_LOG2;
         }
         
         if (max_fft_size != (uintptr_t(1) << max_fft_size_log2))
-            error = CONVOLVE_ERR_FFT_SIZE_MAX_NON_POWER_OF_TWO;
+            error = ConvolveError::FFTSizeNonPowerOfTwo;
         
         m_max_fft_size_log2 = max_fft_size_log2;
         

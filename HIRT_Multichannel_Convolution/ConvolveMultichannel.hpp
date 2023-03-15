@@ -76,7 +76,7 @@ public:
         if (out_chan < m_num_outs)
             return m_convolvers[out_chan]->reset(offset_input(in_chan, out_chan));
         else
-            return CONVOLVE_ERR_OUT_CHAN_OUT_OF_RANGE;
+            return ConvolveError::OutChanOutOfRange;
     }
     
     // Resize and set IR
@@ -86,7 +86,7 @@ public:
         if (out_chan < m_num_outs)
             return m_convolvers[out_chan]->resize(offset_input(in_chan, out_chan), length);
         else
-            return CONVOLVE_ERR_IN_CHAN_OUT_OF_RANGE;
+            return ConvolveError::InChanOutOfRange;
     }
     
     template <class U>
@@ -97,7 +97,7 @@ public:
         if (out_chan < m_num_outs)
             return m_convolvers[out_chan]->set(offset_input(in_chan, out_chan), typed_input.get(), length, resize);
         else
-            return CONVOLVE_ERR_OUT_CHAN_OUT_OF_RANGE;
+            return ConvolveError::OutChanOutOfRange;
     }
     
     // DSP

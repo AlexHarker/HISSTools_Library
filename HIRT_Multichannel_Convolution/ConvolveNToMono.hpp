@@ -58,7 +58,7 @@ private:
         if (in_chan < m_num_in_chans)
             return (m_convolvers[in_chan].*method)(args...);
         else
-            return CONVOLVE_ERR_IN_CHAN_OUT_OF_RANGE;
+            return ConvolveError::InChanOutOfRange;
     }
     
     std::vector<convolve_mono<T>> m_convolvers;

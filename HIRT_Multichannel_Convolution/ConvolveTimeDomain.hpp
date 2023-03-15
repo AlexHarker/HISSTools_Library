@@ -55,7 +55,7 @@ public:
     {
         m_length = std::min(length, uintptr_t(2044));
         
-        return length > 2044 ? CONVOLVE_ERR_TIME_LENGTH_OUT_OF_RANGE : CONVOLVE_ERR_NONE;
+        return length > 2044 ? ConvolveError::TimeLengthOutOfRange : ConvolveError::None;
     }
     
     void set_offset(uintptr_t offset)
@@ -85,7 +85,7 @@ public:
         
         reset();
         
-        return (!m_length && (length - m_offset) > 2044) ? CONVOLVE_ERR_TIME_IMPULSE_TOO_LONG : CONVOLVE_ERR_NONE;
+        return (!m_length && (length - m_offset) > 2044) ? ConvolveError::TimeImpulseTooLong : ConvolveError::None;
     }
     
     void reset()
