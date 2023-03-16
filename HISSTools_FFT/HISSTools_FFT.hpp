@@ -108,7 +108,7 @@ struct Setup<float> : SetupBase<float, FFTSetup>
 
 #endif
 
-#include "HISSTools_FFT_Core.h"
+#include "HISSTools_FFT_Core.hpp"
 
 #if !defined (USE_APPLE_FFT)
 
