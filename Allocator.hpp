@@ -37,4 +37,4 @@ struct aligned_allocator
     void deallocate(T *ptr) { deallocate_aligned(ptr); }
 };
 
-#endif
+#endif /* ALLOCATOR_HPP */

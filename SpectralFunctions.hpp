@@ -1,6 +1,6 @@
 
-#ifndef SPECTRALFUNCTIONS_HPP
-#define SPECTRALFUNCTIONS_HPP
+#ifndef SPECTRAL_FUNCTIONS_HPP
+#define SPECTRAL_FUNCTIONS_HPP
 
 #include "HISSTools_FFT/HISSTools_FFT.h"
 #include "SIMDSupport.hpp"
@@ -387,4 +387,4 @@ void ir_correlate_real(Split<T> *out, Split<T> *in1, Split<T> *in2, uintptr_t ff
     impl::real_operation(out, in1, in2, fft_size, scale, impl::correlate());
 }
 
-#endif
+#endif /* SPECTRAL_FUNCTIONS_HPP */

@@ -1,6 +1,6 @@
 
-#ifndef WINDOWFUNCTIONS_HPP
-#define WINDOWFUNCTIONS_HPP
+#ifndef WINDOW_FUNCTIONS_HPP
+#define WINDOW_FUNCTIONS_HPP
 
 #include <algorithm>
 #include <cstdint>
@@ -663,4 +663,4 @@ namespace window_functions
     };
 }
 
-#endif
+#endif /* WINDOW_FUNCTIONS_HPP */

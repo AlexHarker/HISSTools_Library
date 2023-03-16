@@ -87,4 +87,4 @@ private:
     const T _1div2;
 };
 
-#endif /* Interpolation_h */
+#endif /* INTERPOLATION_HPP */

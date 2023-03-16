@@ -1,6 +1,6 @@
 
-#ifndef SPECTRALPROCESSOR_H
-#define SPECTRALPROCESSOR_H
+#ifndef SPECTRAL_PROCESSOR_HPP
+#define SPECTRAL_PROCESSOR_HPP
 
 #include <algorithm>
 
@@ -677,4 +677,4 @@ protected:
     uintptr_t m_max_fft_size_log2;
 };
 
-#endif
+#endif /* SPECTRAL_PROCESSOR_HPP */

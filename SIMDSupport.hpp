@@ -1,6 +1,6 @@
 
-#ifndef SIMDSUPPORT_HPP
-#define SIMDSUPPORT_HPP
+#ifndef SIMD_SUPPORT_HPP
+#define SIMD_SUPPORT_HPP
 
 #include <algorithm>
 #include <bitset>
@@ -1356,4 +1356,4 @@ SIMDType<float, N> abs(const SIMDType<float, N> a)
     return a & SIMDType<float, N>(bit_mask_32f);
 }
 
-#endif
+#endif /* SIMD_SUPPORT_HPP */

@@ -1,6 +1,6 @@
 
-#ifndef PARTIAL_TRACKER_H
-#define PARTIAL_TRACKER_H
+#ifndef PARTIAL_TRACKER_HPP
+#define PARTIAL_TRACKER_HPP
 
 #include <algorithm>
 #include <cmath>
@@ -441,4 +441,4 @@ private:
     change_tracker<T, Changes> m_changes;
 };
 
-#endif
+#endif /* PARTIAL_TRACKER_HPP */
