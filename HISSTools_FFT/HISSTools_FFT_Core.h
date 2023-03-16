@@ -19,7 +19,8 @@ struct Setup
 struct DoubleSetup : public Setup<double> {};
 struct FloatSetup : public Setup<float> {};
 
-namespace hisstools_fft_impl{
+namespace hisstools_fft_impl
+{
     
 // Aligned Allocation
 /*
@@ -36,6 +37,8 @@ namespace hisstools_fft_impl{
  }
  */
 
+    // ******************** Basic Definitions ******************** //
+
     static constexpr int alignment_size = SIMDLimits<float>::max_size * sizeof(float);
     
     template <class T>
@@ -46,9 +49,66 @@ namespace hisstools_fft_impl{
     static constexpr uintptr_t trig_table_offset = 3;
     
     // Data Type Definitions
-    
-    // ******************** Basic Data Type Defintions ******************** //
-    
+        
+    template <class T, int vec_size>
+    using Vector4x = SizedVector<T, vec_size, 4>;
+
+    // ******************** Setup Creation and Destruction ******************** //
+
+    // Creation
+
+    template <class T>
+    Setup<T> *create_setup(uintptr_t max_fft_log2)
+    {
+        Setup<T> *setup = new(Setup<T>);
+        
+        // Set Max FFT Size
+        
+        setup->max_fft_log2 = max_fft_log2;
+        
+        // Create Tables
+        
+        for (uintptr_t i = trig_table_offset; i <= max_fft_log2; i++)
+        {
+            uintptr_t length = static_cast<uintptr_t>(1u) << (i - 1u);
+            
+            setup->tables[i - trig_table_offset].realp = allocate_aligned<T>(2 * length);
+            setup->tables[i - trig_table_offset].imagp = setup->tables[i - trig_table_offset].realp + length;
+            
+            // Fill the Table
+            
+            T *table_real = setup->tables[i - trig_table_offset].realp;
+            T *table_imag = setup->tables[i - trig_table_offset].imagp;
+            
+            for (uintptr_t j = 0; j < length; j++)
+            {
+                static const double pi = 3.14159265358979323846264338327950288;
+                double angle = -(static_cast<double>(j)) * pi / static_cast<double>(length);
+                
+                *table_real++ = static_cast<T>(cos(angle));
+                *table_imag++ = static_cast<T>(sin(angle));
+            }
+        }
+        
+        return setup;
+    }
+
+    // Destruction
+
+    template <class T>
+    void destroy_setup(Setup<T> *setup)
+    {
+        if (setup)
+        {
+            for (uintptr_t i = trig_table_offset; i <= setup->max_fft_log2; i++)
+                deallocate_aligned(setup->tables[i - trig_table_offset].realp);
+            
+            delete(setup);
+        }
+    }
+
+    // ******************** Interleaving and deinterleaving ******************** //
+
     template <class T>
     void deinterleave(const SIMDType<T, 1> *input, SIMDType<T, 1> *outReal, SIMDType<T, 1> *outImag)
     {
@@ -176,66 +236,7 @@ namespace hisstools_fft_impl{
     }
     
 #endif
-    
-    // ******************** A Vector of 4 Items (Made of Vectors / Scalars) ******************** //
-    
-    template <class T, int vec_size>
-    using Vector4x = SizedVector<T, vec_size, 4>;
-    
-    // ******************** Setup Creation and Destruction ******************** //
-    
-    // Creation
-    
-    template <class T>
-    Setup<T> *create_setup(uintptr_t max_fft_log2)
-    {
-        Setup<T> *setup = new(Setup<T>);
-        
-        // Set Max FFT Size
-        
-        setup->max_fft_log2 = max_fft_log2;
-        
-        // Create Tables
-        
-        for (uintptr_t i = trig_table_offset; i <= max_fft_log2; i++)
-        {
-            uintptr_t length = static_cast<uintptr_t>(1u) << (i - 1u);
-            
-            setup->tables[i - trig_table_offset].realp = allocate_aligned<T>(2 * length);
-            setup->tables[i - trig_table_offset].imagp = setup->tables[i - trig_table_offset].realp + length;
-            
-            // Fill the Table
-            
-            T *table_real = setup->tables[i - trig_table_offset].realp;
-            T *table_imag = setup->tables[i - trig_table_offset].imagp;
-            
-            for (uintptr_t j = 0; j < length; j++)
-            {
-                static const double pi = 3.14159265358979323846264338327950288;
-                double angle = -(static_cast<double>(j)) * pi / static_cast<double>(length);
-                
-                *table_real++ = static_cast<T>(cos(angle));
-                *table_imag++ = static_cast<T>(sin(angle));
-            }
-        }
-        
-        return setup;
-    }
-    
-    // Destruction
-    
-    template <class T>
-    void destroy_setup(Setup<T> *setup)
-    {
-        if (setup)
-        {
-            for (uintptr_t i = trig_table_offset; i <= setup->max_fft_log2; i++)
-                deallocate_aligned(setup->tables[i - trig_table_offset].realp);
-            
-            delete(setup);
-        }
-    }
-    
+
     // ******************** Shuffles for Pass 1 and 2 ******************** //
     
     // Template for an SIMD Vectors With 4 Elements
