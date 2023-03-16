@@ -357,36 +357,38 @@ private:
     template <int First = 0, int Last = array_size>
     struct static_iterate
     {
+        using iterate = static_iterate<First + 1, Last>;
+        
         template <typename Fn>
-        void operator()(SV &result, const SV& a, const SV& b, Fn const& fn) const
+        inline void operator()(SV &result, const SV& a, const SV& b, Fn const& fn) const
         {
             result.mData[First] = fn(a.mData[First], b.mData[First]);
-            static_iterate<First + 1, Last>()(result, a, b, fn);
+            iterate()(result, a, b, fn);
         }
         
-        void load(SV &v, const T *array)
+        inline void load(SV &v, const T *array)
         {
             v.mData[First] = VecType(array + First * vec_size);
-            static_iterate<First + 1, Last>().load(v, array);
+            iterate().load(v, array);
         }
         
-        void store(T *array, const SV& v)
+        inline void store(T *array, const SV& v)
         {
             v.mData[First].store(array + First * vec_size);
-            static_iterate<First + 1, Last>().store(array, v);
+            iterate().store(array, v);
         }
         
-        void set(SV &v, const T& a)
+        inline void set(SV &v, const T& a)
         {
             v.mData[First] = a;
-            static_iterate<First + 1, Last>().set(v, a);
+            iterate().set(v, a);
         }
         
         template <class U>
-        void set(SV &v, const SizedVector<U, 1, final_size>& a)
+        inline void set(SV &v, const SizedVector<U, 1, final_size>& a)
         {
             v.mData[First] = a.mData[First];
-            static_iterate<First + 1, Last>().set(v, a);
+            iterate().set(v, a);
         }
     };
     
