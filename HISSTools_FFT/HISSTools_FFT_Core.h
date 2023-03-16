@@ -247,7 +247,24 @@ namespace hisstools_fft_impl
     
 #endif
     
-#if defined(__arm__) || defined(__arm64__)  || defined(__aarch64__)
+#if defined SIMD_COMPILER_SUPPORT_NEON /* Neon Intrinsics */
+
+#if defined(__arm64) || defined(__aarch64__)
+
+    template<>
+    void deinterleave(const SIMDType<double, 2> *input, SIMDType<double, 2> *outReal, SIMDType<double, 2> *outImag)
+    {
+        *outReal = vuzp1q_f64(input[0].mVal, input[1].mVal);
+        *outImag = vuzp2q_f64(input[0].mVal, input[1].mVal);
+    }
+
+    template<>
+    void interleave(const SIMDType<double, 2> *inReal, const SIMDType<double, 2> *inImag, SIMDType<double, 2> *output)
+    {
+        output[0] = vzip1q_f64(inReal->mVal, inImag->mVal);
+        output[1] = vzip2q_f64(inReal->mVal, inImag->mVal);
+    }
+#endif
     
     template<>
     void deinterleave(const SIMDType<float, 4> *input, SIMDType<float, 4> *outReal, SIMDType<float, 4> *outImag)
@@ -400,8 +417,34 @@ namespace hisstools_fft_impl
     
 #endif
     
-#if defined(__arm__) || defined(__arm64__)  || defined(__aarch64__)
+#if defined SIMD_COMPILER_SUPPORT_NEON /* Neon Intrinsics */
+
+#if defined(__arm64) || defined(__aarch64__)
     
+    // Template Specialisation for an ARM Double Packed (2 SIMD Elements)
+    
+    template<>
+    void shuffle4(const Vector4x<double, 2> &A,
+                  const Vector4x<double, 2> &B,
+                  const Vector4x<double, 2> &C,
+                  const Vector4x<double, 2> &D,
+                  Vector4x<double, 2> *ptr1,
+                  Vector4x<double, 2> *ptr2,
+                  Vector4x<double, 2> *ptr3,
+                  Vector4x<double, 2> *ptr4)
+    {
+        ptr1->mData[0] = vuzp1q_f64(A.mData[0].mVal, C.mData[0].mVal);
+        ptr1->mData[1] = vuzp1q_f64(B.mData[0].mVal, D.mData[0].mVal);
+        ptr2->mData[0] = vuzp1q_f64(A.mData[1].mVal, C.mData[1].mVal);
+        ptr2->mData[1] = vuzp1q_f64(B.mData[1].mVal, D.mData[1].mVal);
+        ptr3->mData[0] = vuzp2q_f64(A.mData[0].mVal, C.mData[0].mVal);
+        ptr3->mData[1] = vuzp2q_f64(B.mData[0].mVal, D.mData[0].mVal);
+        ptr4->mData[0] = vuzp2q_f64(A.mData[1].mVal, C.mData[1].mVal);
+        ptr4->mData[1] = vuzp2q_f64(B.mData[1].mVal, D.mData[1].mVal);
+    }
+    
+#endif
+
     // Template Specialisation for an ARM Float Packed (1 SIMD Element)
     
     template<>
