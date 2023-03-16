@@ -40,7 +40,7 @@
 #define SIMD_COMPILER_SUPPORT_VEC256 2
 #define SIMD_COMPILER_SUPPORT_VEC512 3
 
-template<class T>
+template <class T>
 struct SIMDLimits
 {
     static constexpr int max_size = 1;

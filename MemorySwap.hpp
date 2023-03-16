@@ -17,7 +17,7 @@
 // Use separate freeing locks so the memory is always freed in the assignment thread
 // All memory assignments are aligned in order that the memory is suitable for vector ops etc.
 
-template<class T>
+template <class T>
 class memory_swap
 {
     
@@ -95,13 +95,13 @@ public:
         Ptr(const Ptr& p) = delete;
         Ptr operator = (const Ptr& p) = delete;
         
-        template<typename Op>
+        template <typename Op>
         void update_allocate_if(AllocFunc alloc_function, FreeFunc free_function, uintptr_t size, Op op)
         {
             update(&memory_swap::allocate_locked_if<Op>, alloc_function, free_function, size, op);
         }
         
-        template<typename Op, typename ...Args>
+        template <typename Op, typename ...Args>
         void update(Op op, Args...args)
         {
             if (m_owner)
@@ -216,7 +216,7 @@ public:
     
 private:
     
-    template<typename Op>
+    template <typename Op>
     Ptr allocate_if(AllocFunc alloc_function, FreeFunc free_function, uintptr_t size, Op op)
     {
         lock();
@@ -224,7 +224,7 @@ private:
         return Ptr(this);
     }
     
-    template<typename Op>
+    template <typename Op>
     void allocate_locked_if(AllocFunc alloc_function, FreeFunc free_function, uintptr_t size, Op op)
     {
         if (op(size, m_size))

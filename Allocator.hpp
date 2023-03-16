@@ -14,7 +14,7 @@ namespace impl
 
 // A template for wrapping functions as an allocator
 
-template<impl::allocate_function alloc, impl::free_function dealloc>
+template <impl::allocate_function alloc, impl::free_function dealloc>
 struct function_allocator
 {
     template <typename T>

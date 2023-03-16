@@ -39,7 +39,7 @@ struct FloatSetup : public Setup<float> {};
 
 namespace hisstools_fft_impl{
     
-    template<class T> struct SIMDLimits     { static constexpr int max_size = 1;};
+    template <class T> struct SIMDLimits    { static constexpr int max_size = 1;};
     
 #if defined(__AVX512F__)
     
@@ -480,7 +480,7 @@ namespace hisstools_fft_impl{
     
     // Template for Scalars
     
-    template<class T>
+    template <class T>
     void shuffle4(const Vector4x<T, 1> &A,
                   const Vector4x<T, 1> &B,
                   const Vector4x<T, 1> &C,
@@ -1153,13 +1153,13 @@ namespace hisstools_fft_impl{
     
 #if defined(USE_APPLE_FFT)
     
-    template<class T>
+    template <class T>
     void unzip_complex(const T *input, DSPSplitComplex *output, uintptr_t half_length)
     {
         vDSP_ctoz((COMPLEX *) input, (vDSP_Stride) 2, output, (vDSP_Stride) 1, (vDSP_Length) half_length);
     }
     
-    template<class T>
+    template <class T>
     void unzip_complex(const T *input, DSPDoubleSplitComplex *output, uintptr_t half_length)
     {
         vDSP_ctozD((DOUBLE_COMPLEX *) input, (vDSP_Stride) 2, output, (vDSP_Stride) 1, (vDSP_Length) half_length);
@@ -1208,7 +1208,7 @@ namespace hisstools_fft_impl{
         }
     }
     
-    template<class T>
+    template <class T>
     void unzip_complex(const T *input, Split<T> *output, uintptr_t half_length)
     {
         const int v_size = SIMDLimits<T>::max_size;
@@ -1238,7 +1238,7 @@ namespace hisstools_fft_impl{
             Vector::interleave(realp++, imagp++, out_ptr);
     }
     
-    template<class T>
+    template <class T>
     void zip_complex(const Split<T> *input, T *output, uintptr_t half_length)
     {
         const int v_size = SIMDLimits<T>::max_size;

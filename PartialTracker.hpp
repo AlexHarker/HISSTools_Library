@@ -293,19 +293,19 @@ public:
     size_t max_peaks() const { return m_max_peaks; }
     size_t max_tracks() const { return m_max_tracks; }
     
-    template<bool B = Changes, enable_if_t<B> = 0>
+    template <bool B = Changes, enable_if_t<B> = 0>
     void calc_changes(bool calc) { return m_changes.active(calc); }
     
-    template<bool B = Changes, enable_if_t<B> = 0>
+    template <bool B = Changes, enable_if_t<B> = 0>
     T freq_change_sum() const { return m_changes.freq_sum(); }
     
-    template<bool B = Changes, enable_if_t<B> = 0>
+    template <bool B = Changes, enable_if_t<B> = 0>
     T freq_change_abs() const { return m_changes.freq_abs(); }
     
-    template<bool B = Changes, enable_if_t<B> = 0>
+    template <bool B = Changes, enable_if_t<B> = 0>
     T amp_change_sum() const { return m_changes.amp_sum(); }
     
-    template<bool B = Changes, enable_if_t<B> = 0>
+    template <bool B = Changes, enable_if_t<B> = 0>
     T amp_change_abs() const { return m_changes.amp_abs(); }
     
 private:
@@ -357,7 +357,7 @@ private:
         return 1 - std::exp(-cost);
     }
     
-    template<CostType CostFunc, GetMethod Freq, GetMethod Amp>
+    template <CostType CostFunc, GetMethod Freq, GetMethod Amp>
     size_t find_costs(cpeak<T> *peaks, size_t n_peaks)
     {
         size_t n_costs = 0;

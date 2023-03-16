@@ -93,7 +93,7 @@ void fillSplit(SPLIT split, uintptr_t fft_log2)
     }
 }
 
-template<class SETUP, class SPLIT, class T>
+template <class SETUP, class SPLIT, class T>
 uint64_t timing_test(std::string test, uintptr_t fft_log2, double phase, bool zero, int testSize)
 {
     SETUP setup;

@@ -28,7 +28,7 @@ namespace impl
         using Type = float;
     };
     
-    template<int N, typename Split, typename Op>
+    template <int N, typename Split, typename Op>
     void simd_operation(Split *out, Split *in1, Split *in2, uintptr_t fft_size, double scale, Op op)
     {
         using VecType = SIMDType<typename Infer<Split>::Type, N>;
@@ -46,7 +46,7 @@ namespace impl
             op(r_out[i], i_out[i], r_in1[i], i_in1[i], r_in2[i], i_in2[i], v_scale, i);
     }
     
-    template<typename Split, typename Op>
+    template <typename Split, typename Op>
     void complex_operation(Split *out, Split *in1, Split *in2, uintptr_t fft_size, typename Infer<Split>::Type scale, Op op)
     {
         const int N = SIMDLimits<typename Infer<Split>::Type>::max_size;
@@ -60,7 +60,7 @@ namespace impl
             simd_operation<N>(out, in1, in2, fft_size, scale, op);
     }
     
-    template<typename Split, typename Op>
+    template <typename Split, typename Op>
     void real_operation(Split *out, Split *in1, Split *in2, uintptr_t fft_size, typename Infer<Split>::Type scale, Op op)
     {
         using T = typename Infer<Split>::Type;
@@ -264,7 +264,7 @@ namespace impl
     
     struct correlate
     {
-        template<class T>
+        template <class T>
         void operator()(T& r_out, T& i_out, const T& a, const T& b, const T& c, const T& d, const T& scale, uintptr_t i)
         {
             store(r_out, i_out, scale * (a * c + b * d), scale * (b * c - a * d));
@@ -273,7 +273,7 @@ namespace impl
     
     struct convolve
     {
-        template<class T>
+        template <class T>
         void operator()(T& r_out, T& i_out, const T& a, const T& b, const T& c, const T& d, const T& scale, uintptr_t i)
         {
             store(r_out, i_out, scale * (a * c - b * d), scale * (b * c + a * d));

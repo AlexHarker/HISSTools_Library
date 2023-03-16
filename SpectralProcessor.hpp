@@ -556,7 +556,7 @@ protected:
         return mode != EdgeMode::Linear ? sizes.max() : sizes.linear();
     }
     
-    template<SpectralOp Op>
+    template <SpectralOp Op>
     void binary_op(Split& io, Split& temp, op_sizes& sizes, in_ptr r_in1, in_ptr i_in1, in_ptr r_in2, in_ptr i_in2)
     {
         bool fold1 = sizes.foldMode() && sizes.size1() >= sizes.size2();
@@ -575,7 +575,7 @@ protected:
         ifft(io, sizes.fft_log2());
     }
     
-    template<SpectralOp Op, ComplexArrange arrange>
+    template <SpectralOp Op, ComplexArrange arrange>
     void binary_op(T *r_out, T *i_out, in_ptr r_in1, in_ptr i_in1, in_ptr r_in2, in_ptr i_in2, EdgeMode mode)
     {
         auto get_first = [](in_ptr ptr)
@@ -613,7 +613,7 @@ protected:
         }
     }
     
-    template<SpectralOp Op>
+    template <SpectralOp Op>
     void binary_op(Split& io, Split& temp, op_sizes& sizes, in_ptr in1, in_ptr in2)
     {
         if (!sizes.foldMode())
@@ -645,7 +645,7 @@ protected:
         rifft(io, sizes.fft_log2());
     }
     
-    template<SpectralOp Op, RealArrange arrange>
+    template <SpectralOp Op, RealArrange arrange>
     void binary_op(T *output, in_ptr in1, in_ptr in2, EdgeMode mode)
     {
         if (!calc_conv_corr_size(in1.m_size, in2.m_size, mode))

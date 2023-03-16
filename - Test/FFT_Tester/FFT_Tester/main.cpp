@@ -84,7 +84,7 @@ void fillSplit(SPLIT split, int max_log2)
     }
 }
 
-template<class SETUP, class SPLIT, class T>
+template <class SETUP, class SPLIT, class T>
 uint64_t crash_test(int min_log2, int max_log2)
 {
     SETUP setup;
@@ -139,7 +139,7 @@ uint64_t crash_test(int min_log2, int max_log2)
     return time;
 }
 
-template<class SETUP, class SPLIT, class T>
+template <class SETUP, class SPLIT, class T>
 uint64_t single_test(int size, void (*Fn)(SETUP, SPLIT *, uintptr_t))
 {
     SETUP setup;
@@ -170,7 +170,7 @@ uint64_t single_test(int size, void (*Fn)(SETUP, SPLIT *, uintptr_t))
     return time;
 }
 
-template<class SETUP, class SPLIT, class T>
+template <class SETUP, class SPLIT, class T>
 uint64_t matched_size_test(int min_log2, int max_log2)
 {
     uint64_t time = 0;
@@ -198,7 +198,7 @@ uint64_t matched_size_test(int min_log2, int max_log2)
     return time;
 }
 
-template<class SPLIT, class T, class U>
+template <class SPLIT, class T, class U>
 bool zip_correctness_test(int min_log2, int max_log2)
 {
     SPLIT split;
@@ -249,7 +249,7 @@ bool zip_correctness_test(int min_log2, int max_log2)
     return false;
 }
 
-template<class SPLIT, class T, class U>
+template <class SPLIT, class T, class U>
 uint64_t zip_test(int min_log2, int max_log2)
 {
     SPLIT split;
