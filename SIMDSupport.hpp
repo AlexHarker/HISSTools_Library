@@ -663,13 +663,6 @@ public:
         out2 = vzip2q_f64(in1.mVal, in2.mVal);
     }
     
-    /*
-    template <int y, int x>
-    static SIMDType shuffle(const SIMDType& a, const SIMDType& b)
-    {
-        return _mm_shuffle_pd(a.mVal, b.mVal, (y<<1)|x);
-    }
-    */
     operator SIMDType<float, 2>()
     {
         double vals[2];
@@ -810,13 +803,6 @@ public:
         out2 = v.val[1];
     }
     
-    /*
-    template <int z, int y, int x, int w>
-    static SIMDType shuffle(const SIMDType& a, const SIMDType& b)
-    {
-        return _mm_shuffle_ps(a.mVal, b.mVal, ((z<<6)|(y<<4)|(x<<2)|w));
-    }*/
-    
 #if defined(__arm64) || defined(__aarch64__)
     operator SizedVector<double, 2, 4>() const
     {
@@ -940,12 +926,6 @@ struct SIMDType<double, 2> : public SIMDVector<double, __m128d, 2>
         out2 = _mm_unpackhi_pd(in1.mVal, in2.mVal);
     }
     
-    template <int y, int x>
-    static SIMDType shuffle(const SIMDType& a, const SIMDType& b)
-    {
-        return _mm_shuffle_pd(a.mVal, b.mVal, (y<<1)|x);
-    }
-    
     operator SIMDType<float, 2>()
     {
         double vals[2];
@@ -1008,12 +988,6 @@ struct SIMDType<float, 4> : public SIMDVector<float, __m128, 4>
     {
         out1 = _mm_unpacklo_ps(in1.mVal, in2.mVal);
         out2 = _mm_unpackhi_ps(in1.mVal, in2.mVal);
-    }
-
-    template <int z, int y, int x, int w>
-    static SIMDType shuffle(const SIMDType& a, const SIMDType& b)
-    {
-        return _mm_shuffle_ps(a.mVal, b.mVal, ((z<<6)|(y<<4)|(x<<2)|w));
     }
     
     operator SizedVector<double, 2, 4>() const
