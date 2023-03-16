@@ -109,6 +109,18 @@ namespace hisstools_fft_impl
 
     // ******************** Interleaving and deinterleaving ******************** //
 
+    template <class T, int vec_size>
+    void deinterleave(const SIMDType<T, vec_size> *input, SIMDType<T, vec_size> *outReal, SIMDType<T, vec_size> *outImag)
+    {
+        static_assert(vec_size != vec_size, "Deinterleave not implemented for this type");
+    }
+
+    template <class T, int vec_size>
+    void interleave(const SIMDType<T, vec_size> *inReal, const SIMDType<T, vec_size> *inImag, SIMDType<T, vec_size> *output)
+    {
+        static_assert(vec_size != vec_size, "Interleave not implemented for this type");
+    }
+
     template <class T>
     void deinterleave(const SIMDType<T, 1> *input, SIMDType<T, 1> *outReal, SIMDType<T, 1> *outImag)
     {
@@ -125,25 +137,29 @@ namespace hisstools_fft_impl
     
 #if defined(__SSE__) || defined(__AVX__) || defined(__AVX512F__)
     
-    static void deinterleave(const SIMDType<double, 2> *input, SIMDType<double, 2> *outReal, SIMDType<double, 2> *outImag)
+    template<>
+    void deinterleave(const SIMDType<double, 2> *input, SIMDType<double, 2> *outReal, SIMDType<double, 2> *outImag)
     {
         *outReal = _mm_unpacklo_pd(input[0].mVal, input[1].mVal);
         *outImag = _mm_unpackhi_pd(input[0].mVal, input[1].mVal);
     }
-        
-    static void interleave(const SIMDType<double, 2> *inReal, const SIMDType<double, 2> *inImag, SIMDType<double, 2> *output)
+    
+    template<>
+    void interleave(const SIMDType<double, 2> *inReal, const SIMDType<double, 2> *inImag, SIMDType<double, 2> *output)
     {
         output[0] = _mm_unpacklo_pd(inReal->mVal, inImag->mVal);
         output[1] = _mm_unpackhi_pd(inReal->mVal, inImag->mVal);
     }
     
-    static void deinterleave(const SIMDType<float, 4> *input, SIMDType<float, 4> *outReal, SIMDType<float, 4> *outImag)
+    template<>
+    void deinterleave(const SIMDType<float, 4> *input, SIMDType<float, 4> *outReal, SIMDType<float, 4> *outImag)
     {
         *outReal = _mm_shuffle_ps(input[0].mVal, input[1].mVal, 0x88);
         *outImag = _mm_shuffle_ps(input[0].mVal, input[1].mVal, 0xDD);
     }
-        
-    static void interleave(const SIMDType<float, 4> *inReal, const SIMDType<float, 4> *inImag, SIMDType<float, 4> *output)
+    
+    template<>
+    void interleave(const SIMDType<float, 4> *inReal, const SIMDType<float, 4> *inImag, SIMDType<float, 4> *output)
     {
         output[0] = _mm_unpacklo_ps(inReal->mVal, inImag->mVal);
         output[1] = _mm_unpackhi_ps(inReal->mVal, inImag->mVal);
@@ -153,7 +169,8 @@ namespace hisstools_fft_impl
     
 #if defined(__AVX__) || defined(__AVX512F__)
 
-    static void deinterleave(const SIMDType<double, 4> *input, SIMDType<double, 4> *outReal, SIMDType<double, 4> *outImag)
+    template<>
+    void deinterleave(const SIMDType<double, 4> *input, SIMDType<double, 4> *outReal, SIMDType<double, 4> *outImag)
     {
         const __m256d v1 = _mm256_permute2f128_pd(input[0].mVal, input[1].mVal, 0x20);
         const __m256d v2 = _mm256_permute2f128_pd(input[0].mVal, input[1].mVal, 0x31);
@@ -162,7 +179,8 @@ namespace hisstools_fft_impl
         *outImag = _mm256_unpackhi_pd(v1, v2);
     }
         
-    static void interleave(const SIMDType<double, 4> *inReal, const SIMDType<double, 4> *inImag, SIMDType<double, 4> *output)
+    template<>
+    void interleave(const SIMDType<double, 4> *inReal, const SIMDType<double, 4> *inImag, SIMDType<double, 4> *output)
     {
         const __m256d v1 = _mm256_unpacklo_pd(inReal->mVal, inImag->mVal);
         const __m256d v2 = _mm256_unpackhi_pd(inReal->mVal, inImag->mVal);
@@ -171,7 +189,8 @@ namespace hisstools_fft_impl
         output[1] = _mm256_permute2f128_pd(v1, v2, 0x31);
     }
     
-    static void deinterleave(const SIMDType<float, 8> *input, SIMDType<float, 8> *outReal, SIMDType<float, 8> *outImag)
+    template<>
+    void deinterleave(const SIMDType<float, 8> *input, SIMDType<float, 8> *outReal, SIMDType<float, 8> *outImag)
     {
         const __m256 v1 = _mm256_permute2f128_ps(input[0].mVal, input[1].mVal, 0x20);
         const __m256 v2 = _mm256_permute2f128_ps(input[0].mVal, input[1].mVal, 0x31);
@@ -179,8 +198,9 @@ namespace hisstools_fft_impl
         *outReal = _mm256_shuffle_ps(v1, v2, 0x88);
         *outImag = _mm256_shuffle_ps(v1, v2, 0xDD);
     }
-        
-    static void interleave(const SIMDType<float, 8> *inReal, const SIMDType<float, 8> *inImag, SIMDType<float, 8> *output)
+    
+    template<>
+    void interleave(const SIMDType<float, 8> *inReal, const SIMDType<float, 8> *inImag, SIMDType<float, 8> *output)
     {
         const __m256 v1 = _mm256_unpacklo_ps(inReal->mVal, inImag->mVal);
         const __m256 v2 = _mm256_unpackhi_ps(inReal->mVal, inImag->mVal);
@@ -193,25 +213,29 @@ namespace hisstools_fft_impl
     
 #if defined(__AVX512F__)
     
-    static void deinterleave(const SIMDType<double, 8> *input, SIMDType<double, 8> *outReal, SIMDType<double, 8> *outImag)
+    template<>
+    void deinterleave(const SIMDType<double, 8> *input, SIMDType<double, 8> *outReal, SIMDType<double, 8> *outImag)
     {
         *outReal = _mm512_unpacklo_pd(input[0].mVal, input[1].mVal);
         *outImag = _mm512_unpackhi_pd(input[0].mVal, input[1].mVal);
     }
         
-    static void interleave(const SIMDType<double, 8> *inReal, const SIMDType<double, 8> *inImag, SIMDType<double, 8> *output)
+    template<>
+    void interleave(const SIMDType<double, 8> *inReal, const SIMDType<double, 8> *inImag, SIMDType<double, 8> *output)
     {
         output[0] = _mm512_unpacklo_pd(inReal->mVal, inImag->mVal);
         output[1] = _mm512_unpackhi_pd(inReal->mVal, inImag->mVal);
     }
     
-    static void deinterleave(const SIMDType<float, 16> *input, SIMDType<float, 16> *outReal, SIMDType<float, 16> *outImag)
+    template<>
+    void deinterleave(const SIMDType<float, 16> *input, SIMDType<float, 16> *outReal, SIMDType<float, 16> *outImag)
     {
         *outReal = _mm512_unpacklo_ps(input[0].mVal, input[1].mVal);
         *outImag = _mm512_unpackhi_ps(input[0].mVal, input[1].mVal);
     }
         
-    static void interleave(const SIMDType<float, 16> *inReal, const SIMDType<float, 16> *inImag, SIMDType *output)
+    template<>
+    void interleave(const SIMDType<float, 16> *inReal, const SIMDType<float, 16> *inImag, SIMDType *output)
     {
         output[0] = _mm512_unpacklo_ps(inReal->mVal, inImag->mVal);
         output[1] = _mm512_unpackhi_ps(inReal->mVal, inImag->mVal);
@@ -221,14 +245,16 @@ namespace hisstools_fft_impl
     
 #if defined(__arm__) || defined(__arm64__)  || defined(__aarch64__)
     
-    static void deinterleave(const SIMDType<float, 4> *input, SIMDType<float, 4> *outReal, SIMDType<float, 4> *outImag)
+    template<>
+    void deinterleave(const SIMDType<float, 4> *input, SIMDType<float, 4> *outReal, SIMDType<float, 4> *outImag)
     {
         float32x4x2_t v = vuzpq_f32(input[0].mVal, input[1].mVal);
         *outReal = v.val[0];
         *outImag = v.val[1];
     }
-        
-    static void interleave(const SIMDType<float, 4> *inReal, const SIMDType<float, 4> *inImag, SIMDType<float, 4> *output)
+    
+    template<>
+    void interleave(const SIMDType<float, 4> *inReal, const SIMDType<float, 4> *inImag, SIMDType<float, 4> *output)
     {
         float32x4x2_t v = vzipq_f32(inReal->mVal, inImag->mVal);
         output[0] = v.val[0];
