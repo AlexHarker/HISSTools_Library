@@ -459,6 +459,18 @@ struct SIMDType<double, 1>
     friend SIMDType operator >= (const SIMDType& a, const SIMDType& b) { return a.mVal >= b.mVal; }
     friend SIMDType operator <= (const SIMDType& a, const SIMDType& b) { return a.mVal <= b.mVal; }
     
+    friend void unzip(SIMDType& out1, SIMDType& out2, const SIMDType& in1, const SIMDType& in2)
+    {
+        out1 = in1;
+        out2 = in2;
+    }
+    
+    friend void zip(SIMDType& out1, SIMDType& out2, const SIMDType& in1, const SIMDType& in2)
+    {
+        out1 = in1;
+        out2 = in2;
+    }
+    
     double mVal;
 };
 
@@ -501,6 +513,18 @@ struct SIMDType<float, 1>
     friend SIMDType operator < (const SIMDType& a, const SIMDType& b) { return a.mVal < b.mVal; }
     friend SIMDType operator >= (const SIMDType& a, const SIMDType& b) { return a.mVal >= b.mVal; }
     friend SIMDType operator <= (const SIMDType& a, const SIMDType& b) { return a.mVal <= b.mVal; }
+    
+    friend void unzip(SIMDType& out1, SIMDType& out2, const SIMDType& in1, const SIMDType& in2)
+    {
+        out1 = in1;
+        out2 = in2;
+    }
+    
+    friend void zip(SIMDType& out1, SIMDType& out2, const SIMDType& in1, const SIMDType& in2)
+    {
+        out1 = in1;
+        out2 = in2;
+    }
     
     operator SIMDType<double, 1>() { return static_cast<double>(mVal); }
     
@@ -626,6 +650,19 @@ public:
     friend SIMDType operator < (const SIMDType& a, const SIMDType& b) { return compare<vcltq_f64>(a, b); }
     friend SIMDType operator >= (const SIMDType& a, const SIMDType& b) { return compare<vcgeq_f64>(a, b); }
     friend SIMDType operator <= (const SIMDType& a, const SIMDType& b) { return compare<vcleq_f64>(a, b); }
+    
+    friend void unzip(SIMDType& out1, SIMDType& out2, const SIMDType& in1, const SIMDType& in2)
+    {
+        out1 = vuzp1q_f64(in1.mVal, in2.mVal);
+        out2 = vuzp2q_f64(in1.mVal, in2.mVal);
+    }
+    
+    friend void zip(SIMDType& out1, SIMDType& out2, const SIMDType& in1, const SIMDType& in2)
+    {
+        out1 = vzip1q_f64(in1.mVal, in2.mVal);
+        out2 = vzip2q_f64(in1.mVal, in2.mVal);
+    }
+    
     /*
     template <int y, int x>
     static SIMDType shuffle(const SIMDType& a, const SIMDType& b)
@@ -756,6 +793,23 @@ public:
     friend SIMDType operator < (const SIMDType& a, const SIMDType& b) { return compare<vcltq_f32>(a, b); }
     friend SIMDType operator >= (const SIMDType& a, const SIMDType& b) { return compare<vcgeq_f32>(a, b); }
     friend SIMDType operator <= (const SIMDType& a, const SIMDType& b) { return compare<vcleq_f32>(a, b); }
+    
+    friend void unzip(SIMDType& out1, SIMDType& out2, const SIMDType& in1, const SIMDType& in2)
+    {
+        float32x4x2_t v = vuzpq_f32(in1.mVal, in2.mVal);
+        
+        out1 = v.val[0];
+        out2 = v.val[1];
+    }
+    
+    friend void zip(SIMDType& out1, SIMDType& out2, const SIMDType& in1, const SIMDType& in2)
+    {
+        float32x4x2_t v = vzipq_f32(in1.mVal, in2.mVal);
+        
+        out1 = v.val[0];
+        out2 = v.val[1];
+    }
+    
     /*
     template <int z, int y, int x, int w>
     static SIMDType shuffle(const SIMDType& a, const SIMDType& b)
@@ -874,6 +928,18 @@ struct SIMDType<double, 2> : public SIMDVector<double, __m128d, 2>
     friend SIMDType operator >= (const SIMDType& a, const SIMDType& b) { return _mm_cmple_pd(a.mVal, b.mVal); }
     friend SIMDType operator <= (const SIMDType& a, const SIMDType& b) { return _mm_cmpge_pd(a.mVal, b.mVal); }
     
+    friend void unzip(SIMDType& out1, SIMDType& out2, const SIMDType& in1, const SIMDType& in2)
+    {
+        out1 = _mm_unpacklo_pd(in1.mVal, in2.mVal);
+        out2 = _mm_unpackhi_pd(in1.mVal, in2.mVal);
+    }
+    
+    friend void zip(SIMDType& out1, SIMDType& out2, const SIMDType& in1, const SIMDType& in2)
+    {
+        out1 = _mm_unpacklo_pd(in1.mVal, in2.mVal);
+        out2 = _mm_unpackhi_pd(in1.mVal, in2.mVal);
+    }
+    
     template <int y, int x>
     static SIMDType shuffle(const SIMDType& a, const SIMDType& b)
     {
@@ -932,6 +998,18 @@ struct SIMDType<float, 4> : public SIMDVector<float, __m128, 4>
     friend SIMDType operator >= (const SIMDType& a, const SIMDType& b) { return _mm_cmple_ps(a.mVal, b.mVal); }
     friend SIMDType operator <= (const SIMDType& a, const SIMDType& b) { return _mm_cmpge_ps(a.mVal, b.mVal); }
     
+    friend void unzip(SIMDType& out1, SIMDType& out2, const SIMDType& in1, const SIMDType& in2)
+    {
+        out1 = _mm_shuffle_ps(in1.mVal, in2.mVal, 0x88);
+        out2 = _mm_shuffle_ps(in1.mVal, in2.mVal, 0xDD);
+    }
+    
+    friend void zip(SIMDType& out1, SIMDType& out2, const SIMDType& in1, const SIMDType& in2)
+    {
+        out1 = _mm_unpacklo_ps(in1.mVal, in2.mVal);
+        out2 = _mm_unpackhi_ps(in1.mVal, in2.mVal);
+    }
+
     template <int z, int y, int x, int w>
     static SIMDType shuffle(const SIMDType& a, const SIMDType& b)
     {
@@ -1036,6 +1114,24 @@ struct SIMDType<double, 4> : public SIMDVector<double, __m256d, 4>
     friend SIMDType operator >= (const SIMDType& a, const SIMDType& b) { return _mm256_cmp_pd(a.mVal, b.mVal, _CMP_GE_OQ); }
     friend SIMDType operator <= (const SIMDType& a, const SIMDType& b) { return _mm256_cmp_pd(a.mVal, b.mVal, _CMP_LE_OQ); }
     
+    friend void unzip(SIMDType& out1, SIMDType& out2, const SIMDType& in1, const SIMDType& in2)
+    {
+        const __m256d v1 = _mm256_permute2f128_pd(in1.mVal, in2.mVal, 0x20);
+        const __m256d v2 = _mm256_permute2f128_pd(in1.mVal, in2.mVal, 0x31);
+        
+        out1 = _mm256_unpacklo_pd(v1, v2);
+        out2 = _mm256_unpackhi_pd(v1, v2);
+    }
+    
+    friend void zip(SIMDType& out1, SIMDType& out2, const SIMDType& in1, const SIMDType& in2)
+    {
+        const __m256d v1 = _mm256_unpacklo_pd(in1.mVal, in2.mVal);
+        const __m256d v2 = _mm256_unpackhi_pd(in1.mVal, in2.mVal);
+        
+        out1 = _mm256_permute2f128_pd(v1, v2, 0x20);
+        out2 = _mm256_permute2f128_pd(v1, v2, 0x31);
+    }
+    
     operator SIMDType<float, 4>() { return _mm256_cvtpd_ps(mVal); }
     operator SIMDType<int32_t, 4>() { return _mm256_cvtpd_epi32(mVal); }
 };
@@ -1081,6 +1177,24 @@ struct SIMDType<float, 8> : public SIMDVector<float, __m256, 8>
     friend SIMDType operator < (const SIMDType& a, const SIMDType& b) { return _mm256_cmp_ps(a.mVal, b.mVal, _CMP_LT_OQ); }
     friend SIMDType operator >= (const SIMDType& a, const SIMDType& b) { return _mm256_cmp_ps(a.mVal, b.mVal, _CMP_GE_OQ); }
     friend SIMDType operator <= (const SIMDType& a, const SIMDType& b) { return _mm256_cmp_ps(a.mVal, b.mVal, _CMP_LE_OQ); }
+    
+    friend void unzip(SIMDType& out1, SIMDType& out2, const SIMDType& in1, const SIMDType& in2)
+    {
+        const __m256 v1 = _mm256_permute2f128_ps(in1.mVal, in2.mVal, 0x20);
+        const __m256 v2 = _mm256_permute2f128_ps(in1.mVal, in2.mVal, 0x31);
+        
+        out1 = _mm256_shuffle_ps(v1, v2, 0x88);
+        out2 = _mm256_shuffle_ps(v1, v2, 0xDD);
+    }
+    
+    friend void zip(SIMDType& out1, SIMDType& out2, const SIMDType& in1, const SIMDType& in2)
+    {
+        const __m256 v1 = _mm256_unpacklo_ps(in1.mVal, in2.mVal);
+        const __m256 v2 = _mm256_unpackhi_ps(in1.mVal, in2.mVal);
+        
+        out1 = _mm256_permute2f128_ps(v1, v2, 0x20);
+        out2 = _mm256_permute2f128_ps(v1, v2, 0x31);
+    }
     
     operator SizedVector<double, 4, 8>() const
     {

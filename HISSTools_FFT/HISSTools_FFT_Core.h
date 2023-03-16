@@ -107,183 +107,6 @@ namespace hisstools_fft_impl
         }
     }
 
-    // ******************** Interleaving and Deinterleaving ******************** //
-
-    template <class T, int vec_size>
-    void deinterleave(const SIMDType<T, vec_size> *input,
-                      SIMDType<T, vec_size> *outReal,
-                      SIMDType<T, vec_size> *outImag)
-    {
-        static_assert(vec_size != vec_size, "Deinterleave not implemented for this type");
-    }
-
-    template <class T, int vec_size>
-    void interleave(const SIMDType<T, vec_size> *inReal,
-                    const SIMDType<T, vec_size> *inImag,
-                    SIMDType<T, vec_size> *output)
-    {
-        static_assert(vec_size != vec_size, "Interleave not implemented for this type");
-    }
-
-    template <class T>
-    void deinterleave(const SIMDType<T, 1> *input, SIMDType<T, 1> *outReal, SIMDType<T, 1> *outImag)
-    {
-        *outReal = input[0];
-        *outImag = input[1];
-    }
-        
-    template <class T>
-    void interleave(const SIMDType<T, 1> *inReal, const SIMDType<T, 1> *inImag, SIMDType<T, 1> *output)
-    {
-        output[0] = *inReal;
-        output[1] = *inImag;
-    }
-    
-#if defined(__SSE__) || defined(__AVX__) || defined(__AVX512F__)
-    
-    template<>
-    void deinterleave(const SIMDType<double, 2> *input, SIMDType<double, 2> *outReal, SIMDType<double, 2> *outImag)
-    {
-        *outReal = _mm_unpacklo_pd(input[0].mVal, input[1].mVal);
-        *outImag = _mm_unpackhi_pd(input[0].mVal, input[1].mVal);
-    }
-    
-    template<>
-    void interleave(const SIMDType<double, 2> *inReal, const SIMDType<double, 2> *inImag, SIMDType<double, 2> *output)
-    {
-        output[0] = _mm_unpacklo_pd(inReal->mVal, inImag->mVal);
-        output[1] = _mm_unpackhi_pd(inReal->mVal, inImag->mVal);
-    }
-    
-    template<>
-    void deinterleave(const SIMDType<float, 4> *input, SIMDType<float, 4> *outReal, SIMDType<float, 4> *outImag)
-    {
-        *outReal = _mm_shuffle_ps(input[0].mVal, input[1].mVal, 0x88);
-        *outImag = _mm_shuffle_ps(input[0].mVal, input[1].mVal, 0xDD);
-    }
-    
-    template<>
-    void interleave(const SIMDType<float, 4> *inReal, const SIMDType<float, 4> *inImag, SIMDType<float, 4> *output)
-    {
-        output[0] = _mm_unpacklo_ps(inReal->mVal, inImag->mVal);
-        output[1] = _mm_unpackhi_ps(inReal->mVal, inImag->mVal);
-    }
-    
-#endif
-    
-#if defined(__AVX__) || defined(__AVX512F__)
-
-    template<>
-    void deinterleave(const SIMDType<double, 4> *input, SIMDType<double, 4> *outReal, SIMDType<double, 4> *outImag)
-    {
-        const __m256d v1 = _mm256_permute2f128_pd(input[0].mVal, input[1].mVal, 0x20);
-        const __m256d v2 = _mm256_permute2f128_pd(input[0].mVal, input[1].mVal, 0x31);
-            
-        *outReal = _mm256_unpacklo_pd(v1, v2);
-        *outImag = _mm256_unpackhi_pd(v1, v2);
-    }
-        
-    template<>
-    void interleave(const SIMDType<double, 4> *inReal, const SIMDType<double, 4> *inImag, SIMDType<double, 4> *output)
-    {
-        const __m256d v1 = _mm256_unpacklo_pd(inReal->mVal, inImag->mVal);
-        const __m256d v2 = _mm256_unpackhi_pd(inReal->mVal, inImag->mVal);
-            
-        output[0] = _mm256_permute2f128_pd(v1, v2, 0x20);
-        output[1] = _mm256_permute2f128_pd(v1, v2, 0x31);
-    }
-    
-    template<>
-    void deinterleave(const SIMDType<float, 8> *input, SIMDType<float, 8> *outReal, SIMDType<float, 8> *outImag)
-    {
-        const __m256 v1 = _mm256_permute2f128_ps(input[0].mVal, input[1].mVal, 0x20);
-        const __m256 v2 = _mm256_permute2f128_ps(input[0].mVal, input[1].mVal, 0x31);
-            
-        *outReal = _mm256_shuffle_ps(v1, v2, 0x88);
-        *outImag = _mm256_shuffle_ps(v1, v2, 0xDD);
-    }
-    
-    template<>
-    void interleave(const SIMDType<float, 8> *inReal, const SIMDType<float, 8> *inImag, SIMDType<float, 8> *output)
-    {
-        const __m256 v1 = _mm256_unpacklo_ps(inReal->mVal, inImag->mVal);
-        const __m256 v2 = _mm256_unpackhi_ps(inReal->mVal, inImag->mVal);
-            
-        output[0] = _mm256_permute2f128_ps(v1, v2, 0x20);
-        output[1] = _mm256_permute2f128_ps(v1, v2, 0x31);
-    }
-    
-#endif
-    
-#if defined(__AVX512F__)
-    
-    template<>
-    void deinterleave(const SIMDType<double, 8> *input, SIMDType<double, 8> *outReal, SIMDType<double, 8> *outImag)
-    {
-        *outReal = _mm512_unpacklo_pd(input[0].mVal, input[1].mVal);
-        *outImag = _mm512_unpackhi_pd(input[0].mVal, input[1].mVal);
-    }
-        
-    template<>
-    void interleave(const SIMDType<double, 8> *inReal, const SIMDType<double, 8> *inImag, SIMDType<double, 8> *output)
-    {
-        output[0] = _mm512_unpacklo_pd(inReal->mVal, inImag->mVal);
-        output[1] = _mm512_unpackhi_pd(inReal->mVal, inImag->mVal);
-    }
-    
-    template<>
-    void deinterleave(const SIMDType<float, 16> *input, SIMDType<float, 16> *outReal, SIMDType<float, 16> *outImag)
-    {
-        *outReal = _mm512_unpacklo_ps(input[0].mVal, input[1].mVal);
-        *outImag = _mm512_unpackhi_ps(input[0].mVal, input[1].mVal);
-    }
-        
-    template<>
-    void interleave(const SIMDType<float, 16> *inReal, const SIMDType<float, 16> *inImag, SIMDType<float, 16> *output)
-    {
-        output[0] = _mm512_unpacklo_ps(inReal->mVal, inImag->mVal);
-        output[1] = _mm512_unpackhi_ps(inReal->mVal, inImag->mVal);
-    }
-    
-#endif
-    
-#if defined SIMD_COMPILER_SUPPORT_NEON /* Neon Intrinsics */
-
-#if defined(__arm64) || defined(__aarch64__)
-
-    template<>
-    void deinterleave(const SIMDType<double, 2> *input, SIMDType<double, 2> *outReal, SIMDType<double, 2> *outImag)
-    {
-        *outReal = vuzp1q_f64(input[0].mVal, input[1].mVal);
-        *outImag = vuzp2q_f64(input[0].mVal, input[1].mVal);
-    }
-
-    template<>
-    void interleave(const SIMDType<double, 2> *inReal, const SIMDType<double, 2> *inImag, SIMDType<double, 2> *output)
-    {
-        output[0] = vzip1q_f64(inReal->mVal, inImag->mVal);
-        output[1] = vzip2q_f64(inReal->mVal, inImag->mVal);
-    }
-#endif
-    
-    template<>
-    void deinterleave(const SIMDType<float, 4> *input, SIMDType<float, 4> *outReal, SIMDType<float, 4> *outImag)
-    {
-        float32x4x2_t v = vuzpq_f32(input[0].mVal, input[1].mVal);
-        *outReal = v.val[0];
-        *outImag = v.val[1];
-    }
-    
-    template<>
-    void interleave(const SIMDType<float, 4> *inReal, const SIMDType<float, 4> *inImag, SIMDType<float, 4> *output)
-    {
-        float32x4x2_t v = vzipq_f32(inReal->mVal, inImag->mVal);
-        output[0] = v.val[0];
-        output[1] = v.val[1];
-    }
-    
-#endif
-
     // ******************** Shuffles for Pass 1 and 2 ******************** //
     
     struct shuffler
@@ -1040,7 +863,7 @@ namespace hisstools_fft_impl
         VecType *imagp = reinterpret_cast<VecType*>(imag + offset);
         
         for (uintptr_t i = 0; i < (half_length / vec_size); i++, in_ptr += 2)
-            deinterleave(in_ptr, realp++, imagp++);
+            unzip(*realp++, *imagp++, *in_ptr, *(in_ptr + 1));
     }
     
     template <class T, class U>
@@ -1084,7 +907,7 @@ namespace hisstools_fft_impl
         VecType *out_ptr = reinterpret_cast<VecType*>(output + (2 * offset));
         
         for (uintptr_t i = 0; i < (half_length / vec_size); i++, out_ptr += 2)
-            interleave(realp++, imagp++, out_ptr);
+            zip(*out_ptr, *(out_ptr + 1), *realp++, *imagp++);
     }
     
     template <class T>
