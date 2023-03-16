@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		B822E66E22FB455100368AE7 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B822E66D22FB455100368AE7 /* main.cpp */; };
-		B822E67922FC184700368AE7 /* HISSTools_FFT.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B822E67822FC184700368AE7 /* HISSTools_FFT.cpp */; };
 		B822E67C22FC185C00368AE7 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B822E67B22FC185C00368AE7 /* Accelerate.framework */; };
 /* End PBXBuildFile section */
 
@@ -27,7 +26,6 @@
 /* Begin PBXFileReference section */
 		B822E66A22FB455100368AE7 /* IR_Manipulation_Tester */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = IR_Manipulation_Tester; sourceTree = BUILT_PRODUCTS_DIR; };
 		B822E66D22FB455100368AE7 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
-		B822E67822FC184700368AE7 /* HISSTools_FFT.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = HISSTools_FFT.cpp; path = ../../../HISSTools_FFT/HISSTools_FFT.cpp; sourceTree = "<group>"; };
 		B822E67B22FC185C00368AE7 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
 		B82A03F42302B61C00F887E7 /* SpectralFunctions.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = SpectralFunctions.hpp; path = ../../../SpectralFunctions.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -66,7 +64,6 @@
 			children = (
 				B822E66D22FB455100368AE7 /* main.cpp */,
 				B82A03F42302B61C00F887E7 /* SpectralFunctions.hpp */,
-				B822E67822FC184700368AE7 /* HISSTools_FFT.cpp */,
 			);
 			path = IR_Manipulation_Tester;
 			sourceTree = "<group>";
@@ -136,7 +133,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B822E67922FC184700368AE7 /* HISSTools_FFT.cpp in Sources */,
 				B822E66E22FB455100368AE7 /* main.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

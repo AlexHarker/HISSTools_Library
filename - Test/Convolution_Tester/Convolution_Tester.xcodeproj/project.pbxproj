@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		B8BED9DB29C27C7300BC2B8A /* HISSTools_FFT.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B8BED9DA29C27C7300BC2B8A /* HISSTools_FFT.cpp */; };
 		B8E2FD3129C20CD3006F3CC7 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B8E2FD3029C20CD3006F3CC7 /* main.cpp */; };
 		B8E2FD3929C20F8D006F3CC7 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B8E2FD3829C20F8D006F3CC7 /* Accelerate.framework */; };
 /* End PBXBuildFile section */
@@ -25,7 +24,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		B8BED9DA29C27C7300BC2B8A /* HISSTools_FFT.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = HISSTools_FFT.cpp; path = ../../../../../../../../HISSTools_Library/HISSTools_FFT/HISSTools_FFT.cpp; sourceTree = "<group>"; };
 		B8E2FD2D29C20CD3006F3CC7 /* Convolution_Tester */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Convolution_Tester; sourceTree = BUILT_PRODUCTS_DIR; };
 		B8E2FD3029C20CD3006F3CC7 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		B8E2FD3829C20F8D006F3CC7 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
@@ -64,7 +62,6 @@
 		B8E2FD2F29C20CD3006F3CC7 /* Convolution_Tester */ = {
 			isa = PBXGroup;
 			children = (
-				B8BED9DA29C27C7300BC2B8A /* HISSTools_FFT.cpp */,
 				B8E2FD3029C20CD3006F3CC7 /* main.cpp */,
 				B8E2FD3A29C215B7006F3CC7 /* conv_tester_config.xcconfig */,
 			);
@@ -137,7 +134,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				B8E2FD3129C20CD3006F3CC7 /* main.cpp in Sources */,
-				B8BED9DB29C27C7300BC2B8A /* HISSTools_FFT.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
