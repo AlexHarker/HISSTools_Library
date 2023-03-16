@@ -61,7 +61,7 @@ public:
     {
         tabbedOut(msg + " Elapsed ", to_string_with_precision(mStore / 1000000.0, 2), 35);
         
-        uint64_t elapsed = mStore1;
+        uint64_t elapsed = mStore;
         
         mStore = 0;
         
@@ -74,21 +74,21 @@ private:
     uint64_t        mStore;
 };
 
-template <class SPLIT>
-void fillSplit(SPLIT split, int max_log2)
+template <class T>
+void fillSplit(Split<T> split, int max_log2)
 {
-    for (long i =0; i < (1 << max_log2); i++)
+    for (long i = 0; i < (1 << max_log2); i++)
     {
         split.realp[i] = 1.0 - 2.0 * std::rand() / RAND_MAX;
         split.imagp[i] = 1.0 - 2.0 * std::rand() / RAND_MAX;
     }
 }
 
-template <class SETUP, class SPLIT, class T>
+template <class T>
 uint64_t crash_test(int min_log2, int max_log2)
 {
-    SETUP setup;
-    SPLIT split;
+    Setup<T> setup;
+    Split<T> split;
     
     split.realp = (T *) malloc(sizeof(T) * 1 << max_log2);
     split.imagp = (T *) malloc(sizeof(T) * 1 << max_log2);
@@ -104,7 +104,6 @@ uint64_t crash_test(int min_log2, int max_log2)
         hisstools_fft(setup, &split, i);
         timer.stop();
     }
-    
     
     for (int i = min_log2; i < max_log2; i++)
     {
@@ -139,11 +138,11 @@ uint64_t crash_test(int min_log2, int max_log2)
     return time;
 }
 
-template <class SETUP, class SPLIT, class T>
-uint64_t single_test(int size, void (*Fn)(SETUP, SPLIT *, uintptr_t))
+template <class T>
+uint64_t single_test(int size, void (*Fn)(Setup<T>, Split<T> *, uintptr_t))
 {
-    SETUP setup;
-    SPLIT split;
+    Setup<T> setup;
+    Split<T> split;
     
     split.realp = (T *) malloc(sizeof(T) * 1 << size);
     split.imagp = (T *) malloc(sizeof(T) * 1 << size);
@@ -170,7 +169,7 @@ uint64_t single_test(int size, void (*Fn)(SETUP, SPLIT *, uintptr_t))
     return time;
 }
 
-template <class SETUP, class SPLIT, class T>
+template <class T>
 uint64_t matched_size_test(int min_log2, int max_log2)
 {
     uint64_t time = 0;
@@ -178,30 +177,30 @@ uint64_t matched_size_test(int min_log2, int max_log2)
     std::cout << "---FFT---\n";
     
     for (int i = min_log2; i < max_log2; i++)
-        time += single_test<SETUP, SPLIT, T>(i, &hisstools_fft);
+        time += single_test<T>(i, &hisstools_fft);
     
     std::cout << "---iFFT---\n";
 
     for (int i = min_log2; i < max_log2; i++)
-        time += single_test<SETUP, SPLIT, T>(i, &hisstools_ifft);
+        time += single_test<T>(i, &hisstools_ifft);
     
     std::cout << "---Real FFT---\n";
 
     for (int i = min_log2; i < max_log2; i++)
-        time += single_test<SETUP, SPLIT, T>(i, &hisstools_rfft);
+        time += single_test<T>(i, &hisstools_rfft);
     
     std::cout << "---Real iFFT---\n";
 
     for (int i = min_log2; i < max_log2; i++)
-        time += single_test<SETUP, SPLIT, T>(i, &hisstools_rifft);
+        time += single_test<T>(i, &hisstools_rifft);
     
     return time;
 }
 
-template <class SPLIT, class T, class U>
+template <class T, class U>
 bool zip_correctness_test(int min_log2, int max_log2)
 {
-    SPLIT split;
+    Split<T> split;
     
     U *ptr = (U *) malloc(sizeof(U) * 1 << max_log2);
     split.realp = (T *) malloc(sizeof(T) * 1 << (max_log2 - 1));
@@ -249,10 +248,10 @@ bool zip_correctness_test(int min_log2, int max_log2)
     return false;
 }
 
-template <class SPLIT, class T, class U>
+template <class T, class U>
 uint64_t zip_test(int min_log2, int max_log2)
 {
-    SPLIT split;
+    Split<T> split;
     
     U *ptr = (U *) malloc(sizeof(U) * 1 << max_log2);
     split.realp = (T *) malloc(sizeof(T) * 1 << (max_log2 - 1));
@@ -287,7 +286,7 @@ int main(int argc, const char * argv[])
     
     std::cout << "****** DOUBLE ******\n";
     
-    if (zip_correctness_test<FFT_SPLIT_COMPLEX_D, double, double>(1, 24))
+    if (zip_correctness_test<double, double>(1, 24))
     {
         std::cout << "Errors - did not complete tests\n";
         return -1;
@@ -295,7 +294,7 @@ int main(int argc, const char * argv[])
     
     std::cout << "****** FLOAT ******\n";
     
-    if (zip_correctness_test<FFT_SPLIT_COMPLEX_F, float, float>(1, 24))
+    if (zip_correctness_test<float, float>(1, 24))
     {
             std::cout << "Errors - did not complete tests\n";
             return -1;
@@ -303,27 +302,27 @@ int main(int argc, const char * argv[])
     
     std::cout << "****** DOUBLE ******\n";
 
-    time += crash_test<FFT_SETUP_D, FFT_SPLIT_COMPLEX_D, double>(0, 22);
+    time += crash_test<double>(0, 22);
 
     std::cout << "****** FLOAT ******\n";
 
-    time += crash_test<FFT_SETUP_F, FFT_SPLIT_COMPLEX_F, float>(0, 22);
+    time += crash_test<float>(0, 22);
     
     std::cout << "****** DOUBLE ******\n";
 
-    time += matched_size_test<FFT_SETUP_D, FFT_SPLIT_COMPLEX_D, double>(6, 14);
+    time += matched_size_test<double>(6, 14);
     
     std::cout << "****** FLOAT ******\n";
 
-    time += matched_size_test<FFT_SETUP_F, FFT_SPLIT_COMPLEX_F, float>(6, 14);
+    time += matched_size_test<float>(6, 14);
     
     std::cout << "****** DOUBLE ******\n";
 
-    time += zip_test<FFT_SPLIT_COMPLEX_D, double, double>(1, 24);
+    time += zip_test<double, double>(1, 24);
     
     std::cout << "****** FLOAT ******\n";
 
-    time += zip_test<FFT_SPLIT_COMPLEX_F, float, float>(1, 24);
+    time += zip_test<float, float>(1, 24);
     
     tabbedOut("FFT Tests Total ", to_string_with_precision(time / 1000000.0, 2), 35);
     
