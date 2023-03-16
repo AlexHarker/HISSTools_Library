@@ -1030,14 +1030,14 @@ namespace hisstools_fft_impl
     // Unzip
     
     template <class T, int vec_size>
-    void unzip_impl(const T *input, T *real, T *imag, uintptr_t half_length)
+    void unzip_impl(const T *input, T *real, T *imag, uintptr_t half_length, uintptr_t offset)
     {
         using VecType = SIMDType<T, vec_size>;
 
-        const VecType *in_ptr = reinterpret_cast<const VecType*>(input);
+        const VecType *in_ptr = reinterpret_cast<const VecType*>(input + (2 * offset));
         
-        VecType *realp = reinterpret_cast<VecType*>(real);
-        VecType *imagp = reinterpret_cast<VecType*>(imag);
+        VecType *realp = reinterpret_cast<VecType*>(real + offset);
+        VecType *imagp = reinterpret_cast<VecType*>(imag + offset);
         
         for (uintptr_t i = 0; i < (half_length / vec_size); i++, in_ptr += 2)
             deinterleave(in_ptr, realp++, imagp++);
@@ -1064,24 +1064,24 @@ namespace hisstools_fft_impl
         if (is_aligned(input) && is_aligned(output->realp) && is_aligned(output->imagp))
         {
             uintptr_t v_length = (half_length / v_size) * v_size;
-            unzip_impl<T, v_size>(input, output->realp, output->imagp, v_length);
-            unzip_impl<T, 1>(input + (v_length * 2), output->realp + v_length, output->imagp + v_length, half_length - v_length);
+            unzip_impl<T, v_size>(input, output->realp, output->imagp, v_length, 0);
+            unzip_impl<T, 1>(input, output->realp, output->imagp, half_length - v_length, v_length);
         }
         else
-            unzip_impl<T, 1>(input, output->realp, output->imagp, half_length);
+            unzip_impl<T, 1>(input, output->realp, output->imagp, half_length, 0);
     }
     
     // Zip
     
     template <class T, int vec_size>
-    void zip_impl(const T *real, const T *imag, T *output, uintptr_t half_length)
+    void zip_impl(const T *real, const T *imag, T *output, uintptr_t half_length, uintptr_t offset)
     {
         using VecType = SIMDType<T, vec_size>;
 
-        const VecType *realp = reinterpret_cast<const VecType*>(real);
-        const VecType *imagp = reinterpret_cast<const VecType*>(imag);
+        const VecType *realp = reinterpret_cast<const VecType*>(real + offset);
+        const VecType *imagp = reinterpret_cast<const VecType*>(imag + offset);
         
-        VecType *out_ptr = reinterpret_cast<VecType*>(output);
+        VecType *out_ptr = reinterpret_cast<VecType*>(output + (2 * offset));
         
         for (uintptr_t i = 0; i < (half_length / vec_size); i++, out_ptr += 2)
             interleave(realp++, imagp++, out_ptr);
@@ -1095,11 +1095,11 @@ namespace hisstools_fft_impl
         if (is_aligned(output) && is_aligned(input->realp) && is_aligned(input->imagp))
         {
             uintptr_t v_length = (half_length / v_size) * v_size;
-            zip_impl<T, v_size>(input->realp, input->imagp, output, v_length);
-            zip_impl<T, 1>(input->realp + v_length, input->imagp + v_length, output + (2 * v_length), half_length - v_length);
+            zip_impl<T, v_size>(input->realp, input->imagp, output, v_length, 0);
+            zip_impl<T, 1>(input->realp, input->imagp, output, half_length - v_length, v_length);
         }
         else
-            zip_impl<T, 1>(input->realp, input->imagp, output, half_length);
+            zip_impl<T, 1>(input->realp, input->imagp, output, half_length, 0);
     }
     
     // Unzip With Zero Padding
