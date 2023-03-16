@@ -967,7 +967,7 @@ namespace hisstools_fft_impl{
         Vector *imagp = reinterpret_cast<Vector*>(imag);
         
         for (uintptr_t i = 0; i < (half_length / vec_size); i++, in_ptr += 2)
-            Vector::deinterleave(in_ptr, realp++, imagp++);
+            deinterleave(in_ptr, realp++, imagp++);
     }
     
     template <class T, class U>
@@ -1010,7 +1010,7 @@ namespace hisstools_fft_impl{
         Vector *out_ptr = reinterpret_cast<Vector*>(output);
         
         for (uintptr_t i = 0; i < (half_length / vec_size); i++, out_ptr += 2)
-            Vector::interleave(realp++, imagp++, out_ptr);
+            interleave(realp++, imagp++, out_ptr);
     }
     
     template <class T>
