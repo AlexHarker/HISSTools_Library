@@ -406,7 +406,7 @@ namespace hisstools_fft_impl{
     template <class T, int vec_size>
     void pass_1_2_reorder(Split<T> *input, uintptr_t length)
     {
-        typedef Vector4x<T, vec_size> Vector;
+        using Vector = Vector4x<T, vec_size> ;
         
         Vector *r1_ptr = reinterpret_cast<Vector *>(input->realp);
         Vector *r2_ptr = r1_ptr + (length >> 4);
@@ -479,7 +479,7 @@ namespace hisstools_fft_impl{
     template <class T, int vec_size>
     void pass_3_reorder(Split<T> *input, uintptr_t length)
     {
-        typedef Vector4x<T, vec_size> Vector;
+        using Vector = Vector4x<T, vec_size>;
         
         uintptr_t offset = length >> 5;
         uintptr_t outerLoop = length >> 6;
@@ -542,7 +542,7 @@ namespace hisstools_fft_impl{
     template <class T, int vec_size>
     void pass_3(Split<T> *input, uintptr_t length)
     {
-        typedef Vector4x<T, vec_size> Vector;
+        using Vector = Vector4x<T, vec_size>;
 
         Vector tr;
         Vector ti;
@@ -581,7 +581,7 @@ namespace hisstools_fft_impl{
     template <class T, int vec_size>
     void pass_trig_table_reorder(Split<T> *input, Setup<T> *setup, uintptr_t length, uintptr_t pass)
     {
-        typedef SIMDVector<T, vec_size> Vector;
+        using Vector = SIMDType<T, vec_size>;
 
         uintptr_t size = static_cast<uintptr_t>(2u) << pass;
         uintptr_t incr = size / (vec_size << 1);
@@ -656,7 +656,7 @@ namespace hisstools_fft_impl{
     template <class T, int vec_size>
     void pass_trig_table(Split<T> *input, Setup<T> *setup, uintptr_t length, uintptr_t pass)
     {
-        typedef SIMDVector<T, vec_size> Vector;
+        using Vector = SIMDType<T, vec_size>;
 
         uintptr_t size = static_cast<uintptr_t>(2u) << pass;
         uintptr_t incr = size / (vec_size << 1);
@@ -960,8 +960,8 @@ namespace hisstools_fft_impl{
     template <class T, int vec_size>
     void unzip_impl(const T *input, T *real, T *imag, uintptr_t half_length)
     {
-        typedef SIMDVector<T, vec_size> Vector;
-        
+        using Vector = SIMDType<T, vec_size>;
+
         const Vector *in_ptr = reinterpret_cast<const Vector*>(input);
         Vector *realp = reinterpret_cast<Vector*>(real);
         Vector *imagp = reinterpret_cast<Vector*>(imag);
@@ -1003,7 +1003,7 @@ namespace hisstools_fft_impl{
     template <class T, int vec_size>
     void zip_impl(const T *real, const T *imag, T *output, uintptr_t half_length)
     {
-        typedef SIMDVector<T, vec_size> Vector;
+        using Vector = SIMDType<T, vec_size>;
 
         const Vector *realp = reinterpret_cast<const Vector*>(real);
         const Vector *imagp = reinterpret_cast<const Vector*>(imag);
