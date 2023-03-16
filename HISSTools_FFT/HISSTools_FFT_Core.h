@@ -5,25 +5,7 @@
 #include <algorithm>
 #include <functional>
 
-#if defined(__arm__) || defined(__arm64) || defined(__aarch64__)
-#include <arm_neon.h>
-#include <memory.h>
-#elif defined(__APPLE__) || defined(__linux__) || defined(_WIN32)
-#if defined(_WIN32)
-#include <malloc.h>
-#include <intrin.h>
-#endif
-#include <emmintrin.h>
-#include <immintrin.h>
-#endif
-
-// Microsoft Visual Studio doesn't ever define __SSE__ so if necessary we derive it from other defines
-
-#if !defined(__SSE__)
-#if defined(_M_X64) || (defined(_M_IX86_FP) && _M_IX86_FP > 0)
-#define __SSE__ 1
-#endif
-#endif
+#include "../SIMDSupport.hpp"
 
 // Setup Structures
 
@@ -39,76 +21,22 @@ struct FloatSetup : public Setup<float> {};
 
 namespace hisstools_fft_impl{
     
-    template <class T> struct SIMDLimits    { static constexpr int max_size = 1;};
-    
-#if defined(__AVX512F__)
-    
-    template<> struct SIMDLimits<double>    { static constexpr int max_size = 8; };
-    template<> struct SIMDLimits<float>     { static constexpr int max_size = 16; };
-    
-#elif defined(__AVX__)
-    
-    template<> struct SIMDLimits<double>    { static constexpr int max_size = 4; };
-    template<> struct SIMDLimits<float>     { static constexpr int max_size = 8; };
-    
-#elif defined(__SSE__)
-    
-    template<> struct SIMDLimits<double>    { static constexpr int max_size = 2; };
-    template<> struct SIMDLimits<float>     { static constexpr int max_size = 4; };
-    
-#elif defined(__arm__) || defined(__arm64__) || defined(__aarch64__)
-
-    template<> struct SIMDLimits<float>     { static constexpr int max_size = 4; };
-
-#endif
-    
-    static constexpr int alignment_size = SIMDLimits<float>::max_size * sizeof(float);
-    
 // Aligned Allocation
+/*
+ #if defined(__APPLE__) || defined (__linux__) || defined(__EMSCRIPTEN__)
+ 
+ template <class T>
+ T *allocate_aligned(size_t size)
+ {
+ void *mem = nullptr;
+ if (!posix_memalign(&mem, alignment_size, size * sizeof(T)))
+ return static_cast<T *>(mem);
+ else
+ return nullptr;
+ }
+ */
 
-#if defined(__APPLE__) || defined (__linux__) || defined(__EMSCRIPTEN__)
-    
-    template <class T>
-    T *allocate_aligned(size_t size)
-    {
-        void *mem = nullptr;
-        if (!posix_memalign(&mem, alignment_size, size * sizeof(T)))
-            return static_cast<T *>(mem);
-        else
-            return nullptr;
-    }
-
-#elif defined(__arm__) || defined(__arm64__) || defined(__aarch64__)
-    
-    template <class T>
-    T *allocate_aligned(size_t size)
-    {
-        return static_cast<T *>(aligned_alloc(alignment_size, size * sizeof(T)));
-    }
-    
-#elif defined(_WIN32)
-    
-    template <class T>
-    T *allocate_aligned(size_t size)
-    {
-        return static_cast<T *>(_aligned_malloc(size * sizeof(T), alignment_size));
-    }
-    
-#endif
-    
-// Aligned deallocation
-    
-#if !defined(_WIN32)
-    
-    template <class T>
-    void deallocate_aligned(T *ptr) { free(ptr); }
-    
-#else
-    
-    template <class T>
-    void deallocate_aligned(T *ptr) { _aligned_free(ptr); }
-    
-#endif
+    static constexpr int alignment_size = SIMDLimits<float>::max_size * sizeof(float);
     
     template <class T>
     bool is_aligned(const T *ptr) { return !(reinterpret_cast<uintptr_t>(ptr) % alignment_size); }
@@ -121,291 +49,138 @@ namespace hisstools_fft_impl{
     
     // ******************** Basic Data Type Defintions ******************** //
     
-    template <class T, class U, int vec_size>
-    struct SIMDVectorBase
-    {
-        static constexpr int size = vec_size;
-        
-        SIMDVectorBase() {}
-        SIMDVectorBase(U a) : mVal(a) {}
-        
-        U mVal;
-    };
-    
-    template <class T, int vec_size>
-    struct SIMDVector
-    {};
-    
     template <class T>
-    struct SIMDVector<T, 1> : public SIMDVectorBase<T, T, 1>
+    void deinterleave(const SIMDType<T, 1> *input, SIMDType<T, 1> *outReal, SIMDType<T, 1> *outImag)
     {
-        SIMDVector() {}
-        SIMDVector(T a) : SIMDVectorBase<T, T, 1>(a) {}
-        friend SIMDVector operator + (const SIMDVector& a, const SIMDVector& b) { return a.mVal + b.mVal; }
-        friend SIMDVector operator - (const SIMDVector& a, const SIMDVector& b) { return a.mVal - b.mVal; }
-        friend SIMDVector operator * (const SIMDVector& a, const SIMDVector& b) { return a.mVal * b.mVal; }
+        *outReal = input[0];
+        *outImag = input[1];
+    }
         
-        static void deinterleave(const SIMDVector *input, SIMDVector *outReal, SIMDVector *outImag)
-        {
-            *outReal = input[0];
-            *outImag = input[1];
-        }
-        
-        static void interleave(const SIMDVector *inReal, const SIMDVector *inImag, SIMDVector *output)
-        {
-            output[0] = *inReal;
-            output[1] = *inImag;
-        }
-    };
+    template <class T>
+    void interleave(const SIMDType<T, 1> *inReal, const SIMDType<T, 1> *inImag, SIMDType<T, 1> *output)
+    {
+        output[0] = *inReal;
+        output[1] = *inImag;
+    }
     
 #if defined(__SSE__) || defined(__AVX__) || defined(__AVX512F__)
     
-    template<>
-    struct SIMDVector<double, 2> : public SIMDVectorBase<double, __m128d, 2>
+    static void deinterleave(const SIMDType<double, 2> *input, SIMDType<double, 2> *outReal, SIMDType<double, 2> *outImag)
     {
-        SIMDVector() {}
-        SIMDVector(__m128d a) : SIMDVectorBase(a) {}
-        friend SIMDVector operator + (const SIMDVector &a, const SIMDVector& b) { return _mm_add_pd(a.mVal, b.mVal); }
-        friend SIMDVector operator - (const SIMDVector &a, const SIMDVector& b) { return _mm_sub_pd(a.mVal, b.mVal); }
-        friend SIMDVector operator * (const SIMDVector &a, const SIMDVector& b) { return _mm_mul_pd(a.mVal, b.mVal); }
+        *outReal = _mm_unpacklo_pd(input[0].mVal, input[1].mVal);
+        *outImag = _mm_unpackhi_pd(input[0].mVal, input[1].mVal);
+    }
         
-        static void deinterleave(const SIMDVector *input, SIMDVector *outReal, SIMDVector *outImag)
-        {
-            *outReal = _mm_unpacklo_pd(input[0].mVal, input[1].mVal);
-            *outImag = _mm_unpackhi_pd(input[0].mVal, input[1].mVal);
-        }
-        
-        static void interleave(const SIMDVector *inReal, const SIMDVector *inImag, SIMDVector *output)
-        {
-            output[0] = _mm_unpacklo_pd(inReal->mVal, inImag->mVal);
-            output[1] = _mm_unpackhi_pd(inReal->mVal, inImag->mVal);
-        }
-    };
+    static void interleave(const SIMDType<double, 2> *inReal, const SIMDType<double, 2> *inImag, SIMDType<double, 2> *output)
+    {
+        output[0] = _mm_unpacklo_pd(inReal->mVal, inImag->mVal);
+        output[1] = _mm_unpackhi_pd(inReal->mVal, inImag->mVal);
+    }
     
-    template<>
-    struct SIMDVector<float, 4> : public SIMDVectorBase<float, __m128, 4>
+    static void deinterleave(const SIMDType<float, 4> *input, SIMDType<float, 4> *outReal, SIMDType<float, 4> *outImag)
     {
-        SIMDVector() {}
-        SIMDVector(__m128 a) : SIMDVectorBase(a) {}
-        friend SIMDVector operator + (const SIMDVector& a, const SIMDVector& b) { return _mm_add_ps(a.mVal, b.mVal); }
-        friend SIMDVector operator - (const SIMDVector& a, const SIMDVector& b) { return _mm_sub_ps(a.mVal, b.mVal); }
-        friend SIMDVector operator * (const SIMDVector& a, const SIMDVector& b) { return _mm_mul_ps(a.mVal, b.mVal); }
+        *outReal = _mm_shuffle_ps(input[0].mVal, input[1].mVal, 0x88);
+        *outImag = _mm_shuffle_ps(input[0].mVal, input[1].mVal, 0xDD);
+    }
         
-        static void deinterleave(const SIMDVector *input, SIMDVector *outReal, SIMDVector *outImag)
-        {
-            *outReal = _mm_shuffle_ps(input[0].mVal, input[1].mVal, 0x88);
-            *outImag = _mm_shuffle_ps(input[0].mVal, input[1].mVal, 0xDD);
-        }
-        
-        static void interleave(const SIMDVector *inReal, const SIMDVector *inImag, SIMDVector *output)
-        {
-            output[0] = _mm_unpacklo_ps(inReal->mVal, inImag->mVal);
-            output[1] = _mm_unpackhi_ps(inReal->mVal, inImag->mVal);
-        }
-    };
+    static void interleave(const SIMDType<float, 4> *inReal, const SIMDType<float, 4> *inImag, SIMDType<float, 4> *output)
+    {
+        output[0] = _mm_unpacklo_ps(inReal->mVal, inImag->mVal);
+        output[1] = _mm_unpackhi_ps(inReal->mVal, inImag->mVal);
+    }
     
 #endif
     
 #if defined(__AVX__) || defined(__AVX512F__)
-    
-    template<>
-    struct SIMDVector<double, 4> : public SIMDVectorBase<double, __m256d, 4>
+
+    static void deinterleave(const SIMDType<double, 4> *input, SIMDType<double, 4> *outReal, SIMDType<double, 4> *outImag)
     {
-        SIMDVector() {}
-        SIMDVector(__m256d a) : SIMDVectorBase(a) {}
-        friend SIMDVector operator + (const SIMDVector &a, const SIMDVector &b) { return _mm256_add_pd(a.mVal, b.mVal); }
-        friend SIMDVector operator - (const SIMDVector &a, const SIMDVector &b) { return _mm256_sub_pd(a.mVal, b.mVal); }
-        friend SIMDVector operator * (const SIMDVector &a, const SIMDVector &b) { return _mm256_mul_pd(a.mVal, b.mVal); }
-        
-        static void deinterleave(const SIMDVector *input, SIMDVector *outReal, SIMDVector *outImag)
-        {
-            const __m256d v1 = _mm256_permute2f128_pd(input[0].mVal, input[1].mVal, 0x20);
-            const __m256d v2 = _mm256_permute2f128_pd(input[0].mVal, input[1].mVal, 0x31);
+        const __m256d v1 = _mm256_permute2f128_pd(input[0].mVal, input[1].mVal, 0x20);
+        const __m256d v2 = _mm256_permute2f128_pd(input[0].mVal, input[1].mVal, 0x31);
             
-            *outReal = _mm256_unpacklo_pd(v1, v2);
-            *outImag = _mm256_unpackhi_pd(v1, v2);
-        }
+        *outReal = _mm256_unpacklo_pd(v1, v2);
+        *outImag = _mm256_unpackhi_pd(v1, v2);
+    }
         
-        static void interleave(const SIMDVector *inReal, const SIMDVector *inImag, SIMDVector *output)
-        {
-            const __m256d v1 = _mm256_unpacklo_pd(inReal->mVal, inImag->mVal);
-            const __m256d v2 = _mm256_unpackhi_pd(inReal->mVal, inImag->mVal);
-            
-            output[0] = _mm256_permute2f128_pd(v1, v2, 0x20);
-            output[1] = _mm256_permute2f128_pd(v1, v2, 0x31);
-        }
-    };
-    
-    template<>
-    struct SIMDVector<float, 8> : public SIMDVectorBase<float, __m256, 8>
+    static void interleave(const SIMDType<double, 4> *inReal, const SIMDType<double, 4> *inImag, SIMDType<double, 4> *output)
     {
-        SIMDVector() {}
-        SIMDVector(__m256 a) : SIMDVectorBase(a) {}
-        friend SIMDVector operator + (const SIMDVector &a, const SIMDVector &b) { return _mm256_add_ps(a.mVal, b.mVal); }
-        friend SIMDVector operator - (const SIMDVector &a, const SIMDVector &b) { return _mm256_sub_ps(a.mVal, b.mVal); }
-        friend SIMDVector operator * (const SIMDVector &a, const SIMDVector &b) { return _mm256_mul_ps(a.mVal, b.mVal); }
-        
-        static void deinterleave(const SIMDVector *input, SIMDVector *outReal, SIMDVector *outImag)
-        {
-            const __m256 v1 = _mm256_permute2f128_ps(input[0].mVal, input[1].mVal, 0x20);
-            const __m256 v2 = _mm256_permute2f128_ps(input[0].mVal, input[1].mVal, 0x31);
+        const __m256d v1 = _mm256_unpacklo_pd(inReal->mVal, inImag->mVal);
+        const __m256d v2 = _mm256_unpackhi_pd(inReal->mVal, inImag->mVal);
             
-            *outReal = _mm256_shuffle_ps(v1, v2, 0x88);
-            *outImag = _mm256_shuffle_ps(v1, v2, 0xDD);
-        }
-        
-        static void interleave(const SIMDVector *inReal, const SIMDVector *inImag, SIMDVector *output)
-        {
-            const __m256 v1 = _mm256_unpacklo_ps(inReal->mVal, inImag->mVal);
-            const __m256 v2 = _mm256_unpackhi_ps(inReal->mVal, inImag->mVal);
+        output[0] = _mm256_permute2f128_pd(v1, v2, 0x20);
+        output[1] = _mm256_permute2f128_pd(v1, v2, 0x31);
+    }
+    
+    static void deinterleave(const SIMDType<float, 8> *input, SIMDType<float, 8> *outReal, SIMDType<float, 8> *outImag)
+    {
+        const __m256 v1 = _mm256_permute2f128_ps(input[0].mVal, input[1].mVal, 0x20);
+        const __m256 v2 = _mm256_permute2f128_ps(input[0].mVal, input[1].mVal, 0x31);
             
-            output[0] = _mm256_permute2f128_ps(v1, v2, 0x20);
-            output[1] = _mm256_permute2f128_ps(v1, v2, 0x31);
-        }
-    };
+        *outReal = _mm256_shuffle_ps(v1, v2, 0x88);
+        *outImag = _mm256_shuffle_ps(v1, v2, 0xDD);
+    }
+        
+    static void interleave(const SIMDType<float, 8> *inReal, const SIMDType<float, 8> *inImag, SIMDType<float, 8> *output)
+    {
+        const __m256 v1 = _mm256_unpacklo_ps(inReal->mVal, inImag->mVal);
+        const __m256 v2 = _mm256_unpackhi_ps(inReal->mVal, inImag->mVal);
+            
+        output[0] = _mm256_permute2f128_ps(v1, v2, 0x20);
+        output[1] = _mm256_permute2f128_ps(v1, v2, 0x31);
+    }
     
 #endif
     
 #if defined(__AVX512F__)
     
-    template<>
-    struct SIMDVector<double, 8> : public SIMDVectorBase<double, __m512d, 8>
+    static void deinterleave(const SIMDType<double, 8> *input, SIMDType<double, 8> *outReal, SIMDType<double, 8> *outImag)
     {
-        SIMDVector() {}
-        SIMDVector(__m512d a) : SIMDVectorBase(a) {}
-        friend SIMDVector operator + (const SIMDVector &a, const SIMDVector &b) { return _mm512_add_pd(a.mVal, b.mVal); }
-        friend SIMDVector operator - (const SIMDVector &a, const SIMDVector &b) { return _mm512_sub_pd(a.mVal, b.mVal); }
-        friend SIMDVector operator * (const SIMDVector &a, const SIMDVector &b) { return _mm512_mul_pd(a.mVal, b.mVal); }
+        *outReal = _mm512_unpacklo_pd(input[0].mVal, input[1].mVal);
+        *outImag = _mm512_unpackhi_pd(input[0].mVal, input[1].mVal);
+    }
         
-        static void deinterleave(const SIMDVector *input, SIMDVector *outReal, SIMDVector *outImag)
-        {
-            *outReal = _mm512_unpacklo_pd(input[0].mVal, input[1].mVal);
-            *outImag = _mm512_unpackhi_pd(input[0].mVal, input[1].mVal);
-        }
-        
-        static void interleave(const SIMDVector *inReal, const SIMDVector *inImag, SIMDVector *output)
-        {
-            output[0] = _mm512_unpacklo_pd(inReal->mVal, inImag->mVal);
-            output[1] = _mm512_unpackhi_pd(inReal->mVal, inImag->mVal);
-        }
-    };
+    static void interleave(const SIMDType<double, 8> *inReal, const SIMDType<double, 8> *inImag, SIMDType<double, 8> *output)
+    {
+        output[0] = _mm512_unpacklo_pd(inReal->mVal, inImag->mVal);
+        output[1] = _mm512_unpackhi_pd(inReal->mVal, inImag->mVal);
+    }
     
-    template<>
-    struct SIMDVector<float, 16> : public SIMDVectorBase<float, __m512, 16>
+    static void deinterleave(const SIMDType<float, 16> *input, SIMDType<float, 16> *outReal, SIMDType<float, 16> *outImag)
     {
-        SIMDVector() {}
-        SIMDVector(__m512 a) : SIMDVectorBase(a) {}
-        friend SIMDVector operator + (const SIMDVector &a, const SIMDVector &b) { return _mm512_add_ps(a.mVal, b.mVal); }
-        friend SIMDVector operator - (const SIMDVector &a, const SIMDVector &b) { return _mm512_sub_ps(a.mVal, b.mVal); }
-        friend SIMDVector operator * (const SIMDVector &a, const SIMDVector &b) { return _mm512_mul_ps(a.mVal, b.mVal); }
+        *outReal = _mm512_unpacklo_ps(input[0].mVal, input[1].mVal);
+        *outImag = _mm512_unpackhi_ps(input[0].mVal, input[1].mVal);
+    }
         
-        static void deinterleave(const SIMDVector *input, SIMDVector *outReal, SIMDVector *outImag)
-        {
-            *outReal = _mm512_unpacklo_ps(input[0].mVal, input[1].mVal);
-            *outImag = _mm512_unpackhi_ps(input[0].mVal, input[1].mVal);
-        }
-        
-        static void interleave(const SIMDVector *inReal, const SIMDVector *inImag, SIMDVector *output)
-        {
-            output[0] = _mm512_unpacklo_ps(inReal->mVal, inImag->mVal);
-            output[1] = _mm512_unpackhi_ps(inReal->mVal, inImag->mVal);
-        }
-    };
+    static void interleave(const SIMDType<float, 16> *inReal, const SIMDType<float, 16> *inImag, SIMDType *output)
+    {
+        output[0] = _mm512_unpacklo_ps(inReal->mVal, inImag->mVal);
+        output[1] = _mm512_unpackhi_ps(inReal->mVal, inImag->mVal);
+    }
     
 #endif
     
 #if defined(__arm__) || defined(__arm64__)  || defined(__aarch64__)
     
-    template<>
-    struct SIMDVector<float, 4> : public SIMDVectorBase<float, float32x4_t, 4>
+    static void deinterleave(const SIMDType<float, 4> *input, SIMDType<float, 4> *outReal, SIMDType<float, 4> *outImag)
     {
-        SIMDVector() {}
-        SIMDVector(float32x4_t a) : SIMDVectorBase(a) {}
-        friend SIMDVector operator + (const SIMDVector& a, const SIMDVector& b) { return vaddq_f32(a.mVal, b.mVal); }
-        friend SIMDVector operator - (const SIMDVector& a, const SIMDVector& b) { return vsubq_f32(a.mVal, b.mVal); }
-        friend SIMDVector operator * (const SIMDVector& a, const SIMDVector& b) { return vmulq_f32(a.mVal, b.mVal); }
+        float32x4x2_t v = vuzpq_f32(input[0].mVal, input[1].mVal);
+        *outReal = v.val[0];
+        *outImag = v.val[1];
+    }
         
-        static void deinterleave(const SIMDVector *input, SIMDVector *outReal, SIMDVector *outImag)
-        {
-            float32x4x2_t v = vuzpq_f32(input[0].mVal, input[1].mVal);
-            *outReal = v.val[0];
-            *outImag = v.val[1];
-        }
-        
-        static void interleave(const SIMDVector *inReal, const SIMDVector *inImag, SIMDVector *output)
-        {
-            float32x4x2_t v = vzipq_f32(inReal->mVal, inImag->mVal);
-            output[0] = v.val[0];
-            output[1] = v.val[1];
-        }
-    };
+    static void interleave(const SIMDType<float, 4> *inReal, const SIMDType<float, 4> *inImag, SIMDType<float, 4> *output)
+    {
+        float32x4x2_t v = vzipq_f32(inReal->mVal, inImag->mVal);
+        output[0] = v.val[0];
+        output[1] = v.val[1];
+    }
     
 #endif
     
     // ******************** A Vector of 4 Items (Made of Vectors / Scalars) ******************** //
     
     template <class T, int vec_size>
-    struct Vector4x
-    {
-        typedef SIMDVector<T, vec_size> ArrayType;
-        static constexpr int array_size = 4 / vec_size;
-        
-        Vector4x() {}
-        Vector4x(const Vector4x *ptr) { *this = *ptr; }
-        Vector4x(const T *array) { std::memcpy(mData, array, sizeof(ArrayType) * array_size); }
-        
-        // This template allows a static loop
-        
-        template <int first, int last>
-        struct static_for
-        {
-            template <typename Fn>
-            void operator()(Vector4x &result, const Vector4x &a, const Vector4x &b, Fn const& fn) const
-            {
-                if (first < last)
-                {
-                    result.mData[first] = fn(a.mData[first], b.mData[first]);
-                    static_for<first + 1, last>()(result, a, b, fn);
-                }
-            }
-        };
-        
-        // This specialisation avoids infinite recursion
-        
-        template <int N>
-        struct static_for<N, N>
-        {
-            template <typename Fn>
-            void operator()(Vector4x & /* result */, const Vector4x & /* a */, const Vector4x & /* b */ , Fn const& /* fn */) const {}
-        };
-        
-        template <typename Op>
-        friend Vector4x operate(const Vector4x& a, const Vector4x& b, Op op)
-        {
-            Vector4x result;
-            
-            static_for<0, array_size>()(result, a, b, op);
-            
-            return result;
-        }
-        
-        friend Vector4x operator + (const Vector4x& a, const Vector4x& b)
-        {
-            return operate(a, b, std::plus<ArrayType>());
-        }
-        
-        friend Vector4x operator - (const Vector4x& a, const Vector4x& b)
-        {
-            return operate(a, b, std::minus<ArrayType>());
-        }
-        
-        friend Vector4x operator * (const Vector4x& a, const Vector4x& b)
-        {
-            return operate(a, b, std::multiplies<ArrayType>());
-        }
-        
-        ArrayType mData[array_size];
-    };
+    using Vector4x = SizedVector<T, vec_size, 4>;
     
     // ******************** Setup Creation and Destruction ******************** //
     
