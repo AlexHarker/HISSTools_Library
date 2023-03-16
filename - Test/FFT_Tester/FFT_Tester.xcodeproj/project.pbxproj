@@ -29,6 +29,7 @@
 		B82AAC331F61FC1C0015CDCF /* HISSTools_FFT.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = HISSTools_FFT.hpp; path = ../../../HISSTools_FFT/HISSTools_FFT.hpp; sourceTree = "<group>"; };
 		B82AAC371F6217970015CDCF /* HISSTools_FFT_Core.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = HISSTools_FFT_Core.hpp; path = ../../../HISSTools_FFT/HISSTools_FFT_Core.hpp; sourceTree = "<group>"; };
 		B8378E0F22BCC9FF004F8598 /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = System/Library/Frameworks/Accelerate.framework; sourceTree = SDKROOT; };
+		B8F160B129C38E3200EF098B /* HISSTools_FFT_Types.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = HISSTools_FFT_Types.hpp; path = ../../../HISSTools_FFT/HISSTools_FFT_Types.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -64,6 +65,7 @@
 			isa = PBXGroup;
 			children = (
 				B82AAC331F61FC1C0015CDCF /* HISSTools_FFT.hpp */,
+				B8F160B129C38E3200EF098B /* HISSTools_FFT_Types.hpp */,
 				B82AAC371F6217970015CDCF /* HISSTools_FFT_Core.hpp */,
 				B82AAC2B1F61FC0C0015CDCF /* main.cpp */,
 			);

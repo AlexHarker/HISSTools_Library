@@ -1,16 +1,17 @@
 
-
 #ifndef HISSTOOLS_FFT_HPP
 #define HISSTOOLS_FFT_HPP
 
+#include "HISSTools_FFT_Types.hpp"
+
 #include <stdint.h>
 
-/** @file HISSTools_FFT.hpp @brief The main interface for the HISSTools FFT.
+/** @file HISSTools_FFT.hpp @brief The interface for the HISSTools FFT.
  
-    The FFT is compatiable with the FFT routines provided by Apple's vDSP library and can be configured to use this fast FFT when available. */
+    The FFT is compatible with the FFT routines provided by Apple's vDSP library and can be configured to use this fast FFT when available. */
 
 /**
- The NO_NATIVE_FFT preprocessor command instructs the HISSTools FFT to use its own code even if the Apple FFT is available. You must link against the Accelerate framework if this is not defined under Mac OS. It is not a default setting
+ The NO_NATIVE_FFT preprocessor command instructs the HISSTools FFT to use its own code even if the Apple FFT is available. You must link against the Accelerate framework if this is not defined under Mac OS. The default is to use the Apple FFT.
  */
 
 // Platform check for Apple FFT selection
@@ -19,35 +20,13 @@
 #define USE_APPLE_FFT
 #endif
 
-// SetupBase is a helper utility for binding FFT setups to a template type for a given type.
-
-template <class T, class U>
-struct SetupBase
-{
-    using scalar_type = T;
-    
-    SetupBase() : m_setup(nullptr) {}
-    SetupBase(U setup) : m_setup(setup) {}
-    
-    operator U() { return m_setup; }
-    
-    U m_setup;
-};
-
-// Forward Declaration
-
-template <class T>
-struct Setup;
-
 /**
     Split is a split of complex data (of a given type) for an FFT stored against two pointers (real and imaginary parts).
  */
 
 template <class T>
-struct Split
+struct Split : impl::TypeBase<T>
 {
-    using scalar_type = T;
-    
     Split() {}
     Split(T *real, T *imag) : realp(real), imagp(imag) {}
     
@@ -58,49 +37,48 @@ struct Split
     T *imagp;
 };
 
+/**
+    Setup is an opaque structure that holds the twiddle factors for an FFT of up to a given size.
+ */
+
+template <class T>
+struct Setup;
+
 // Type definitions for Apple / HISSTools FFT
 
 #if defined (USE_APPLE_FFT)
 
 #include <Accelerate/Accelerate.h>
 
-// Class specialisations for use with the Apple FFT
+// Type specialisations for use with the Apple FFT
+
+// Splits
 
 template<>
-struct Split<double> : DSPDoubleSplitComplex
+struct Split<double> : DSPDoubleSplitComplex, impl::TypeBase<double>
 {
-    using scalar_type = double;
-    
     Split() {}
-    Split(double *real, double *imag)
-    {
-        realp = real;
-        imagp = imag;
-    }
+    Split(double *real, double *imag) : DSPDoubleSplitComplex{ real, imag } {}
 };
 
 template<>
-struct Split<float> : DSPSplitComplex
+struct Split<float> : DSPSplitComplex, impl::TypeBase<float>
 {
-    using scalar_type = float;
-    
     Split() {}
-    Split(float *real, float *imag)
-    {
-        realp = real;
-        imagp = imag;
-    }
+    Split(float *real, float *imag) : DSPSplitComplex{ real, imag } {}
 };
 
+// Setups
+
 template<>
-struct Setup<double> : SetupBase<double, FFTSetupD>
+struct Setup<double> : impl::SetupBase<double, FFTSetupD>
 {
     Setup() {}
     Setup(FFTSetupD setup) : SetupBase(setup) {}
 };
 
 template<>
-struct Setup<float> : SetupBase<float, FFTSetup>
+struct Setup<float> : impl::SetupBase<float, FFTSetup>
 {
     Setup() {}
     Setup(FFTSetup setup) : SetupBase(setup) {}
@@ -108,20 +86,20 @@ struct Setup<float> : SetupBase<float, FFTSetup>
 
 #endif
 
+// N.B. Include once basic types are defined
+
 #include "HISSTools_FFT_Core.hpp"
 
 #if !defined (USE_APPLE_FFT)
 
-/**
- Setup is an opaque setup structure for an FFT of a given type T.
- */
+// Setup definition when using the HISSTools codepath
 
 template <class T>
-struct Setup: SetupBase<T, hisstools_fft_impl::SetupType<T> *>
+struct Setup : impl::SetupBase<T, hisstools_fft_impl::SetupType<T> *>
 {
     Setup() {}
     Setup(hisstools_fft_impl::SetupType<T> *setup)
-    : SetupBase<T, hisstools_fft_impl::SetupType<T> *>(setup)
+    : impl::SetupBase<T, hisstools_fft_impl::SetupType<T> *>(setup)
     {}
 };
 
