@@ -433,48 +433,48 @@ namespace hisstools_fft_impl
     template <class T, int vec_size>
     void pass_1_2_reorder(Split<T> *input, uintptr_t length)
     {
-        using Vector = Vector4x<T, vec_size> ;
+        using VecType = Vector4x<T, vec_size> ;
         
-        Vector *r1_ptr = reinterpret_cast<Vector *>(input->realp);
-        Vector *r2_ptr = r1_ptr + (length >> 4);
-        Vector *r3_ptr = r2_ptr + (length >> 4);
-        Vector *r4_ptr = r3_ptr + (length >> 4);
-        Vector *i1_ptr = reinterpret_cast<Vector *>(input->imagp);
-        Vector *i2_ptr = i1_ptr + (length >> 4);
-        Vector *i3_ptr = i2_ptr + (length >> 4);
-        Vector *i4_ptr = i3_ptr + (length >> 4);
+        VecType *r1_ptr = reinterpret_cast<VecType *>(input->realp);
+        VecType *r2_ptr = r1_ptr + (length >> 4);
+        VecType *r3_ptr = r2_ptr + (length >> 4);
+        VecType *r4_ptr = r3_ptr + (length >> 4);
+        VecType *i1_ptr = reinterpret_cast<VecType *>(input->imagp);
+        VecType *i2_ptr = i1_ptr + (length >> 4);
+        VecType *i3_ptr = i2_ptr + (length >> 4);
+        VecType *i4_ptr = i3_ptr + (length >> 4);
         
         for (uintptr_t i = 0; i < length >> 4; i++)
         {
-            const Vector r1 = *r1_ptr;
-            const Vector i1 = *i1_ptr;
-            const Vector r2 = *r2_ptr;
-            const Vector i2 = *i2_ptr;
+            const VecType r1 = *r1_ptr;
+            const VecType i1 = *i1_ptr;
+            const VecType r2 = *r2_ptr;
+            const VecType i2 = *i2_ptr;
             
-            const Vector r3 = *r3_ptr;
-            const Vector i3 = *i3_ptr;
-            const Vector r4 = *r4_ptr;
-            const Vector i4 = *i4_ptr;
+            const VecType r3 = *r3_ptr;
+            const VecType i3 = *i3_ptr;
+            const VecType r4 = *r4_ptr;
+            const VecType i4 = *i4_ptr;
             
-            const Vector r5 = r1 + r3;
-            const Vector r6 = r2 + r4;
-            const Vector r7 = r1 - r3;
-            const Vector r8 = r2 - r4;
+            const VecType r5 = r1 + r3;
+            const VecType r6 = r2 + r4;
+            const VecType r7 = r1 - r3;
+            const VecType r8 = r2 - r4;
             
-            const Vector i5 = i1 + i3;
-            const Vector i6 = i2 + i4;
-            const Vector i7 = i1 - i3;
-            const Vector i8 = i2 - i4;
+            const VecType i5 = i1 + i3;
+            const VecType i6 = i2 + i4;
+            const VecType i7 = i1 - i3;
+            const VecType i8 = i2 - i4;
             
-            const Vector rA = r5 + r6;
-            const Vector rB = r5 - r6;
-            const Vector rC = r7 + i8;
-            const Vector rD = r7 - i8;
+            const VecType rA = r5 + r6;
+            const VecType rB = r5 - r6;
+            const VecType rC = r7 + i8;
+            const VecType rD = r7 - i8;
             
-            const Vector iA = i5 + i6;
-            const Vector iB = i5 - i6;
-            const Vector iC = i7 - r8;
-            const Vector iD = i7 + r8;
+            const VecType iA = i5 + i6;
+            const VecType iB = i5 - i6;
+            const VecType iC = i7 - r8;
+            const VecType iD = i7 + r8;
             
             shuffle4(rA, rB, rC, rD, r1_ptr++, r2_ptr++, r3_ptr++, r4_ptr++);
             shuffle4(iA, iB, iC, iD, i1_ptr++, i2_ptr++, i3_ptr++, i4_ptr++);
@@ -506,41 +506,41 @@ namespace hisstools_fft_impl
     template <class T, int vec_size>
     void pass_3_reorder(Split<T> *input, uintptr_t length)
     {
-        using Vector = Vector4x<T, vec_size>;
+        using VecType = Vector4x<T, vec_size>;
         
         uintptr_t offset = length >> 5;
         uintptr_t outerLoop = length >> 6;
         
-        Vector tr;
-        Vector ti;
+        VecType tr;
+        VecType ti;
         
         pass_3_twiddle(tr, ti);
         
-        Vector *r1_ptr = reinterpret_cast<Vector *>(input->realp);
-        Vector *i1_ptr = reinterpret_cast<Vector *>(input->imagp);
-        Vector *r2_ptr = r1_ptr + offset;
-        Vector *i2_ptr = i1_ptr + offset;
+        VecType *r1_ptr = reinterpret_cast<VecType *>(input->realp);
+        VecType *i1_ptr = reinterpret_cast<VecType *>(input->imagp);
+        VecType *r2_ptr = r1_ptr + offset;
+        VecType *i2_ptr = i1_ptr + offset;
         
         for (uintptr_t i = 0, j = 0; i < length >> 1; i += 8)
         {
             // Get input
             
-            const Vector r1(r1_ptr);
-            const Vector r2(r1_ptr + 1);
-            const Vector i1(i1_ptr);
-            const Vector i2(i1_ptr + 1);
+            const VecType r1(r1_ptr);
+            const VecType r2(r1_ptr + 1);
+            const VecType i1(i1_ptr);
+            const VecType i2(i1_ptr + 1);
             
-            const Vector r3(r2_ptr);
-            const Vector r4(r2_ptr + 1);
-            const Vector i3(i2_ptr);
-            const Vector i4(i2_ptr + 1);
+            const VecType r3(r2_ptr);
+            const VecType r4(r2_ptr + 1);
+            const VecType i3(i2_ptr);
+            const VecType i4(i2_ptr + 1);
             
             // Multiply by twiddle
             
-            const Vector r5 = (r3 * tr) - (i3 * ti);
-            const Vector i5 = (r3 * ti) + (i3 * tr);
-            const Vector r6 = (r4 * tr) - (i4 * ti);
-            const Vector i6 = (r4 * ti) + (i4 * tr);
+            const VecType r5 = (r3 * tr) - (i3 * ti);
+            const VecType i5 = (r3 * ti) + (i3 * tr);
+            const VecType r6 = (r4 * tr) - (i4 * ti);
+            const VecType i6 = (r4 * ti) + (i4 * tr);
             
             // Store output (swapping as necessary)
             
@@ -569,29 +569,29 @@ namespace hisstools_fft_impl
     template <class T, int vec_size>
     void pass_3(Split<T> *input, uintptr_t length)
     {
-        using Vector = Vector4x<T, vec_size>;
+        using VecType = Vector4x<T, vec_size>;
 
-        Vector tr;
-        Vector ti;
+        VecType tr;
+        VecType ti;
         
         pass_3_twiddle(tr, ti);
         
-        Vector *r_ptr = reinterpret_cast<Vector *>(input->realp);
-        Vector *i_ptr = reinterpret_cast<Vector *>(input->imagp);
+        VecType *r_ptr = reinterpret_cast<VecType *>(input->realp);
+        VecType *i_ptr = reinterpret_cast<VecType *>(input->imagp);
         
         for (uintptr_t i = 0; i < length >> 3; i++)
         {
             // Get input
             
-            const Vector r1(r_ptr);
-            const Vector r2(r_ptr + 1);
-            const Vector i1(i_ptr);
-            const Vector i2(i_ptr + 1);
+            const VecType r1(r_ptr);
+            const VecType r2(r_ptr + 1);
+            const VecType i1(i_ptr);
+            const VecType i2(i_ptr + 1);
             
             // Multiply by twiddle
             
-            const Vector r3 = (r2 * tr) - (i2 * ti);
-            const Vector i3 = (r2 * ti) + (i2 * tr);
+            const VecType r3 = (r2 * tr) - (i2 * ti);
+            const VecType i3 = (r2 * ti) + (i2 * tr);
             
             // Store output
             
@@ -608,7 +608,7 @@ namespace hisstools_fft_impl
     template <class T, int vec_size>
     void pass_trig_table_reorder(Split<T> *input, Setup<T> *setup, uintptr_t length, uintptr_t pass)
     {
-        using Vector = SIMDType<T, vec_size>;
+        using VecType = SIMDType<T, vec_size>;
 
         uintptr_t size = static_cast<uintptr_t>(2u) << pass;
         uintptr_t incr = size / (vec_size << 1);
@@ -616,39 +616,39 @@ namespace hisstools_fft_impl
         uintptr_t offset = (length >> pass) / (vec_size << 1);
         uintptr_t outerLoop = ((length >> 1) / size) / (static_cast<uintptr_t>(1u) << pass);
         
-        Vector *r1_ptr = reinterpret_cast<Vector *>(input->realp);
-        Vector *i1_ptr = reinterpret_cast<Vector *>(input->imagp);
-        Vector *r2_ptr = r1_ptr + offset;
-        Vector *i2_ptr = i1_ptr + offset;
+        VecType *r1_ptr = reinterpret_cast<VecType *>(input->realp);
+        VecType *i1_ptr = reinterpret_cast<VecType *>(input->imagp);
+        VecType *r2_ptr = r1_ptr + offset;
+        VecType *i2_ptr = i1_ptr + offset;
         
         for (uintptr_t i = 0, j = 0; i < (length >> 1); loop += size)
         {
-            Vector *tr_ptr = reinterpret_cast<Vector *>(setup->tables[pass - (trig_table_offset - 1)].realp);
-            Vector *ti_ptr = reinterpret_cast<Vector *>(setup->tables[pass - (trig_table_offset - 1)].imagp);
+            VecType *tr_ptr = reinterpret_cast<VecType *>(setup->tables[pass - (trig_table_offset - 1)].realp);
+            VecType *ti_ptr = reinterpret_cast<VecType *>(setup->tables[pass - (trig_table_offset - 1)].imagp);
             
             for (; i < loop; i += (vec_size << 1))
             {
                 // Get input and twiddle
                 
-                const Vector tr = *tr_ptr++;
-                const Vector ti = *ti_ptr++;
+                const VecType tr = *tr_ptr++;
+                const VecType ti = *ti_ptr++;
                 
-                const Vector r1 = *r1_ptr;
-                const Vector i1 = *i1_ptr;
-                const Vector r2 = *r2_ptr;
-                const Vector i2 = *i2_ptr;
+                const VecType r1 = *r1_ptr;
+                const VecType i1 = *i1_ptr;
+                const VecType r2 = *r2_ptr;
+                const VecType i2 = *i2_ptr;
                 
-                const Vector r3 = *(r1_ptr + incr);
-                const Vector i3 = *(i1_ptr + incr);
-                const Vector r4 = *(r2_ptr + incr);
-                const Vector i4 = *(i2_ptr + incr);
+                const VecType r3 = *(r1_ptr + incr);
+                const VecType i3 = *(i1_ptr + incr);
+                const VecType r4 = *(r2_ptr + incr);
+                const VecType i4 = *(i2_ptr + incr);
                 
                 // Multiply by twiddle
                 
-                const Vector r5 = (r2 * tr) - (i2 * ti);
-                const Vector i5 = (r2 * ti) + (i2 * tr);
-                const Vector r6 = (r4 * tr) - (i4 * ti);
-                const Vector i6 = (r4 * ti) + (i4 * tr);
+                const VecType r5 = (r2 * tr) - (i2 * ti);
+                const VecType i5 = (r2 * ti) + (i2 * tr);
+                const VecType r6 = (r4 * tr) - (i4 * ti);
+                const VecType i6 = (r4 * ti) + (i4 * tr);
                 
                 // Store output (swapping as necessary)
                 
@@ -683,38 +683,38 @@ namespace hisstools_fft_impl
     template <class T, int vec_size>
     void pass_trig_table(Split<T> *input, Setup<T> *setup, uintptr_t length, uintptr_t pass)
     {
-        using Vector = SIMDType<T, vec_size>;
+        using VecType = SIMDType<T, vec_size>;
 
         uintptr_t size = static_cast<uintptr_t>(2u) << pass;
         uintptr_t incr = size / (vec_size << 1);
         uintptr_t loop = size;
         
-        Vector *r1_ptr = reinterpret_cast<Vector *>(input->realp);
-        Vector *i1_ptr = reinterpret_cast<Vector *>(input->imagp);
-        Vector *r2_ptr = r1_ptr + (size >> 1) / vec_size;
-        Vector *i2_ptr = i1_ptr + (size >> 1) / vec_size;
+        VecType *r1_ptr = reinterpret_cast<VecType *>(input->realp);
+        VecType *i1_ptr = reinterpret_cast<VecType *>(input->imagp);
+        VecType *r2_ptr = r1_ptr + (size >> 1) / vec_size;
+        VecType *i2_ptr = i1_ptr + (size >> 1) / vec_size;
         
         for (uintptr_t i = 0; i < length; loop += size)
         {
-            Vector *tr_ptr = reinterpret_cast<Vector *>(setup->tables[pass - (trig_table_offset - 1)].realp);
-            Vector *ti_ptr = reinterpret_cast<Vector *>(setup->tables[pass - (trig_table_offset - 1)].imagp);
+            VecType *tr_ptr = reinterpret_cast<VecType *>(setup->tables[pass - (trig_table_offset - 1)].realp);
+            VecType *ti_ptr = reinterpret_cast<VecType *>(setup->tables[pass - (trig_table_offset - 1)].imagp);
             
             for (; i < loop; i += (vec_size << 1))
             {
                 // Get input and twiddle factors
                 
-                const Vector tr = *tr_ptr++;
-                const Vector ti = *ti_ptr++;
+                const VecType tr = *tr_ptr++;
+                const VecType ti = *ti_ptr++;
                 
-                const Vector r1 = *r1_ptr;
-                const Vector i1 = *i1_ptr;
-                const Vector r2 = *r2_ptr;
-                const Vector i2 = *i2_ptr;
+                const VecType r1 = *r1_ptr;
+                const VecType i1 = *i1_ptr;
+                const VecType r2 = *r2_ptr;
+                const VecType i2 = *i2_ptr;
                 
                 // Multiply by twiddle
                 
-                const Vector r3 = (r2 * tr) - (i2 * ti);
-                const Vector i3 = (r2 * ti) + (i2 * tr);
+                const VecType r3 = (r2 * tr) - (i2 * ti);
+                const VecType i3 = (r2 * ti) + (i2 * tr);
                 
                 // Store output
                 
@@ -987,11 +987,12 @@ namespace hisstools_fft_impl
     template <class T, int vec_size>
     void unzip_impl(const T *input, T *real, T *imag, uintptr_t half_length)
     {
-        using Vector = SIMDType<T, vec_size>;
+        using VecType = SIMDType<T, vec_size>;
 
-        const Vector *in_ptr = reinterpret_cast<const Vector*>(input);
-        Vector *realp = reinterpret_cast<Vector*>(real);
-        Vector *imagp = reinterpret_cast<Vector*>(imag);
+        const VecType *in_ptr = reinterpret_cast<const VecType*>(input);
+        
+        VecType *realp = reinterpret_cast<VecType*>(real);
+        VecType *imagp = reinterpret_cast<VecType*>(imag);
         
         for (uintptr_t i = 0; i < (half_length / vec_size); i++, in_ptr += 2)
             deinterleave(in_ptr, realp++, imagp++);
@@ -1030,11 +1031,12 @@ namespace hisstools_fft_impl
     template <class T, int vec_size>
     void zip_impl(const T *real, const T *imag, T *output, uintptr_t half_length)
     {
-        using Vector = SIMDType<T, vec_size>;
+        using VecType = SIMDType<T, vec_size>;
 
-        const Vector *realp = reinterpret_cast<const Vector*>(real);
-        const Vector *imagp = reinterpret_cast<const Vector*>(imag);
-        Vector *out_ptr = reinterpret_cast<Vector*>(output);
+        const VecType *realp = reinterpret_cast<const VecType*>(real);
+        const VecType *imagp = reinterpret_cast<const VecType*>(imag);
+        
+        VecType *out_ptr = reinterpret_cast<VecType*>(output);
         
         for (uintptr_t i = 0; i < (half_length / vec_size); i++, out_ptr += 2)
             interleave(realp++, imagp++, out_ptr);
