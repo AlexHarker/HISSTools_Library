@@ -826,13 +826,13 @@ namespace hisstools_fft_impl
     template <class T>
     void unzip_complex(const T *input, DSPSplitComplex *output, uintptr_t half_length)
     {
-        vDSP_ctoz((COMPLEX *) input, (vDSP_Stride) 2, output, (vDSP_Stride) 1, (vDSP_Length) half_length);
+        vDSP_ctoz(reinterpret_cast<const COMPLEX *>(input), 2, output, 1, half_length);
     }
     
     template <class T>
     void unzip_complex(const T *input, DSPDoubleSplitComplex *output, uintptr_t half_length)
     {
-        vDSP_ctozD((DOUBLE_COMPLEX *) input, (vDSP_Stride) 2, output, (vDSP_Stride) 1, (vDSP_Length) half_length);
+        vDSP_ctozD(reinterpret_cast<const DOUBLE_COMPLEX *>(input), 2, output, 1, half_length);
     }
     
     template<>

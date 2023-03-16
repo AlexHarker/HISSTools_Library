@@ -10,64 +10,64 @@
 
 void hisstools_fft(FFT_SETUP_D setup, FFT_SPLIT_COMPLEX_D *input, uintptr_t log2n)
 {
-    vDSP_fft_zipD(setup, input, (vDSP_Stride) 1, log2n, FFT_FORWARD);
+    vDSP_fft_zipD(setup, input, 1, log2n, FFT_FORWARD);
 }
 
 void hisstools_fft(FFT_SETUP_F setup, FFT_SPLIT_COMPLEX_F *input, uintptr_t log2n)
 {
-    vDSP_fft_zip(setup, input, (vDSP_Stride) 1, log2n, FFT_FORWARD);
+    vDSP_fft_zip(setup, input, 1, log2n, FFT_FORWARD);
 }
 
 void hisstools_rfft(FFT_SETUP_D setup, FFT_SPLIT_COMPLEX_D *input, uintptr_t log2n)
 {
-    vDSP_fft_zripD(setup, input, (vDSP_Stride) 1, log2n, FFT_FORWARD);
+    vDSP_fft_zripD(setup, input, 1, log2n, FFT_FORWARD);
 }
 
 void hisstools_rfft(FFT_SETUP_F setup, FFT_SPLIT_COMPLEX_F *input, uintptr_t log2n)
 {
-    vDSP_fft_zrip(setup, input, (vDSP_Stride) 1, log2n, FFT_FORWARD);
+    vDSP_fft_zrip(setup, input, 1, log2n, FFT_FORWARD);
 }
 
 void hisstools_ifft(FFT_SETUP_D setup, FFT_SPLIT_COMPLEX_D *input, uintptr_t log2n)
 {
-    vDSP_fft_zipD(setup, input, (vDSP_Stride) 1, log2n, FFT_INVERSE);
+    vDSP_fft_zipD(setup, input, 1, log2n, FFT_INVERSE);
 }
 
 void hisstools_ifft(FFT_SETUP_F setup, FFT_SPLIT_COMPLEX_F *input, uintptr_t log2n)
 {
-    vDSP_fft_zip(setup, input, (vDSP_Stride) 1, log2n, FFT_INVERSE);
+    vDSP_fft_zip(setup, input, 1, log2n, FFT_INVERSE);
 }
 
 void hisstools_rifft(FFT_SETUP_D setup, FFT_SPLIT_COMPLEX_D *input, uintptr_t log2n)
 {
-    vDSP_fft_zripD(setup, input, (vDSP_Stride) 1, log2n, FFT_INVERSE);
+    vDSP_fft_zripD(setup, input, 1, log2n, FFT_INVERSE);
 }
 
 void hisstools_rifft(FFT_SETUP_F setup, FFT_SPLIT_COMPLEX_F *input, uintptr_t log2n)
 {
-    vDSP_fft_zrip(setup, input, (vDSP_Stride) 1, log2n, FFT_INVERSE);
+    vDSP_fft_zrip(setup, input, 1, log2n, FFT_INVERSE);
 }
 
 // Zip and Unzip
 
 void hisstools_unzip(const double *input, FFT_SPLIT_COMPLEX_D *output, uintptr_t log2n)
 {
-    vDSP_ctozD((DOUBLE_COMPLEX *) input, (vDSP_Stride) 2, output, (vDSP_Stride) 1, (vDSP_Length) (1 << (log2n - 1)));
+    vDSP_ctozD(reinterpret_cast<const DOUBLE_COMPLEX *>(input), 2, output, 1, 1U << (log2n - 1U));
 }
 
 void hisstools_unzip(const float *input, FFT_SPLIT_COMPLEX_F *output, uintptr_t log2n)
 {
-    vDSP_ctoz((COMPLEX *) input, (vDSP_Stride) 2, output, (vDSP_Stride) 1, (vDSP_Length) (1 << (log2n - 1)));
+    vDSP_ctoz(reinterpret_cast<const COMPLEX *>(input), 2, output, 1, 1U << (log2n - 1U));
 }
 
 void hisstools_zip(const FFT_SPLIT_COMPLEX_D *input, double *output, uintptr_t log2n)
 {
-    vDSP_ztocD(input, (vDSP_Stride) 1, (DOUBLE_COMPLEX *) output, (vDSP_Stride) 2, (vDSP_Length) (1 << (log2n - 1)));
+    vDSP_ztocD(input, 1, reinterpret_cast<DOUBLE_COMPLEX *>(output), 2, 1U << (log2n - 1U));
 }
 
 void hisstools_zip(const FFT_SPLIT_COMPLEX_F *input, float *output, uintptr_t log2n)
 {
-    vDSP_ztoc(input, (vDSP_Stride) 1, (COMPLEX *) output, (vDSP_Stride) 2, (vDSP_Length) (1 << (log2n - 1)));
+    vDSP_ztoc(input, 1, reinterpret_cast<COMPLEX *>(output), 2, 1U << (log2n - 1U));
 }
 
 // Setup Create / Destroy
