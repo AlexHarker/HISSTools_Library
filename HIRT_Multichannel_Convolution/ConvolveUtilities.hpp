@@ -1,7 +1,7 @@
 
 #pragma once
 
-#include "../HISSTools_FFT/HISSTools_FFT.h"
+#include "../HISSTools_FFT/HISSTools_FFT.hpp"
 
 #include <algorithm>
 #include <vector>

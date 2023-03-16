@@ -1,6 +1,6 @@
 
-#ifndef __HISSTOOLS_FFT_CORE__
-#define __HISSTOOLS_FFT_CORE__
+#ifndef HISSTOOLS_FFT_CORE_HPP
+#define HISSTOOLS_FFT_CORE_HPP
 
 #include <algorithm>
 #include <cmath>
