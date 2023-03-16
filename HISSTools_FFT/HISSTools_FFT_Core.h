@@ -1,8 +1,8 @@
 
+#include <algorithm>
 #include <cmath>
 #include <cstring>
 #include <cstdlib>
-#include <algorithm>
 #include <functional>
 
 #include "../SIMDSupport.hpp"
