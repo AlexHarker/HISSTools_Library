@@ -167,6 +167,9 @@ public:
             if (m_part_3) m_part_3->process(in, out, num_samples, accumulate || m_part_2);
             if (part_4.get()) part_4.get()->process(in, out, num_samples, accumulate || m_part_3);
         }
+        else if (!accumulate)
+            std::fill_n(out, num_samples, IO(0));
+            
     }
     
     // Set partiioning
