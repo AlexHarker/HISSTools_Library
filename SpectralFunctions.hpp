@@ -29,7 +29,7 @@ namespace impl
     };
     
     template <int N, typename Split, typename Op>
-    void simd_operation(Split *out, Split *in1, Split *in2, uintptr_t fft_size, double scale, Op op)
+    void simd_operation(Split *out, Split *in1, Split *in2, uintptr_t fft_size, typename Infer<Split>::Type scale, Op op)
     {
         using VecType = SIMDType<typename Infer<Split>::Type, N>;
         
