@@ -19,351 +19,293 @@
 #define USE_APPLE_FFT
 #endif
 
+// SetupBase is a helper utility for binding FFT setups to a template type for a given type.
+
+template <class T, class U>
+struct SetupBase
+{
+    using scalar_type = T;
+    
+    SetupBase() : m_setup(nullptr) {}
+    SetupBase(U setup) : m_setup(setup) {}
+    
+    operator U() { return m_setup; }
+    
+    U m_setup;
+};
+
+// Forward Declaration
+
+template <class T>
+struct Setup;
+
 /**
-    Split is a Split for a double-precision FFT.
+    Split is a split of complex data (of a given type) for an FFT stored against two pointers (real and imaginary parts).
  */
 
-template <class T> struct Split
+template <class T>
+struct Split
 {
+    using scalar_type = T;
+    
     Split() {}
     Split(T *real, T *imag) : realp(real), imagp(imag) {}
+    
     /** A pointer to the real portion of the data */
     T *realp;
+    
     /** A pointer to the imaginary portion of the data */
     T *imagp;
 };
 
 // Type definitions for Apple / HISSTools FFT
 
-#if defined(USE_APPLE_FFT)
+#if defined (USE_APPLE_FFT)
 
 #include <Accelerate/Accelerate.h>
 
-using FFT_SETUP_D = FFTSetupD;
-using FFT_SETUP_F = FFTSetup;
+// Class specialisations for use with the Apple FFT
 
-using FFT_SPLIT_COMPLEX_D = struct DSPDoubleSplitComplex;
-using FFT_SPLIT_COMPLEX_F = struct DSPSplitComplex;
+template<>
+struct Split<double> : DSPDoubleSplitComplex
+{
+    using scalar_type = double;
+    
+    Split() {}
+    Split(double *real, double *imag)
+    {
+        realp = real;
+        imagp = imag;
+    }
+};
 
-#else
+template<>
+struct Split<float> : DSPSplitComplex
+{
+    using scalar_type = float;
+    
+    Split() {}
+    Split(float *real, float *imag)
+    {
+        realp = real;
+        imagp = imag;
+    }
+};
+
+template<>
+struct Setup<double> : SetupBase<double, FFTSetupD>
+{
+    Setup() {}
+    Setup(FFTSetupD setup) : SetupBase(setup) {}
+};
+
+template<>
+struct Setup<float> : SetupBase<float, FFTSetup>
+{
+    Setup() {}
+    Setup(FFTSetup setup) : SetupBase(setup) {}
+};
+
+#endif
+
+#include "HISSTools_FFT_Core.h"
+
+#if !defined (USE_APPLE_FFT)
 
 /**
-    FFT_SETUP_D is an opaque setup structure for a double-precision FFT.
+ Setup is an opaque setup structure for an FFT of a given type T.
  */
 
-using FFT_SETUP_D = struct DoubleSetup *;
-
-/**
-    FFT_SETUP_F is an opaque setup structure for a single-precision FFT.
- */
-
-using FFT_SETUP_F = struct FloatSetup *;
-
-/**
-    FFT_SPLIT_COMPLEX_D is a Structure for storing a double-precision complex array in split form.
- */
-
-using FFT_SPLIT_COMPLEX_D = Split<double>;
-
-/**
-    FFT_SPLIT_COMPLEX_F is a Structure for storing a single-precision complex array in split form.
- */
-using FFT_SPLIT_COMPLEX_F = Split<float>;
+template <class T>
+struct Setup: SetupBase<T, hisstools_fft_impl::SetupType<T> *>
+{
+    Setup() {}
+    Setup(hisstools_fft_impl::SetupType<T> *setup)
+    : SetupBase<T, hisstools_fft_impl::SetupType<T> *>(setup)
+    {}
+};
 
 #endif
 
 /**
-    hisstools_create_setup() creates an FFT setup suitable for double-precision FFTs and iFFTs up to a maximum specified size.
+ hisstools_create_setup() creates an FFT setup suitable for FFTs and iFFTs up to a maximum specified size.
  
-	@param	setup           A pointer to an uninitialised FFT_SETUP_D.
-	@param	max_fft_log_2   The log base 2 of the FFT size of the maimum FFT size you wish to support..
+	@param	setup           A pointer to an uninitialised Setup<T>.
+	@param	max_fft_log_2   The log base 2 of the FFT size of the maimum FFT size you wish to support.
 	
-	@remark             On return the object pointed to by setup will be intialsed,
+	@remark                 On return the object pointed to by setup will be intialsed,
  */
 
-void hisstools_create_setup(FFT_SETUP_D *setup, uintptr_t max_fft_log_2);
+template <class T>
+void hisstools_create_setup(Setup<T> *setup, uintptr_t max_fft_log_2)
+{
+    hisstools_fft_impl::create_setup(setup->m_setup, max_fft_log_2);
+}
 
 /**
- hisstools_create_setup() creates an FFT setup suitable for single-precision FFTs and iFFTs up to a maximum specified size.
+    hisstools_destroy_setup() destroys an FFT setup.
  
-	@param	setup           A pointer to an uninitialised FFT_SETUP_F.
-	@param	max_fft_log_2   The log base 2 of the FFT size of the maimum FFT size you wish to support..
-	
-	@remark             On return the object pointed to by setup will be intialsed,
- */
-
-void hisstools_create_setup(FFT_SETUP_F *setup, uintptr_t max_fft_log_2);
-
-/**
-    hisstools_destroy_setup() destroys a double-precision FFT setup.
- 
-	@param	setup		A FFT_SETUP_D (double-precision setup).
+	@param	setup		A Setup<T> (setup of type T).
  
 	@remark             After calling this routine the setup is destroyed.
  */
 
-void hisstools_destroy_setup(FFT_SETUP_D setup);
+template <class T>
+void hisstools_destroy_setup(Setup<T> setup)
+{
+    hisstools_fft_impl::destroy_setup(setup.m_setup);
+}
 
 /**
-    hisstools_destroy_setup() destroys a single-precision FFT setup.
+    hisstools_unzip() performs unzipping prior to an in-place real FFT.
  
-	@param	setup		A FFT_SETUP_F (single-precision setup).
+    @param    input     A pointer to the real input.
+    @param    output    A pointer to a Split<T> structure to unzip to.
+    @param    log2n     The log base 2 of the FFT size.
  
-	@remark             After calling this routine the setup is destroyed.
+    @remark             Prior to running a real FFT the data must be unzipped from a contiguous memory location into a complex split structure. This function performs the unzipping.
  */
 
-void hisstools_destroy_setup(FFT_SETUP_F setup);
+template <class T>
+void hisstools_unzip(const T *input, Split<T> *output, uintptr_t log2n)
+{
+    hisstools_fft_impl::unzip_complex(input, output, 1U << (log2n - 1U));
+}
 
 /**
-    hisstools_fft() performs an in-place complex Fast Fourier Transform.
+    hisstools_zip() performs zipping subsequent to an in-place real FFT.
  
-	@param	setup		A FFT_SETUP_D that has been created to deal with an appropriate maximum size of FFT.
-	@param	input		A pointer to a FFT_SPLIT_COMPLEX_D structure containing the complex input.
-	@param	log2n		The log base 2 of the FFT size.
-	
-	@remark             The FFT may be performed with either scalar or SIMD instructions. SIMD instuctions will be used when the pointers within the FFT_SPLIT_COMPLEX_D are sixteen byte aligned
+    @param    input     A pointer to a Split<T> structure to zip from.
+    @param    output    A pointer to the real output.
+    @param    log2n     The log base 2 of the FFT size.
+ 
+    @remark             Subsequent to running a real FFT the data must be zipped from a complex split structue into a contiguous memory location for final output. This function performs the zipping.
  */
 
-void hisstools_fft(FFT_SETUP_D setup, FFT_SPLIT_COMPLEX_D *input, uintptr_t log2n);
-
-/**
-    hisstools_fft() performs an in-place complex Fast Fourier Transform.
- 
-	@param	setup		A FFT_SETUP_F that has been created to deal with an appropriate maximum size of FFT.
-	@param	input		A pointer to a FFT_SPLIT_COMPLEX_F structure containing the complex input.
-	@param	log2n		The log base 2 of the FFT size.
-	
-	@remark             The FFT may be performed with scalar or SIMD instructions. SIMD instuctions will be used when the pointers within the FFT_SPLIT_COMPLEX_D are sixteen byte aligned.
- */
-
-void hisstools_fft(FFT_SETUP_F setup, FFT_SPLIT_COMPLEX_F *input, uintptr_t log2n);
-
-/**
-    hisstools_rfft() performs an in-place real Fast Fourier Transform.
- 
-	@param	setup		A FFT_SETUP_D that has been created to deal with an appropriate maximum size of FFT.
-	@param	input		A pointer to a FFT_SPLIT_COMPLEX_D structure containing a complex input.
-	@param	log2n		The log base 2 of the FFT size.
-	
-	@remark             The FFT may be performed with either scalar or SIMD instructions. SIMD instuctions will be used when the pointers within the FFT_SPLIT_COMPLEX_D are sixteen byte aligned. Note that the input should first be unzipped into the complex input structure using hisstools_unzip() or hisstools_unzip_zero).
- */
-
-void hisstools_rfft(FFT_SETUP_D setup, FFT_SPLIT_COMPLEX_D *input, uintptr_t log2n);
-
-/**
-    hisstools_rfft() performs an in-place real Fast Fourier Transform.
- 
-	@param	setup		A FFT_SETUP_F that has been created to deal with an appropriate maximum size of FFT.
-	@param	input		A pointer to a FFT_SPLIT_COMPLEX_F structure containing a complex input.
-	@param	log2n		The log base 2 of the FFT size.
-	
-	@remark             The FFT may be performed with either scalar or SIMD instructions. SIMD instuctions will be used when the pointers within the FFT_SPLIT_COMPLEX_D are sixteen byte aligned. Note that the input should first be unzipped into the complex input structure using hisstools_unzip() or hisstools_unzip_zero).
- */
-
-void hisstools_rfft(FFT_SETUP_F setup, FFT_SPLIT_COMPLEX_F *input, uintptr_t log2n);
-
-/**
- hisstools_rfft() performs an out-of-place real Fast Fourier Transform.
- 
-	@param	setup		A FFT_SETUP_F that has been created to deal with an appropriate maximum size of FFT.
-	@param	input		A pointer to a real input
- .	@param	output		A pointer to a a FFT_SPLIT_COMPLEX_D structure which will hold the complex output.
-	@param	in_length   The length of the input real array.
-	@param	log2n		The log base 2 of the FFT size.
-	
-	@remark             The FFT may be performed with either scalar or SIMD instructions. SIMD instuctions will be used when the pointers within the FFT_SPLIT_COMPLEX_D are sixteen byte aligned.
- */
-
-void hisstools_rfft(FFT_SETUP_D setup, const double *input, FFT_SPLIT_COMPLEX_D *output, uintptr_t in_length, uintptr_t log2n);
-
-/**
- hisstools_rfft() performs an out-of-place real Fast Fourier Transform.
- 
-	@param	setup		A FFT_SETUP_F that has been created to deal with an appropriate maximum size of FFT.
-	@param	input		A pointer to a real input
- .	@param	output		A pointer to a a FFT_SPLIT_COMPLEX_D structure which will hold the complex output.
-	@param	in_length   The length of the input real array.
-	@param	log2n		The log base 2 of the FFT size.
-	
-	@remark             The FFT may be performed with either scalar or SIMD instructions. SIMD instuctions will be used when the pointers within the FFT_SPLIT_COMPLEX_D are sixteen byte aligned.
- */
-
-void hisstools_rfft(FFT_SETUP_F setup, const float *input, FFT_SPLIT_COMPLEX_F *output, uintptr_t in_length, uintptr_t log2n);
-
-/**
- hisstools_rfft() performs an out-of-place real Fast Fourier Transform.
- 
-	@param	setup		A FFT_SETUP_F that has been created to deal with an appropriate maximum size of FFT.
-	@param	input		A pointer to a real input
- .	@param	output		A pointer to a a FFT_SPLIT_COMPLEX_D structure which will hold the complex output.
-	@param	in_length   The length of the input real array.
-	@param	log2n		The log base 2 of the FFT size.
-	
-	@remark             The FFT may be performed with either scalar or SIMD instructions. SIMD instuctions will be used when the pointers within the FFT_SPLIT_COMPLEX_D are sixteen byte aligned.
- */
-
-void hisstools_rfft(FFT_SETUP_D setup, const float *input, FFT_SPLIT_COMPLEX_D *output, uintptr_t in_length, uintptr_t log2n);
-
-/**
- hisstools_ifft() performs an in-place inverse complex Fast Fourier Transform.
- 
-	@param	setup		A FFT_SETUP_D that has been created to deal with an appropriate maximum size of FFT.
-	@param	input		A pointer to a FFT_SPLIT_COMPLEX_D structure containing a complex input.
-	@param	log2n		The log base 2 of the FFT size.
-	
-	@remark             The inverse FFT may be performed with either scalar or SIMD instructions. SIMD instuctions will be used when the pointers within the FFT_SPLIT_COMPLEX_D are sixteen byte aligned.
- */
-
-void hisstools_ifft(FFT_SETUP_D setup, FFT_SPLIT_COMPLEX_D *input, uintptr_t log2n);
-
-/**
-    hisstools_ifft() performs an in-place inverse complex Fast Fourier Transform.
- 
-	@param	setup		A FFT_SETUP_D that has been created to deal with an appropriate maximum size of FFT.
-	@param	input		A pointer to a FFT_SPLIT_COMPLEX_F structure containing a complex input.
-	@param	log2n		The log base 2 of the FFT size.
-	
-	@remark             The inverse FFT may be performed with either scalar or SIMD instructions. SIMD instuctions will be used when the pointers within the FFT_SPLIT_COMPLEX_F are sixteen byte aligned.
- */
-
-void hisstools_ifft(FFT_SETUP_F setup, FFT_SPLIT_COMPLEX_F *input, uintptr_t log2n);
-
-/**
-    hisstools_rifft() performs an in-place inverse real Fast Fourier Transform.
- 
-	@param	setup		A FFT_SETUP_D that has been created to deal with an appropriate maximum size of FFT.
-	@param	input		A pointer to a FFT_SPLIT_COMPLEX_D structure containing a complex input.
-	@param	log2n		The log base 2 of the FFT size.
-	
-	@remark             The inverse FFT may be performed with either scalar or SIMD instructions. SIMD instuctions will be used when the pointers within the FFT_SPLIT_COMPLEX_D are sixteen byte aligned. Note that the output will need to be zipped from the complex output structure using hisstools_zip().
- */
-
-void hisstools_rifft(FFT_SETUP_D setup, FFT_SPLIT_COMPLEX_D *input, uintptr_t log2n);
-
-/**
-    hisstools_rifft() performs an in-place inverse real Fast Fourier Transform.
- 
-	@param	setup		A FFT_SETUP_F that has been created to deal with an appropriate maximum size of FFT.
-	@param	input		A pointer to a FFT_SPLIT_COMPLEX_F structure containing a complex input.
-	@param	log2n		The log base 2 of the FFT size.
-	
-	@remark             The inverse FFT may be performed with either scalar or SIMD instructions. SIMD instuctions will be used when the pointers within the FFT_SPLIT_COMPLEX_D are sixteen byte aligned. Note that the output will need to be zipped from the complex output structure using hisstools_zip().
- */
- 
-void hisstools_rifft(FFT_SETUP_F setup, FFT_SPLIT_COMPLEX_F *input, uintptr_t log2n);
-
-/**
-    hisstools_rifft() performs an out-out-place inverse real Fast Fourier Transform.
- 
-	@param	setup		A FFT_SETUP_F that has been created to deal with an appropriate maximum size of FFT.
-	@param	input		A pointer to a FFT_SPLIT_COMPLEX_F structure containing a complex input.
-	@param	output		A pointer to a real array to hold the output.
-	@param	log2n		The log base 2 of the FFT size.
-	
-	@remark             The inverse FFT may be performed with either scalar or SIMD instructions. SIMD instuctions will be used when the pointers within the FFT_SPLIT_COMPLEX_D are sixteen byte aligned. .
- */
-
-void hisstools_rifft(FFT_SETUP_D setup, FFT_SPLIT_COMPLEX_D *input, double *output, uintptr_t log2n);
-
-/**
- hisstools_rifft() performs an out-out-place inverse real Fast Fourier Transform.
- 
-	@param	setup		A FFT_SETUP_F that has been created to deal with an appropriate maximum size of FFT.
-	@param	input		A pointer to a FFT_SPLIT_COMPLEX_F structure containing a complex input.
-	@param	output		A pointer to a real array to hold the output.
-	@param	log2n		The log base 2 of the FFT size.
-	
-	@remark             The inverse FFT may be performed with either scalar or SIMD instructions. SIMD instuctions will be used when the pointers within the FFT_SPLIT_COMPLEX_D are sixteen byte aligned. .
- */
-
-void hisstools_rifft(FFT_SETUP_F setup, FFT_SPLIT_COMPLEX_F *input, float *output, uintptr_t log2n);
+template <class T>
+void hisstools_zip(const Split<T> *input, T *output, uintptr_t log2n)
+{
+    hisstools_fft_impl::zip_complex(input, output, 1U << (log2n - 1U));
+}
 
 /**
  hisstools_unzip_zero() performs unzipping and zero-padding prior to an in-place real FFT.
  
-	@param	input		A pointer to the real double-precision input.
-	@param	output		A pointer to a FFT_SPLIT_COMPLEX_D structure to unzip to.
-	@param	in_length   The actual length of the input
-	@param	log2n		The log base 2 of the FFT size.
-	
-	@remark             Prior to running a real FFT the data must be unzipped from a contiguous memory location into a complex split structure. This function performs unzipping, and zero-pads any remaining input for inputs that may not match the length of the FFT.
+    @param    input         A pointer to the real input.
+    @param    output        A pointer to a Split<T> structure to unzip to.
+    @param    in_length     The actual length of the input
+    @param    log2n         The log base 2 of the FFT size.
+ 
+    @remark                 Prior to running a real FFT the data must be unzipped from a contiguous memory location into a complex split structure. This function performs unzipping, and zero-pads any remaining input for inputs that may not match the length of the FFT. This version allows a floating point input to be unzipped directly to a complex split structure.
  */
 
-void hisstools_unzip_zero(const double *input, FFT_SPLIT_COMPLEX_D *output, uintptr_t in_length, uintptr_t log2n);
+// Unzip incorporating zero padding
+
+template <class T, class U>
+void hisstools_unzip_zero(const U *input, Split<T> *output, uintptr_t in_length, uintptr_t log2n)
+{
+    hisstools_fft_impl::unzip_zero(input, output, in_length, log2n);
+}
 
 /**
-    hisstools_unzip_zero() performs unzipping and zero-padding prior to an in-place real FFT.
+    hisstools_fft() performs an in-place complex Fast Fourier Transform.
  
-	@param	input		A pointer to the real single-precision input.
-	@param	output		A pointer to a FFT_SPLIT_COMPLEX_F structure to unzip to.
-	@param	in_length   The actual length of the input
+	@param	setup		A Setup<T> that has been created to deal with an appropriate maximum size of FFT.
+	@param	input		A pointer to a Split<T> structure containing the complex input.
 	@param	log2n		The log base 2 of the FFT size.
 	
-	@remark             Prior to running a real FFT the data must be unzipped from a contiguous memory location into a complex split structure. This function performs unzipping, and zero-pads any remaining input for inputs that may not match the length of the FFT.
+	@remark             The FFT may be performed with scalar or SIMD instructions. SIMD instuctions will be used when the pointers within the Split<float> are sixteen byte aligned.
  */
 
-void hisstools_unzip_zero(const float *input, FFT_SPLIT_COMPLEX_F *output, uintptr_t in_length, uintptr_t log2n);
+template <class T>
+void hisstools_fft(Setup<T> setup, Split<T> *input, uintptr_t log2n)
+{
+    hisstools_fft_impl::hisstools_fft(input, setup.m_setup, log2n);
+}
 
 /**
-    hisstools_unzip_zero() performs unzipping and zero-padding prior to an in-place real FFT.
+    hisstools_rfft() performs an in-place real Fast Fourier Transform.
  
-	@param	input		A pointer to the real single-precision input.
-	@param	output		A pointer to a FFT_SPLIT_COMPLEX_D structure to unzip to.
-	@param	in_length   The actual length of the input
+	@param	setup		A Setup<T> that has been created to deal with an appropriate maximum size of FFT.
+	@param	input		A pointer to a Split<T> structure containing a complex input.
 	@param	log2n		The log base 2 of the FFT size.
 	
-	@remark             Prior to running a real FFT the data must be unzipped from a contiguous memory location into a complex split structure. This function performs unzipping, and zero-pads any remaining input for inputs that may not match the length of the FFT. This version allows a floating point input to be unzipped directly to a double-precision complex split structure.
+	@remark             The FFT may be performed with either scalar or SIMD instructions. SIMD instuctions will be used when the pointers within the Split<T> are sixteen byte aligned. Note that the input should first be unzipped into the complex input structure using hisstools_unzip() or hisstools_unzip_zero).
  */
 
-void hisstools_unzip_zero(const float *input, FFT_SPLIT_COMPLEX_D *output, uintptr_t in_length, uintptr_t log2n);
+template <class T>
+void hisstools_rfft(Setup<T> setup, Split<T> *input, uintptr_t log2n)
+{
+    hisstools_fft_impl::hisstools_rfft(input, setup.m_setup, log2n);
+}
 
 /**
-    hisstools_unzip() performs unzipping prior to an in-place real FFT.
+ hisstools_rfft() performs an out-of-place real Fast Fourier Transform.
  
-	@param	input		A pointer to the real double-precision input.
-	@param	output		A pointer to a FFT_SPLIT_COMPLEX_D structure to unzip to.
+	@param	setup		A Setup<float> that has been created to deal with an appropriate maximum size of FFT.
+	@param	input		A pointer to a real input
+ .	@param	output		A pointer to a a Split<T> structure which will hold the complex output.
+	@param	in_length   The length of the input real array.
 	@param	log2n		The log base 2 of the FFT size.
 	
-	@remark             Prior to running a real FFT the data must be unzipped from a contiguous memory location into a complex split structure. This function performs the unzipping. 
+	@remark             The FFT may be performed with either scalar or SIMD instructions. SIMD instuctions will be used when the pointers within the Split<T> are sixteen byte aligned.
  */
 
-void hisstools_unzip(const double *input, FFT_SPLIT_COMPLEX_D *output, uintptr_t log2n);
+template <class T, class U>
+void hisstools_rfft(Setup<T> setup, const U *input, Split<T> *output, uintptr_t in_length, uintptr_t log2n)
+{
+    hisstools_unzip_zero(input, output, in_length, log2n);
+    hisstools_rfft(setup, output, log2n);
+}
 
 /**
-    hisstools_unzip() performs unzipping prior to an in-place real FFT.
+ hisstools_ifft() performs an in-place inverse complex Fast Fourier Transform.
  
-	@param	input		A pointer to the real single-precision input.
-	@param	output		A pointer to a FFT_SPLIT_COMPLEX_F structure to unzip to.
+	@param	setup		A Setup<T> that has been created to deal with an appropriate maximum size of FFT.
+	@param	input		A pointer to a Split<T> structure containing a complex input.
 	@param	log2n		The log base 2 of the FFT size.
 	
-	@remark             Prior to running a real FFT the data must be unzipped from a contiguous memory location into a complex split structure. This function performs the unzipping.
+	@remark             The inverse FFT may be performed with either scalar or SIMD instructions. SIMD instuctions will be used when the pointers within the Split<T> are sixteen byte aligned.
  */
 
-void hisstools_unzip(const float *input, FFT_SPLIT_COMPLEX_F *output, uintptr_t log2n);
+template <class T>
+void hisstools_ifft(Setup<T> setup, Split<T> *input, uintptr_t log2n)
+{
+    hisstools_fft_impl::hisstools_ifft(input, setup.m_setup, log2n);
+}
 
 /**
-    hisstools_zip() performs zipping subsequent to an in-place real FFT.
+    hisstools_rifft() performs an in-place inverse real Fast Fourier Transform.
  
-	@param	input		A pointer to a FFT_SPLIT_COMPLEX_D structure to zip from.
-	@param	output		A pointer to the real double-precision output.
+	@param	setup		A Setup<T> that has been created to deal with an appropriate maximum size of FFT.
+	@param	input		A pointer to a Split<T> structure containing a complex input.
 	@param	log2n		The log base 2 of the FFT size.
 	
-	@remark             Subsequent to running a real FFT the data must be zipped from a complex split structue into a contiguous memory location for final output. This function performs the zipping.
+	@remark             The inverse FFT may be performed with either scalar or SIMD instructions. SIMD instuctions will be used when the pointers within the Split<T> are sixteen byte aligned. Note that the output will need to be zipped from the complex output structure using hisstools_zip().
  */
-
-void hisstools_zip(const FFT_SPLIT_COMPLEX_D *input, double *output, uintptr_t log2n);
+ 
+template <class T>
+void hisstools_rifft(Setup<T> setup, Split<T> *input, uintptr_t log2n)
+{
+    hisstools_fft_impl::hisstools_rifft(input, setup.m_setup, log2n);
+}
 
 /**
-    hisstools_zip() performs zipping subsequent to an in-place real FFT.
+    hisstools_rifft() performs an out-out-place inverse real Fast Fourier Transform.
  
-	@param	input		A pointer to a FFT_SPLIT_COMPLEX_F structure to zip from.
-	@param	output		A pointer to the real single-precision output.
+	@param	setup		A Setup<T> that has been created to deal with an appropriate maximum size of FFT.
+	@param	input		A pointer to a Split<T> structure containing a complex input.
+	@param	output		A pointer to a real array to hold the output.
 	@param	log2n		The log base 2 of the FFT size.
 	
-	@remark             Subsequent to running a real FFT the data must be zipped from a complex split structue into a contiguous memory location for final output. This function performs the zipping.
+	@remark             The inverse FFT may be performed with either scalar or SIMD instructions. SIMD instuctions will be used when the pointers within the Split<T> are sixteen byte aligned.
  */
 
-void hisstools_zip(const FFT_SPLIT_COMPLEX_F *input, float *output, uintptr_t log2n);
+template <class T>
+void hisstools_rifft(Setup<T> setup, Split<T> *input, T *output, uintptr_t log2n)
+{
+    hisstools_rifft(setup, input, log2n);
+    hisstools_zip(input, output, log2n);
+}
 
 #endif
-

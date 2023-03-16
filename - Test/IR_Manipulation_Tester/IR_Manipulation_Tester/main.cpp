@@ -93,11 +93,11 @@ void fillSplit(SPLIT split, uintptr_t fft_log2)
     }
 }
 
-template <class SETUP, class SPLIT, class T>
+template <class T>
 uint64_t timing_test(std::string test, uintptr_t fft_log2, double phase, bool zero, int testSize)
 {
-    SETUP setup;
-    SPLIT split;
+    Setup<T> setup;
+    Split<T> split;
     
     uintptr_t fft_size = 1 << fft_log2;
     
@@ -133,25 +133,25 @@ int main(int argc, const char * argv[])
     int fft_log2 = 14;
     int iter = 100;
     
-    timing_test<FFT_SETUP_D, FFT_SPLIT_COMPLEX_D, double>("Zero Mix", fft_log2, 0.1, true, iter);
-    timing_test<FFT_SETUP_D, FFT_SPLIT_COMPLEX_D, double>("Center Mix", fft_log2, 0.9, false, iter);
-    timing_test<FFT_SETUP_D, FFT_SPLIT_COMPLEX_D, double>("Zero Min", fft_log2, 0.0, true, iter);
-    timing_test<FFT_SETUP_D, FFT_SPLIT_COMPLEX_D, double>("Center Min", fft_log2, 0.0, false, iter);
-    timing_test<FFT_SETUP_D, FFT_SPLIT_COMPLEX_D, double>("Zero Max", fft_log2, 1.0, true, iter);
-    timing_test<FFT_SETUP_D, FFT_SPLIT_COMPLEX_D, double>("Center Max", fft_log2, 1.0, false, iter);
-    timing_test<FFT_SETUP_D, FFT_SPLIT_COMPLEX_D, double>("Zero Lin", fft_log2, 0.5, true, iter);
-    timing_test<FFT_SETUP_D, FFT_SPLIT_COMPLEX_D, double>("Center Lin", fft_log2, 0.5, false, iter);
+    timing_test<double>("Zero Mix", fft_log2, 0.1, true, iter);
+    timing_test<double>("Center Mix", fft_log2, 0.9, false, iter);
+    timing_test<double>("Zero Min", fft_log2, 0.0, true, iter);
+    timing_test<double>("Center Min", fft_log2, 0.0, false, iter);
+    timing_test<double>("Zero Max", fft_log2, 1.0, true, iter);
+    timing_test<double>("Center Max", fft_log2, 1.0, false, iter);
+    timing_test<double>("Zero Lin", fft_log2, 0.5, true, iter);
+    timing_test<double>("Center Lin", fft_log2, 0.5, false, iter);
     
     std::cout << "Float vector size is " << SIMDLimits<float>::max_size << "\n";
     
-    timing_test<FFT_SETUP_F, FFT_SPLIT_COMPLEX_F, float>("Zero Mix", fft_log2, 0.1, true, iter);
-    timing_test<FFT_SETUP_F, FFT_SPLIT_COMPLEX_F, float>("Center Mix", fft_log2, 0.9, false, iter);
-    timing_test<FFT_SETUP_F, FFT_SPLIT_COMPLEX_F, float>("Zero Min", fft_log2, 0.0, true, iter);
-    timing_test<FFT_SETUP_F, FFT_SPLIT_COMPLEX_F, float>("Center Min", fft_log2, 0.0, false, iter);
-    timing_test<FFT_SETUP_F, FFT_SPLIT_COMPLEX_F, float>("Zero Max", fft_log2, 1.0, true, iter);
-    timing_test<FFT_SETUP_F, FFT_SPLIT_COMPLEX_F, float>("Center Max", fft_log2, 1.0, false, iter);
-    timing_test<FFT_SETUP_F, FFT_SPLIT_COMPLEX_F, float>("Zero Lin", fft_log2, 0.5, true, iter);
-    timing_test<FFT_SETUP_F, FFT_SPLIT_COMPLEX_F, float>("Center Lin", fft_log2, 0.5, false, iter);
+    timing_test<float>("Zero Mix", fft_log2, 0.1, true, iter);
+    timing_test<float>("Center Mix", fft_log2, 0.9, false, iter);
+    timing_test<float>("Zero Min", fft_log2, 0.0, true, iter);
+    timing_test<float>("Center Min", fft_log2, 0.0, false, iter);
+    timing_test<float>("Zero Max", fft_log2, 1.0, true, iter);
+    timing_test<float>("Center Max", fft_log2, 1.0, false, iter);
+    timing_test<float>("Zero Lin", fft_log2, 0.5, true, iter);
+    timing_test<float>("Center Lin", fft_log2, 0.5, false, iter);
 
     return 0;
 }

@@ -8,25 +8,6 @@
 
 namespace impl
 {
-    template <typename U>
-    struct Infer {};
-
-    template <>
-    struct Infer<double>
-    {
-        using Split = FFT_SPLIT_COMPLEX_D;
-        using Setup = FFT_SETUP_D;
-        using Type = double;
-    };
-
-    template <>
-    struct Infer<float>
-    {
-        using Split = FFT_SPLIT_COMPLEX_F;
-        using Setup = FFT_SETUP_F;
-        using Type = float;
-    };
-
     template <class T>
     void add_to_result(T& result, T value)  { result += value; }
 

@@ -11,27 +11,10 @@
 
 namespace impl
 {
-    template <typename T>
-    struct Infer {};
-    
-    template <>
-    struct Infer<FFT_SPLIT_COMPLEX_D>
+    template <class T, int N, typename Op>
+    void simd_operation(Split<T> *out, Split<T> *in1, Split<T> *in2, uintptr_t fft_size, T scale, Op op)
     {
-        using Setup = FFT_SETUP_D;
-        using Type = double;
-    };
-    
-    template <>
-    struct Infer<FFT_SPLIT_COMPLEX_F>
-    {
-        using Setup = FFT_SETUP_F;
-        using Type = float;
-    };
-    
-    template <int N, typename Split, typename Op>
-    void simd_operation(Split *out, Split *in1, Split *in2, uintptr_t fft_size, typename Infer<Split>::Type scale, Op op)
-    {
-        using VecType = SIMDType<typename Infer<Split>::Type, N>;
+        using VecType = SIMDType<T, N>;
         
         const VecType *r_in1 = reinterpret_cast<const VecType *>(in1->realp);
         const VecType *i_in1 = reinterpret_cast<const VecType *>(in1->imagp);
@@ -46,10 +29,10 @@ namespace impl
             op(r_out[i], i_out[i], r_in1[i], i_in1[i], r_in2[i], i_in2[i], v_scale, i);
     }
     
-    template <typename Split, typename Op>
-    void complex_operation(Split *out, Split *in1, Split *in2, uintptr_t fft_size, typename Infer<Split>::Type scale, Op op)
+    template <class T, typename Op>
+    void complex_operation(Split<T> *out, Split<T> *in1, Split<T> *in2, uintptr_t fft_size, T scale, Op op)
     {
-        const int N = SIMDLimits<typename Infer<Split>::Type>::max_size;
+        constexpr int N = SIMDLimits<T>::max_size;
         constexpr int M = N / 2 ? N / 2 : 1;
         
         if (fft_size == 1 || fft_size < M)
@@ -60,11 +43,9 @@ namespace impl
             simd_operation<N>(out, in1, in2, fft_size, scale, op);
     }
     
-    template <typename Split, typename Op>
-    void real_operation(Split *out, Split *in1, Split *in2, uintptr_t fft_size, typename Infer<Split>::Type scale, Op op)
+    template <class T, typename Op>
+    void real_operation(Split<T> *out, Split<T> *in1, Split<T> *in2, uintptr_t fft_size, T scale, Op op)
     {
-        using T = typename Infer<Split>::Type;
-
         T temp1(0);
         T temp2(0);
         T dc_value;
@@ -83,11 +64,9 @@ namespace impl
         out->imagp[0] = nq_value;
     }
     
-    template <typename Split, typename Op>
-    void real_operation(Split *out, const Split *in, uintptr_t fft_size, Op op)
+    template <class T, typename Op>
+    void real_operation(Split<T> *out, const Split<T> *in, uintptr_t fft_size, Op op)
     {
-        using T = typename Infer<Split>::Type;
-
         const T *r_in = in->realp;
         const T *i_in = in->imagp;
         T *r_out = out->realp;
@@ -107,11 +86,9 @@ namespace impl
             op(r_out[i], i_out[i], r_in[i], i_in[i], i);
     }
     
-    template <typename Split, typename Op>
-    void real_operation(Split *out, uintptr_t fft_size, Op op)
+    template <class T, typename Op>
+    void real_operation(Split<T> *out, uintptr_t fft_size, Op op)
     {
-        using T = typename Infer<Split>::Type;
-        
         T *r_out = out->realp;
         T *i_out = out->imagp;
         
@@ -139,7 +116,7 @@ namespace impl
     
     struct copy
     {
-        template <typename T>
+        template <class T>
         void operator()(T& r_out, T& i_out, const T& r_in, const T& i_in, uintptr_t i)
         {
             store(r_out, i_out, T(r_in), T(i_in));
@@ -148,7 +125,7 @@ namespace impl
     
     struct amplitude
     {
-        template <typename T>
+        template <class T>
         void operator()(T& r_out, T& i_out, const T& r_in, const T& i_in, uintptr_t i)
         {
             store(r_out, i_out, std::sqrt(r_in * r_in + i_in * i_in), T(0));
@@ -157,7 +134,7 @@ namespace impl
     
     struct amplitude_linear
     {
-        template <typename T>
+        template <class T>
         void operator()(T& r_out, T& i_out, const T& r_in, const T& i_in, uintptr_t i)
         {
             store(r_out, i_out, std::sqrt(r_in * r_in + i_in * i_in) * (i & 0x1 ? T(-1) : T(1)), T(0));
@@ -166,7 +143,7 @@ namespace impl
     
     struct conjugate
     {
-        template <typename T>
+        template <class T>
         void operator()(T& r_out, T& i_out, const T& r_in, const T& i_in, uintptr_t i)
         {
             store(r_out, i_out, T(r_in), T(-i_in));
@@ -175,7 +152,7 @@ namespace impl
     
     struct log_power
     {
-        template <typename T>
+        template <class T>
         void operator()(T& r_out, T& i_out, const T& r_in, const T& i_in, uintptr_t i)
         {
             static T min_power = std::pow(10.0, -300.0 / 10.0);
@@ -185,7 +162,7 @@ namespace impl
     
     struct complex_exponential
     {
-        template <typename T>
+        template <class T>
         void operator()(T& r_out, T& i_out, const T& r_in, const T& i_in, uintptr_t i)
         {
             const std::complex<T> c = std::exp(std::complex<T>(r_in, i_in));
@@ -195,7 +172,7 @@ namespace impl
     
     struct complex_exponential_conjugate
     {
-        template <typename T>
+        template <class T>
         void operator()(T& r_out, T& i_out, const T& r_in, const T& i_in, uintptr_t i)
         {
             const std::complex<T> c = std::exp(std::complex<T>(r_in, i_in));
@@ -216,7 +193,7 @@ namespace impl
             lin_factor = zero_center ? 0.0 : (-2.0 * M_PI * (phase - delay_factor));
         }
         
-        template <typename T>
+        template <class T>
         void operator()(T& r_out, T& i_out, const T& r_in, const T& i_in, uintptr_t i)
         {
             const double amp = std::exp(r_in);
@@ -235,7 +212,7 @@ namespace impl
             spike_constant = ((long double) (2.0 * M_PI)) *  -position / static_cast<double>(fft_size);
         }
         
-        template <typename T>
+        template <class T>
         void operator()(T& r_out, T& i_out, uintptr_t i)
         {
             const long double phase = spike_constant * i;
@@ -250,7 +227,7 @@ namespace impl
     {
         delay_calc(double delay, uintptr_t fft_size) : spike(delay, fft_size) {}
         
-        template <typename T>
+        template <class T>
         void operator()(T& r_out, T& i_out, const T& r_in, const T& i_in, uintptr_t i)
         {
             using complex = std::complex<T>;
@@ -280,11 +257,9 @@ namespace impl
         }
     };
     
-    template <typename Split>
-    void minimum_phase_components(typename Infer<Split>::Setup setup, Split *out, Split *in, uintptr_t fft_size)
+    template <class T>
+    void minimum_phase_components(Setup<T> setup, Split<T> *out, Split<T> *in, uintptr_t fft_size)
     {
-        using T = typename Infer<Split>::Type;
-        
         T *r_out = out->realp;
         T *i_out = out->imagp;
         
@@ -336,45 +311,22 @@ namespace impl
     }
 }
 
-// Types
-
-template <typename T>
-struct FFTTypes
-{
-    using Split = void;
-    using Setup = void;
-};
-
-template<>
-struct FFTTypes<float>
-{
-    using Split = FFT_SPLIT_COMPLEX_F;
-    using Setup = FFT_SETUP_F;
-};
-
-template<>
-struct FFTTypes<double>
-{
-    using Split = FFT_SPLIT_COMPLEX_D;
-    using Setup = FFT_SETUP_D;
-};
-
 // Function calls
 
-template <typename Split>
-void ir_copy(Split *out, const Split *in, uintptr_t fft_size)
+template <class T>
+void ir_copy(Split<T> *out, const Split<T> *in, uintptr_t fft_size)
 {
     impl::real_operation(out, in, fft_size, impl::copy());
 }
 
-template <typename Split>
-void ir_spike(Split *out, uintptr_t fft_size, double spike_position)
+template <class T>
+void ir_spike(Split<T> *out, uintptr_t fft_size, double spike_position)
 {
     impl::real_operation(out, fft_size, impl::spike(spike_position, fft_size));
 }
 
-template <typename Split>
-void ir_delay(Split *out, const Split *in, uintptr_t fft_size, double delay)
+template <class T>
+void ir_delay(Split<T> *out, const Split<T> *in, uintptr_t fft_size, double delay)
 {
     if (delay != 0.0)
         impl::real_operation(out, in, fft_size, impl::delay_calc(delay, fft_size));
@@ -382,14 +334,14 @@ void ir_delay(Split *out, const Split *in, uintptr_t fft_size, double delay)
         ir_copy(out, in, fft_size);
 }
 
-template <typename Split>
-void ir_time_reverse(Split *out, const Split *in, uintptr_t fft_size)
+template <class T>
+void ir_time_reverse(Split<T> *out, const Split<T> *in, uintptr_t fft_size)
 {
     impl::real_operation(out, in, fft_size, impl::conjugate());
 }
 
-template <typename Setup, typename Split>
-void ir_phase(Setup setup, Split *out, Split *in, uintptr_t fft_size, double phase, bool zero_center = false)
+template <class T>
+void ir_phase(Setup<T> setup, Split<T> *out, Split<T> *in, uintptr_t fft_size, double phase, bool zero_center = false)
 {
     if (phase == 0.5)
     {
@@ -411,26 +363,26 @@ void ir_phase(Setup setup, Split *out, Split *in, uintptr_t fft_size, double pha
     }
 }
 
-template <typename Split, typename T>
-void ir_convolve_complex(Split *out, Split *in1, Split *in2, uintptr_t fft_size, T scale)
+template <class T>
+void ir_convolve_complex(Split<T> *out, Split<T> *in1, Split<T> *in2, uintptr_t fft_size, T scale)
 {
     impl::complex_operation(out, in1, in2, fft_size, scale, impl::convolve());
 }
 
-template <typename Split, typename T>
-void ir_convolve_real(Split *out, Split *in1, Split *in2, uintptr_t fft_size, T scale)
+template <class T>
+void ir_convolve_real(Split<T> *out, Split<T> *in1, Split<T> *in2, uintptr_t fft_size, T scale)
 {
     impl::real_operation(out, in1, in2, fft_size, scale, impl::convolve());
 }
 
-template <typename Split, typename T>
-void ir_correlate_complex(Split *out, Split *in1, Split *in2, uintptr_t fft_size, T scale)
+template <class T>
+void ir_correlate_complex(Split<T> *out, Split<T> *in1, Split<T> *in2, uintptr_t fft_size, T scale)
 {
     impl::complex_operation(out, in1, in2, fft_size, scale, impl::correlate());
 }
 
-template <typename Split, typename T>
-void ir_correlate_real(Split *out, Split *in1, Split *in2, uintptr_t fft_size, T scale)
+template <class T>
+void ir_correlate_real(Split<T> *out, Split<T> *in1, Split<T> *in2, uintptr_t fft_size, T scale)
 {
     impl::real_operation(out, in1, in2, fft_size, scale, impl::correlate());
 }

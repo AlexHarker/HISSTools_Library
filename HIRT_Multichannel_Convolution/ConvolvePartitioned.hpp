@@ -17,8 +17,6 @@ class convolve_partitioned
     // N.B. fixed_max_fft_size_log2 is perhaps conservative right now
     
     using VecType = SIMDType<T, SIMDLimits<T>::max_size>;
-    using Setup = typename impl::Infer<T>::Setup;
-    using Split = typename impl::Infer<T>::Split;
     
     static constexpr int loop_unroll_size = 4;
     static constexpr int fixed_min_fft_size_log2 = impl::ilog2(VecType::size * loop_unroll_size);
@@ -200,8 +198,8 @@ public:
     
     void process(const IO *in, IO *out, uintptr_t num_samples, bool accumulate = false)
     {
-        Split ir_temp;
-        Split in_temp;
+        Split<T> ir_temp;
+        Split<T> in_temp;
         
         // Scheduling variables
         
@@ -381,7 +379,7 @@ private:
 
     // Process a partition
     
-    static void process_partition(Split in_1, Split in_2, Split out, uintptr_t num_bins)
+    static void process_partition(Split<T> in_1, Split<T> in_2, Split<T> out, uintptr_t num_bins)
     {
         uintptr_t num_vecs = num_bins / VecType::size;
         
@@ -450,7 +448,7 @@ private:
             *(out_ptr++) = *(temp_ptr++) * scale;
     }
     
-    static void offset_split_pointer(Split &complex_1, const Split &complex_2, uintptr_t offset)
+    static void offset_split_pointer(Split<T> &complex_1, const Split<T> &complex_2, uintptr_t offset)
     {
         complex_1.realp = complex_2.realp + offset;
         complex_1.imagp = complex_2.imagp + offset;
@@ -464,7 +462,7 @@ private:
     
     // FFT variables
     
-    Setup m_fft_setup;
+    Setup<T> m_fft_setup;
     
     uintptr_t m_max_fft_size_log2;
     uintptr_t m_fft_size_log2;
@@ -482,10 +480,10 @@ private:
     
     T *m_fft_buffers[4];
     
-    Split m_impulse_buffer;
-    Split m_input_buffer;
-    Split m_accum_buffer;
-    Split m_partition_temp;
+    Split<T> m_impulse_buffer;
+    Split<T> m_input_buffer;
+    Split<T> m_accum_buffer;
+    Split<T> m_partition_temp;
     
     // Flags
     

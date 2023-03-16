@@ -21,9 +21,7 @@ class kernel_smoother : private spectral_processor<T, Allocator>
     using op_sizes = typename processor::op_sizes;
     using zipped_pointer = typename processor::zipped_pointer;
     using in_ptr = typename processor::in_ptr;
- 
-    using Split = typename FFTTypes<T>::Split;
-    
+     
     template <bool B>
     using enable_if_t = typename std::enable_if<B, int>::type;
     
@@ -84,8 +82,8 @@ public:
         uintptr_t fft_size = processor::max_fft_size() >= sizes.fft() ? sizes.fft() : 0;
         
         T *ptr = allocator.template allocate<T>(fft_size * 2 + filter_full + length + filter_size * 2);
-        Split io { ptr, ptr + (fft_size >> 1) };
-        Split st { io.realp + fft_size, io.imagp + fft_size };
+        Split<T> io { ptr, ptr + (fft_size >> 1) };
+        Split<T> st { io.realp + fft_size, io.imagp + fft_size };
         T *filter = ptr + (fft_size << 1);
         T *padded = filter + filter_full;
         
@@ -314,7 +312,7 @@ private:
         filter_val.store(out);
     }
     
-    void apply_filter_fft(T *out, const T *data, const T *filter, Split& io, Split& temp, uintptr_t width, uintptr_t n, T gain)
+    void apply_filter_fft(T *out, const T *data, const T *filter, Split<T>& io, Split<T>& temp, uintptr_t width, uintptr_t n, T gain)
     {
         uintptr_t data_width = n + width - 1;
         op_sizes sizes(data_width, width, processor::EdgeMode::Linear);
