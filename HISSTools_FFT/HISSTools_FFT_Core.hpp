@@ -940,14 +940,18 @@ struct hisstools_fft_impl
     
     // ******************** FFT Pass Control ******************** //
     
+    // Utility Helper
+    
+    static constexpr int min(int a, int b) { return a < b ? a : b; }
+    
     // FFT Passes Template
     
     template <class T, int max_vec_size>
     static void fft_passes(Split<T> *input, SetupType<T> *setup, uintptr_t fft_log2)
     {
-        constexpr int A = std::min(max_vec_size,  4);
-        constexpr int B = std::min(max_vec_size,  8);
-        constexpr int C = std::min(max_vec_size, 16);
+        constexpr int A = min(max_vec_size,  4);
+        constexpr int B = min(max_vec_size,  8);
+        constexpr int C = min(max_vec_size, 16);
         const uintptr_t length = static_cast<uintptr_t>(1u) << fft_log2;
         uintptr_t i;
         
