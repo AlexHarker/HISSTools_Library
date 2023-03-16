@@ -1,5 +1,6 @@
 
-#pragma once
+#ifndef CONVOLVE_TIME_DOMAIN_HPP
+#define CONVOLVE_TIME_DOMAIN_HPP
 
 #include "ConvolveUtilities.hpp"
 #include "../SIMDSupport.hpp"
@@ -295,3 +296,5 @@ private:
     
     bool m_reset;
 };
+
+#endif /* CONVOLVE_TIME_DOMAIN_HPP */

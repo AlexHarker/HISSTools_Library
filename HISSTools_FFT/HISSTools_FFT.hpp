@@ -286,4 +286,4 @@ void hisstools_rifft(Setup<T> setup, Split<T> *input, T *output, uintptr_t log2n
     hisstools_zip(input, output, log2n);
 }
 
-#endif
+#endif /* HISSTOOLS_FFT_HPP */

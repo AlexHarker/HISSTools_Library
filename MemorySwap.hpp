@@ -1,5 +1,6 @@
 
-#pragma once
+#ifndef MEMORY_SWAP_HPP
+#define MEMORY_SWAP_HPP
 
 #include <cstdint>
 #include <cstdlib>
@@ -291,3 +292,5 @@ private:
     uintptr_t m_size;
     FreeFunc m_free_function;
 };
+
+#endif /* MEMORY_SWAP_HPP */

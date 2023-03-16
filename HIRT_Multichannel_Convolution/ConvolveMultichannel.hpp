@@ -1,5 +1,6 @@
 
-#pragma once
+#ifndef CONVOLVE_MULTICHANNEL_HPP
+#define CONVOLVE_MULTICHANNEL_HPP
 
 #include "../MemorySwap.hpp"
 #include "../SIMDSupport.hpp"
@@ -141,3 +142,5 @@ private:
         
     std::vector<CN> m_convolvers;
 };
+
+#endif /* CONVOLVE_MULTICHANNEL_HPP */

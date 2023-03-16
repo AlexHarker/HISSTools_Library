@@ -1,5 +1,6 @@
 
-#pragma once
+#ifndef CONVOLVE_PARTITIONED_HPP
+#define CONVOLVE_PARTITIONED_HPP
 
 #include "../HISSTools_FFT/HISSTools_FFT.hpp"
 
@@ -495,3 +496,5 @@ private:
     std::default_random_engine m_rand_gen;
     std::uniform_int_distribution<uintptr_t> m_rand_dist;
 };
+
+#endif /* CONVOLVE_PARTITIONED_HPP */

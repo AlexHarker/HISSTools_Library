@@ -1,6 +1,7 @@
 
-#pragma once
-	
+#ifndef CONVOLVE_N_TO_MONO_HPP
+#define CONVOLVE_N_TO_MONO_HPP
+
 #include "ConvolveUtilities.hpp"
 #include "ConvolveMono.hpp"
 
@@ -100,3 +101,5 @@ private:
     
     std::vector<convolve_mono<T, IO>> m_convolvers;
 };
+
+#endif /* CONVOLVE_N_TO_MONO_HPP */

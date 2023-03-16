@@ -1125,4 +1125,4 @@ struct hisstools_fft_impl
     
 };
 
-#endif
+#endif /* HISSTOOLS_FFT_CORE_HPP */

@@ -1,5 +1,6 @@
 
-#pragma once
+#ifndef CONVOLVE_UTILITIES_HPP
+#define CONVOLVE_UTILITIES_HPP
 
 #include "../HISSTools_FFT/HISSTools_FFT.hpp"
 
@@ -89,3 +90,5 @@ private:
 
     const T *m_input;
 };
+
+#endif /* CONVOLVE_UTILITIES_HPP */

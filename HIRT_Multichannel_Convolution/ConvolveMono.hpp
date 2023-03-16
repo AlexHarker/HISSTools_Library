@@ -1,5 +1,6 @@
 
-#pragma once
+#ifndef CONVOLVE_MONO_HPP
+#define CONVOLVE_MONO_HPP
 
 #include "ConvolveUtilities.hpp"
 #include "ConvolveTimeDomain.hpp"
@@ -292,3 +293,5 @@ private:
     std::default_random_engine m_rand_gen;
     std::uniform_int_distribution<uintptr_t> m_rand_dist;
 };
+
+#endif /* CONVOLVE_MONO_HPP */
