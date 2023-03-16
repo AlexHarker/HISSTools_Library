@@ -22,7 +22,7 @@ enum class EdgeMode { ZeroPad, Extend, Wrap, Fold, Mirror, Extrapolate };
 template <class T>
 struct table_fetcher
 {
-    typedef T fetch_type;
+    using fetch_type = T;
     
     table_fetcher(intptr_t length, double scale_val) : size(length), scale(scale_val) {}
     
@@ -301,7 +301,7 @@ void table_read_loop(Table fetcher, typename T::scalar_type *out, const V *posit
 template <template <class T, class U, class V, class Tb> class Reader, class Table, class W, class X>
 void table_read(Table fetcher, W *out, const X *positions, intptr_t n_samps, double mul)
 {
-    typedef typename Table::fetch_type fetch_type;
+    using fetch_type = typename Table::fetch_type;
     const int vec_size = SIMDLimits<W>::max_size;
     intptr_t n_vsample = (n_samps / vec_size) * vec_size;
     

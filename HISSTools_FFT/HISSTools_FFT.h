@@ -39,11 +39,11 @@ template <class T> struct Split
 
 #include <Accelerate/Accelerate.h>
 
-typedef FFTSetupD FFT_SETUP_D;
-typedef FFTSetup FFT_SETUP_F;
+using FFT_SETUP_D = FFTSetupD;
+using FFT_SETUP_F = FFTSetup;
 
-typedef struct DSPDoubleSplitComplex FFT_SPLIT_COMPLEX_D;
-typedef struct DSPSplitComplex FFT_SPLIT_COMPLEX_F;
+using FFT_SPLIT_COMPLEX_D = struct DSPDoubleSplitComplex;
+using FFT_SPLIT_COMPLEX_F = struct DSPSplitComplex;
 
 #else
 
@@ -51,24 +51,24 @@ typedef struct DSPSplitComplex FFT_SPLIT_COMPLEX_F;
     FFT_SETUP_D is an opaque setup structure for a double-precision FFT.
  */
 
-typedef struct DoubleSetup *FFT_SETUP_D;
+using FFT_SETUP_D = struct DoubleSetup *;
 
 /**
     FFT_SETUP_F is an opaque setup structure for a single-precision FFT.
  */
 
-typedef struct FloatSetup *FFT_SETUP_F;
+using FFT_SETUP_F = struct FloatSetup *;
 
 /**
     FFT_SPLIT_COMPLEX_D is a Structure for storing a double-precision complex array in split form.
  */
 
-typedef Split<double> FFT_SPLIT_COMPLEX_D;
+using FFT_SPLIT_COMPLEX_D = Split<double>;
 
 /**
     FFT_SPLIT_COMPLEX_F is a Structure for storing a single-precision complex array in split form.
  */
-typedef Split<float> FFT_SPLIT_COMPLEX_F;
+using FFT_SPLIT_COMPLEX_F = Split<float>;
 
 #endif
 

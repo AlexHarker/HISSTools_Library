@@ -283,7 +283,7 @@ template <class T, class U, int vec_size>
 struct SIMDVector
 {
     static constexpr int size = vec_size;
-    typedef T scalar_type;
+    using scalar_type = T;
     
     SIMDVector() {}
     SIMDVector(U a) : mVal(a) {}
@@ -425,7 +425,7 @@ template<>
 struct SIMDType<double, 1>
 {
     static constexpr int size = 1;
-    typedef double scalar_type;
+    using scalar_type = double;
     
     SIMDType() {}
     SIMDType(double a) : mVal(a) {}
@@ -466,7 +466,7 @@ template<>
 struct SIMDType<float, 1>
 {
     static constexpr int size = 1;
-    typedef float scalar_type;
+    using scalar_type = float;
     
     SIMDType() {}
     SIMDType(float a) : mVal(a) {}
@@ -511,7 +511,7 @@ template<>
 struct SIMDType<float, 2>
 {
     static constexpr int size = 1;
-    typedef float scalar_type;
+    using scalar_type = float;
     
     SIMDType() {}
     
