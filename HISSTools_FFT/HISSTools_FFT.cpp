@@ -94,18 +94,6 @@ void hisstools_destroy_setup(FFT_SETUP_F setup)
         vDSP_destroy_fftsetup(setup);
 }
 
-// Zip and Unzip
-
-template <class V> void unzipComplex(const float *input, FFT_SPLIT_COMPLEX_F *output, uintptr_t half_length)
-{
-    vDSP_ctoz((COMPLEX *) input, (vDSP_Stride) 2, output, (vDSP_Stride) 1, half_length);
-}
-
-template <class V> void unzipComplex(const double *input, FFT_SPLIT_COMPLEX_D *output, uintptr_t half_length)
-{
-    vDSP_ctozD((DOUBLE_COMPLEX *) input, (vDSP_Stride) 2, output, (vDSP_Stride) 1, half_length);
-}
-
 #else
 
 // User FFT Routines
