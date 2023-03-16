@@ -1014,7 +1014,7 @@ namespace hisstools_fft_impl
     template <class T>
     void unzip_complex(const T *input, Split<T> *output, uintptr_t half_length)
     {
-        const int v_size = SIMDLimits<T>::max_size;
+        constexpr int v_size = SIMDLimits<T>::max_size;
         
         if (is_aligned(input) && is_aligned(output->realp) && is_aligned(output->imagp))
         {
@@ -1045,7 +1045,7 @@ namespace hisstools_fft_impl
     template <class T>
     void zip_complex(const Split<T> *input, T *output, uintptr_t half_length)
     {
-        const int v_size = SIMDLimits<T>::max_size;
+        constexpr int v_size = SIMDLimits<T>::max_size;
         
         if (is_aligned(output) && is_aligned(input->realp) && is_aligned(input->imagp))
         {
@@ -1097,9 +1097,9 @@ namespace hisstools_fft_impl
     template <class T, int max_vec_size>
     void fft_passes(Split<T> *input, Setup<T> *setup, uintptr_t fft_log2)
     {
-        const int A = max_vec_size <  4 ? max_vec_size :  4;
-        const int B = max_vec_size <  8 ? max_vec_size :  8;
-        const int C = max_vec_size < 16 ? max_vec_size : 16;
+        constexpr int A = std::min(max_vec_size,  4);
+        constexpr int B = std::min(max_vec_size,  8);
+        constexpr int C = std::min(max_vec_size, 16);
         const uintptr_t length = static_cast<uintptr_t>(1u) << fft_log2;
         uintptr_t i;
         
