@@ -33,7 +33,7 @@ template <class T> struct Split
     T *imagp;
 };
 
-// Type defintions for Apple / HISSTools FFT
+// Type definitions for Apple / HISSTools FFT
 
 #if defined(USE_APPLE_FFT)
 

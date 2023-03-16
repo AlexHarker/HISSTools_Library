@@ -107,7 +107,7 @@ namespace hisstools_fft_impl
         }
     }
 
-    // ******************** Interleaving and deinterleaving ******************** //
+    // ******************** Interleaving and Deinterleaving ******************** //
 
     template <class T, int vec_size>
     void deinterleave(const SIMDType<T, vec_size> *input, SIMDType<T, vec_size> *outReal, SIMDType<T, vec_size> *outImag)
