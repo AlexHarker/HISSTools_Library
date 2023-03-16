@@ -8,10 +8,11 @@
 
 /** @file HISSTools_FFT.hpp @brief The interface for the HISSTools FFT.
  
-    The FFT is compatible with the FFT routines provided by Apple's vDSP library and can be configured to use this fast FFT when available. */
+    The FFT is compatible with the FFT routines provided by Apple's vDSP library and can be configured to use this fast FFT when available.
+ */
 
 /**
- The NO_NATIVE_FFT preprocessor command instructs the HISSTools FFT to use its own code even if the Apple FFT is available. You must link against the Accelerate framework if this is not defined under Mac OS. The default is to use the Apple FFT.
+    The NO_NATIVE_FFT preprocessor command instructs the HISSTools FFT to use its own code even if the Apple FFT is available. You must link against the Accelerate framework if this is not defined under Mac OS. The default is to use the Apple FFT.
  */
 
 // Platform check for Apple FFT selection
