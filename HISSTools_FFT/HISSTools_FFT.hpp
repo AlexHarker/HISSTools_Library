@@ -128,7 +128,7 @@ struct Setup: SetupBase<T, hisstools_fft_impl::SetupType<T> *>
 #endif
 
 /**
- hisstools_create_setup() creates an FFT setup suitable for FFTs and iFFTs up to a maximum specified size.
+    hisstools_create_setup() creates an FFT setup suitable for FFTs and iFFTs up to a maximum specified size.
  
 	@param	setup           A pointer to an uninitialised Setup<T>.
 	@param	max_fft_log_2   The log base 2 of the FFT size of the maimum FFT size you wish to support.
@@ -189,7 +189,7 @@ void hisstools_zip(const Split<T> *input, T *output, uintptr_t log2n)
 }
 
 /**
- hisstools_unzip_zero() performs unzipping and zero-padding prior to an in-place real FFT.
+    hisstools_unzip_zero() performs unzipping and zero-padding prior to an in-place real FFT.
  
     @param    input         A pointer to the real input.
     @param    output        A pointer to a Split<T> structure to unzip to.
@@ -240,7 +240,7 @@ void hisstools_rfft(Setup<T> setup, Split<T> *input, uintptr_t log2n)
 }
 
 /**
- hisstools_rfft() performs an out-of-place real Fast Fourier Transform.
+    hisstools_rfft() performs an out-of-place real Fast Fourier Transform.
  
 	@param	setup		A Setup<float> that has been created to deal with an appropriate maximum size of FFT.
 	@param	input		A pointer to a real input
@@ -259,7 +259,7 @@ void hisstools_rfft(Setup<T> setup, const U *input, Split<T> *output, uintptr_t 
 }
 
 /**
- hisstools_ifft() performs an in-place inverse complex Fast Fourier Transform.
+    hisstools_ifft() performs an in-place inverse complex Fast Fourier Transform.
  
 	@param	setup		A Setup<T> that has been created to deal with an appropriate maximum size of FFT.
 	@param	input		A pointer to a Split<T> structure containing a complex input.
