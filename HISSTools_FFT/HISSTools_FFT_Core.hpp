@@ -10,6 +10,48 @@
 
 #include "../SIMDSupport.hpp"
 
+// Type definitions for Apple / HISSTools FFT
+
+#if defined (USE_APPLE_FFT)
+
+#include <Accelerate/Accelerate.h>
+
+// Type specialisations for use with the Apple FFT
+
+// Splits
+
+template<>
+struct Split<double> : DSPDoubleSplitComplex, impl::TypeBase<double>
+{
+    Split() {}
+    Split(double *real, double *imag) : DSPDoubleSplitComplex{ real, imag } {}
+};
+
+template<>
+struct Split<float> : DSPSplitComplex, impl::TypeBase<float>
+{
+    Split() {}
+    Split(float *real, float *imag) : DSPSplitComplex{ real, imag } {}
+};
+
+// Setups
+
+template<>
+struct Setup<double> : impl::SetupBase<double, FFTSetupD>
+{
+    Setup() {}
+    Setup(FFTSetupD setup) : SetupBase(setup) {}
+};
+
+template<>
+struct Setup<float> : impl::SetupBase<float, FFTSetup>
+{
+    Setup() {}
+    Setup(FFTSetup setup) : SetupBase(setup) {}
+};
+
+#endif
+
 struct hisstools_fft_impl
 {
     // Offset for Table
@@ -1124,5 +1166,20 @@ struct hisstools_fft_impl
 #endif
     
 };
+
+#if !defined (USE_APPLE_FFT)
+
+// Setup definition when using the HISSTools codepath
+
+template <class T>
+struct Setup : impl::SetupBase<T, hisstools_fft_impl::SetupType<T> *>
+{
+    Setup() {}
+    Setup(hisstools_fft_impl::SetupType<T> *setup)
+    : impl::SetupBase<T, hisstools_fft_impl::SetupType<T> *>(setup)
+    {}
+};
+
+#endif
 
 #endif /* HISSTOOLS_FFT_CORE_HPP */
