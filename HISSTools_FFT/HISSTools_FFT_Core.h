@@ -286,192 +286,190 @@ namespace hisstools_fft_impl
 
     // ******************** Shuffles for Pass 1 and 2 ******************** //
     
-    // Template for an SIMD Vectors With 4 Elements
-    
-    template <class T, int vec_size>
-    void shuffle4(const Vector4x<T, vec_size> &,
-                  const Vector4x<T, vec_size> &,
-                  const Vector4x<T, vec_size> &,
-                  const Vector4x<T, vec_size> &,
-                  Vector4x<T, vec_size> *,
-                  Vector4x<T, vec_size> *,
-                  Vector4x<T, vec_size> *,
-                  Vector4x<T, vec_size> *)
+    struct shuffler
     {
-        static_assert(vec_size != vec_size, "Shuffle not implemented for this type");
-    }
-    
-    // Template for Scalars
-    
-    template <class T>
-    void shuffle4(const Vector4x<T, 1> &A,
-                  const Vector4x<T, 1> &B,
-                  const Vector4x<T, 1> &C,
-                  const Vector4x<T, 1> &D,
-                  Vector4x<T, 1> *ptr1,
-                  Vector4x<T, 1> *ptr2,
-                  Vector4x<T, 1> *ptr3,
-                  Vector4x<T, 1> *ptr4)
-    {
-        ptr1->mData[0] = A.mData[0];
-        ptr1->mData[1] = C.mData[0];
-        ptr1->mData[2] = B.mData[0];
-        ptr1->mData[3] = D.mData[0];
-        ptr2->mData[0] = A.mData[2];
-        ptr2->mData[1] = C.mData[2];
-        ptr2->mData[2] = B.mData[2];
-        ptr2->mData[3] = D.mData[2];
-        ptr3->mData[0] = A.mData[1];
-        ptr3->mData[1] = C.mData[1];
-        ptr3->mData[2] = B.mData[1];
-        ptr3->mData[3] = D.mData[1];
-        ptr4->mData[0] = A.mData[3];
-        ptr4->mData[1] = C.mData[3];
-        ptr4->mData[2] = B.mData[3];
-        ptr4->mData[3] = D.mData[3];
-    }
-    
-#if defined(__SSE__) || defined(__AVX__) || defined(__AVX512F__)
-    
-    // Template Specialisation for an SSE Float Packed (1 SIMD Element)
-    
-    template<>
-    void shuffle4(const Vector4x<float, 4> &A,
-                  const Vector4x<float, 4> &B,
-                  const Vector4x<float, 4> &C,
-                  const Vector4x<float, 4> &D,
-                  Vector4x<float, 4> *ptr1,
-                  Vector4x<float, 4> *ptr2,
-                  Vector4x<float, 4> *ptr3,
-                  Vector4x<float, 4> *ptr4)
-    {
-        const __m128 v1 = _mm_unpacklo_ps(A.mData[0].mVal, B.mData[0].mVal);
-        const __m128 v2 = _mm_unpackhi_ps(A.mData[0].mVal, B.mData[0].mVal);
-        const __m128 v3 = _mm_unpacklo_ps(C.mData[0].mVal, D.mData[0].mVal);
-        const __m128 v4 = _mm_unpackhi_ps(C.mData[0].mVal, D.mData[0].mVal);
+        // Template for an SIMD Vectors With 4 Elements
+        
+        template <class T, int vec_size>
+        static void shuffle4(const Vector4x<T, vec_size> &,
+                             const Vector4x<T, vec_size> &,
+                             const Vector4x<T, vec_size> &,
+                             const Vector4x<T, vec_size> &,
+                             Vector4x<T, vec_size> *,
+                             Vector4x<T, vec_size> *,
+                             Vector4x<T, vec_size> *,
+                             Vector4x<T, vec_size> *)
+        {
+            static_assert(vec_size != vec_size, "Shuffle not implemented for this type");
+        }
+        
+        // Template for Scalars
+        
+        template <class T>
+        static void shuffle4(const Vector4x<T, 1> &A,
+                             const Vector4x<T, 1> &B,
+                             const Vector4x<T, 1> &C,
+                             const Vector4x<T, 1> &D,
+                             Vector4x<T, 1> *ptr1,
+                             Vector4x<T, 1> *ptr2,
+                             Vector4x<T, 1> *ptr3,
+                             Vector4x<T, 1> *ptr4)
+        {
+            ptr1->mData[0] = A.mData[0];
+            ptr1->mData[1] = C.mData[0];
+            ptr1->mData[2] = B.mData[0];
+            ptr1->mData[3] = D.mData[0];
+            ptr2->mData[0] = A.mData[2];
+            ptr2->mData[1] = C.mData[2];
+            ptr2->mData[2] = B.mData[2];
+            ptr2->mData[3] = D.mData[2];
+            ptr3->mData[0] = A.mData[1];
+            ptr3->mData[1] = C.mData[1];
+            ptr3->mData[2] = B.mData[1];
+            ptr3->mData[3] = D.mData[1];
+            ptr4->mData[0] = A.mData[3];
+            ptr4->mData[1] = C.mData[3];
+            ptr4->mData[2] = B.mData[3];
+            ptr4->mData[3] = D.mData[3];
+        }
+        
+    #if defined(__SSE__) || defined(__AVX__) || defined(__AVX512F__)
+        
+        // Shuffle for an SSE Float Packed (1 SIMD Element)
+        
+        static void shuffle4(const Vector4x<float, 4> &A,
+                             const Vector4x<float, 4> &B,
+                             const Vector4x<float, 4> &C,
+                             const Vector4x<float, 4> &D,
+                             Vector4x<float, 4> *ptr1,
+                             Vector4x<float, 4> *ptr2,
+                             Vector4x<float, 4> *ptr3,
+                             Vector4x<float, 4> *ptr4)
+        {
+            const __m128 v1 = _mm_unpacklo_ps(A.mData[0].mVal, B.mData[0].mVal);
+            const __m128 v2 = _mm_unpackhi_ps(A.mData[0].mVal, B.mData[0].mVal);
+            const __m128 v3 = _mm_unpacklo_ps(C.mData[0].mVal, D.mData[0].mVal);
+            const __m128 v4 = _mm_unpackhi_ps(C.mData[0].mVal, D.mData[0].mVal);
 
-        ptr1->mData[0] = _mm_unpacklo_ps(v1, v3);
-        ptr2->mData[0] = _mm_unpacklo_ps(v2, v4);
-        ptr3->mData[0] = _mm_unpackhi_ps(v1, v3);
-        ptr4->mData[0] = _mm_unpackhi_ps(v2, v4);
-    }
-    
-    // Template Specialisation for an SSE Double Packed (2 SIMD Elements)
-    
-    template<>
-    void shuffle4(const Vector4x<double, 2> &A,
-                  const Vector4x<double, 2> &B,
-                  const Vector4x<double, 2> &C,
-                  const Vector4x<double, 2> &D,
-                  Vector4x<double, 2> *ptr1,
-                  Vector4x<double, 2> *ptr2,
-                  Vector4x<double, 2> *ptr3,
-                  Vector4x<double, 2> *ptr4)
-    {
-        ptr1->mData[0] = _mm_unpacklo_pd(A.mData[0].mVal, C.mData[0].mVal);
-        ptr1->mData[1] = _mm_unpacklo_pd(B.mData[0].mVal, D.mData[0].mVal);
-        ptr2->mData[0] = _mm_unpacklo_pd(A.mData[1].mVal, C.mData[1].mVal);
-        ptr2->mData[1] = _mm_unpacklo_pd(B.mData[1].mVal, D.mData[1].mVal);
-        ptr3->mData[0] = _mm_unpackhi_pd(A.mData[0].mVal, C.mData[0].mVal);
-        ptr3->mData[1] = _mm_unpackhi_pd(B.mData[0].mVal, D.mData[0].mVal);
-        ptr4->mData[0] = _mm_unpackhi_pd(A.mData[1].mVal, C.mData[1].mVal);
-        ptr4->mData[1] = _mm_unpackhi_pd(B.mData[1].mVal, D.mData[1].mVal);
-    }
-    
-#endif
-    
-#if defined(__AVX__) || defined(__AVX512F__)
-    
-    // Template Specialisation for an AVX256 Double Packed (1 SIMD Element)
-    
-    template<>
-    void shuffle4(const Vector4x<double, 4> &A,
-                  const Vector4x<double, 4> &B,
-                  const Vector4x<double, 4> &C,
-                  const Vector4x<double, 4> &D,
-                  Vector4x<double, 4> *ptr1,
-                  Vector4x<double, 4> *ptr2,
-                  Vector4x<double, 4> *ptr3,
-                  Vector4x<double, 4> *ptr4)
-    {
-        const __m256d v1 = _mm256_unpacklo_pd(A.mData[0].mVal, B.mData[0].mVal);
-        const __m256d v2 = _mm256_unpackhi_pd(A.mData[0].mVal, B.mData[0].mVal);
-        const __m256d v3 = _mm256_unpacklo_pd(C.mData[0].mVal, D.mData[0].mVal);
-        const __m256d v4 = _mm256_unpackhi_pd(C.mData[0].mVal, D.mData[0].mVal);
+            ptr1->mData[0] = _mm_unpacklo_ps(v1, v3);
+            ptr2->mData[0] = _mm_unpacklo_ps(v2, v4);
+            ptr3->mData[0] = _mm_unpackhi_ps(v1, v3);
+            ptr4->mData[0] = _mm_unpackhi_ps(v2, v4);
+        }
         
-        const __m256d v5 = _mm256_permute2f128_pd(v1, v2, 0x20);
-        const __m256d v6 = _mm256_permute2f128_pd(v1, v2, 0x31);
-        const __m256d v7 = _mm256_permute2f128_pd(v3, v4, 0x20);
-        const __m256d v8 = _mm256_permute2f128_pd(v3, v4, 0x31);
+        // Shuffle for an SSE Double Packed (2 SIMD Elements)
         
-        const __m256d v9 = _mm256_unpacklo_pd(v5, v7);
-        const __m256d vA = _mm256_unpackhi_pd(v5, v7);
-        const __m256d vB = _mm256_unpacklo_pd(v6, v8);
-        const __m256d vC = _mm256_unpackhi_pd(v6, v8);
+        static void shuffle4(const Vector4x<double, 2> &A,
+                             const Vector4x<double, 2> &B,
+                             const Vector4x<double, 2> &C,
+                             const Vector4x<double, 2> &D,
+                             Vector4x<double, 2> *ptr1,
+                             Vector4x<double, 2> *ptr2,
+                             Vector4x<double, 2> *ptr3,
+                             Vector4x<double, 2> *ptr4)
+        {
+            ptr1->mData[0] = _mm_unpacklo_pd(A.mData[0].mVal, C.mData[0].mVal);
+            ptr1->mData[1] = _mm_unpacklo_pd(B.mData[0].mVal, D.mData[0].mVal);
+            ptr2->mData[0] = _mm_unpacklo_pd(A.mData[1].mVal, C.mData[1].mVal);
+            ptr2->mData[1] = _mm_unpacklo_pd(B.mData[1].mVal, D.mData[1].mVal);
+            ptr3->mData[0] = _mm_unpackhi_pd(A.mData[0].mVal, C.mData[0].mVal);
+            ptr3->mData[1] = _mm_unpackhi_pd(B.mData[0].mVal, D.mData[0].mVal);
+            ptr4->mData[0] = _mm_unpackhi_pd(A.mData[1].mVal, C.mData[1].mVal);
+            ptr4->mData[1] = _mm_unpackhi_pd(B.mData[1].mVal, D.mData[1].mVal);
+        }
         
-        ptr1->mData[0] = _mm256_permute2f128_pd(v9, vA, 0x20);
-        ptr2->mData[0] = _mm256_permute2f128_pd(vB, vC, 0x20);
-        ptr3->mData[0] = _mm256_permute2f128_pd(v9, vA, 0x31);
-        ptr4->mData[0] = _mm256_permute2f128_pd(vB, vC, 0x31) ;
-    }
-    
-#endif
-    
-#if defined SIMD_COMPILER_SUPPORT_NEON /* Neon Intrinsics */
+    #endif
+        
+    #if defined(__AVX__) || defined(__AVX512F__)
+        
+        // Shuffle for an AVX256 Double Packed (1 SIMD Element)
+        
+        static void shuffle4(const Vector4x<double, 4> &A,
+                             const Vector4x<double, 4> &B,
+                             const Vector4x<double, 4> &C,
+                             const Vector4x<double, 4> &D,
+                             Vector4x<double, 4> *ptr1,
+                             Vector4x<double, 4> *ptr2,
+                             Vector4x<double, 4> *ptr3,
+                             Vector4x<double, 4> *ptr4)
+        {
+            const __m256d v1 = _mm256_unpacklo_pd(A.mData[0].mVal, B.mData[0].mVal);
+            const __m256d v2 = _mm256_unpackhi_pd(A.mData[0].mVal, B.mData[0].mVal);
+            const __m256d v3 = _mm256_unpacklo_pd(C.mData[0].mVal, D.mData[0].mVal);
+            const __m256d v4 = _mm256_unpackhi_pd(C.mData[0].mVal, D.mData[0].mVal);
+            
+            const __m256d v5 = _mm256_permute2f128_pd(v1, v2, 0x20);
+            const __m256d v6 = _mm256_permute2f128_pd(v1, v2, 0x31);
+            const __m256d v7 = _mm256_permute2f128_pd(v3, v4, 0x20);
+            const __m256d v8 = _mm256_permute2f128_pd(v3, v4, 0x31);
+            
+            const __m256d v9 = _mm256_unpacklo_pd(v5, v7);
+            const __m256d vA = _mm256_unpackhi_pd(v5, v7);
+            const __m256d vB = _mm256_unpacklo_pd(v6, v8);
+            const __m256d vC = _mm256_unpackhi_pd(v6, v8);
+            
+            ptr1->mData[0] = _mm256_permute2f128_pd(v9, vA, 0x20);
+            ptr2->mData[0] = _mm256_permute2f128_pd(vB, vC, 0x20);
+            ptr3->mData[0] = _mm256_permute2f128_pd(v9, vA, 0x31);
+            ptr4->mData[0] = _mm256_permute2f128_pd(vB, vC, 0x31) ;
+        }
+        
+    #endif
+        
+    #if defined SIMD_COMPILER_SUPPORT_NEON /* Neon Intrinsics */
 
-#if defined(__arm64) || defined(__aarch64__)
-    
-    // Template Specialisation for an ARM Double Packed (2 SIMD Elements)
-    
-    template<>
-    void shuffle4(const Vector4x<double, 2> &A,
-                  const Vector4x<double, 2> &B,
-                  const Vector4x<double, 2> &C,
-                  const Vector4x<double, 2> &D,
-                  Vector4x<double, 2> *ptr1,
-                  Vector4x<double, 2> *ptr2,
-                  Vector4x<double, 2> *ptr3,
-                  Vector4x<double, 2> *ptr4)
-    {
-        ptr1->mData[0] = vuzp1q_f64(A.mData[0].mVal, C.mData[0].mVal);
-        ptr1->mData[1] = vuzp1q_f64(B.mData[0].mVal, D.mData[0].mVal);
-        ptr2->mData[0] = vuzp1q_f64(A.mData[1].mVal, C.mData[1].mVal);
-        ptr2->mData[1] = vuzp1q_f64(B.mData[1].mVal, D.mData[1].mVal);
-        ptr3->mData[0] = vuzp2q_f64(A.mData[0].mVal, C.mData[0].mVal);
-        ptr3->mData[1] = vuzp2q_f64(B.mData[0].mVal, D.mData[0].mVal);
-        ptr4->mData[0] = vuzp2q_f64(A.mData[1].mVal, C.mData[1].mVal);
-        ptr4->mData[1] = vuzp2q_f64(B.mData[1].mVal, D.mData[1].mVal);
-    }
-    
-#endif
+    #if defined(__arm64) || defined(__aarch64__)
+        
+        // Shuffle an ARM Double Packed (2 SIMD Elements)
+        
+        static void shuffle4(const Vector4x<double, 2> &A,
+                             const Vector4x<double, 2> &B,
+                             const Vector4x<double, 2> &C,
+                             const Vector4x<double, 2> &D,
+                             Vector4x<double, 2> *ptr1,
+                             Vector4x<double, 2> *ptr2,
+                             Vector4x<double, 2> *ptr3,
+                             Vector4x<double, 2> *ptr4)
+        {
+            ptr1->mData[0] = vuzp1q_f64(A.mData[0].mVal, C.mData[0].mVal);
+            ptr1->mData[1] = vuzp1q_f64(B.mData[0].mVal, D.mData[0].mVal);
+            ptr2->mData[0] = vuzp1q_f64(A.mData[1].mVal, C.mData[1].mVal);
+            ptr2->mData[1] = vuzp1q_f64(B.mData[1].mVal, D.mData[1].mVal);
+            ptr3->mData[0] = vuzp2q_f64(A.mData[0].mVal, C.mData[0].mVal);
+            ptr3->mData[1] = vuzp2q_f64(B.mData[0].mVal, D.mData[0].mVal);
+            ptr4->mData[0] = vuzp2q_f64(A.mData[1].mVal, C.mData[1].mVal);
+            ptr4->mData[1] = vuzp2q_f64(B.mData[1].mVal, D.mData[1].mVal);
+        }
+        
+    #endif
 
-    // Template Specialisation for an ARM Float Packed (1 SIMD Element)
-    
-    template<>
-    void shuffle4(const Vector4x<float, 4> &A,
-                  const Vector4x<float, 4> &B,
-                  const Vector4x<float, 4> &C,
-                  const Vector4x<float, 4> &D,
-                  Vector4x<float, 4> *ptr1,
-                  Vector4x<float, 4> *ptr2,
-                  Vector4x<float, 4> *ptr3,
-                  Vector4x<float, 4> *ptr4)
-    {
-        const float32x4_t v1 = vcombine_f32( vget_low_f32(A.mData[0].mVal),  vget_low_f32(C.mData[0].mVal));
-        const float32x4_t v2 = vcombine_f32(vget_high_f32(A.mData[0].mVal), vget_high_f32(C.mData[0].mVal));
-        const float32x4_t v3 = vcombine_f32( vget_low_f32(B.mData[0].mVal),  vget_low_f32(D.mData[0].mVal));
-        const float32x4_t v4 = vcombine_f32(vget_high_f32(B.mData[0].mVal), vget_high_f32(D.mData[0].mVal));
+        // Shuffle for an ARM Float Packed (1 SIMD Element)
         
-        const float32x4x2_t v5 = vuzpq_f32(v1, v3);
-        const float32x4x2_t v6 = vuzpq_f32(v2, v4);
+        static void shuffle4(const Vector4x<float, 4> &A,
+                             const Vector4x<float, 4> &B,
+                             const Vector4x<float, 4> &C,
+                             const Vector4x<float, 4> &D,
+                             Vector4x<float, 4> *ptr1,
+                             Vector4x<float, 4> *ptr2,
+                             Vector4x<float, 4> *ptr3,
+                             Vector4x<float, 4> *ptr4)
+        {
+            const float32x4_t v1 = vcombine_f32( vget_low_f32(A.mData[0].mVal),  vget_low_f32(C.mData[0].mVal));
+            const float32x4_t v2 = vcombine_f32(vget_high_f32(A.mData[0].mVal), vget_high_f32(C.mData[0].mVal));
+            const float32x4_t v3 = vcombine_f32( vget_low_f32(B.mData[0].mVal),  vget_low_f32(D.mData[0].mVal));
+            const float32x4_t v4 = vcombine_f32(vget_high_f32(B.mData[0].mVal), vget_high_f32(D.mData[0].mVal));
+            
+            const float32x4x2_t v5 = vuzpq_f32(v1, v3);
+            const float32x4x2_t v6 = vuzpq_f32(v2, v4);
+            
+            ptr1->mData[0] = v5.val[0];
+            ptr2->mData[0] = v6.val[0];
+            ptr3->mData[0] = v5.val[1];
+            ptr4->mData[0] = v6.val[1];
+        }
         
-        ptr1->mData[0] = v5.val[0];
-        ptr2->mData[0] = v6.val[0];
-        ptr3->mData[0] = v5.val[1];
-        ptr4->mData[0] = v6.val[1];
-    }
-    
-#endif
+    #endif
+    };
     
     // ******************** Templates (Scalar or SIMD) for FFT Passes ******************** //
     
@@ -523,8 +521,8 @@ namespace hisstools_fft_impl
             const VecType iC = i7 - r8;
             const VecType iD = i7 + r8;
             
-            shuffle4(rA, rB, rC, rD, r1_ptr++, r2_ptr++, r3_ptr++, r4_ptr++);
-            shuffle4(iA, iB, iC, iD, i1_ptr++, i2_ptr++, i3_ptr++, i4_ptr++);
+            shuffler::shuffle4(rA, rB, rC, rD, r1_ptr++, r2_ptr++, r3_ptr++, r4_ptr++);
+            shuffler::shuffle4(iA, iB, iC, iD, i1_ptr++, i2_ptr++, i3_ptr++, i4_ptr++);
         }
     }
     
