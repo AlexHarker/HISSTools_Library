@@ -110,13 +110,17 @@ namespace hisstools_fft_impl
     // ******************** Interleaving and Deinterleaving ******************** //
 
     template <class T, int vec_size>
-    void deinterleave(const SIMDType<T, vec_size> *input, SIMDType<T, vec_size> *outReal, SIMDType<T, vec_size> *outImag)
+    void deinterleave(const SIMDType<T, vec_size> *input,
+                      SIMDType<T, vec_size> *outReal,
+                      SIMDType<T, vec_size> *outImag)
     {
         static_assert(vec_size != vec_size, "Deinterleave not implemented for this type");
     }
 
     template <class T, int vec_size>
-    void interleave(const SIMDType<T, vec_size> *inReal, const SIMDType<T, vec_size> *inImag, SIMDType<T, vec_size> *output)
+    void interleave(const SIMDType<T, vec_size> *inReal,
+                    const SIMDType<T, vec_size> *inImag,
+                    SIMDType<T, vec_size> *output)
     {
         static_assert(vec_size != vec_size, "Interleave not implemented for this type");
     }
@@ -235,7 +239,7 @@ namespace hisstools_fft_impl
     }
         
     template<>
-    void interleave(const SIMDType<float, 16> *inReal, const SIMDType<float, 16> *inImag, SIMDType *output)
+    void interleave(const SIMDType<float, 16> *inReal, const SIMDType<float, 16> *inImag, SIMDType<float, 16> *output)
     {
         output[0] = _mm512_unpacklo_ps(inReal->mVal, inImag->mVal);
         output[1] = _mm512_unpackhi_ps(inReal->mVal, inImag->mVal);
