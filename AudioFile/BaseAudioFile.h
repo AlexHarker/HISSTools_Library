@@ -23,6 +23,7 @@ namespace HISSTools
             kAudioFileAIFC,
             kAudioFileWAVE
         };
+        
         enum PCMFormat
         {
             kAudioFileInt8,
@@ -32,11 +33,13 @@ namespace HISSTools
             kAudioFileFloat32,
             kAudioFileFloat64
         };
+        
         enum Endianness
         {
             kAudioFileLittleEndian,
             kAudioFileBigEndian
         };
+        
         enum NumberFormat
         {
             kAudioFileInt,
@@ -68,54 +71,127 @@ namespace HISSTools
             AIFC_CURRENT_SPECIFICATION = 0xA2805140
         };
         
-        BaseAudioFile();
-        virtual ~BaseAudioFile();
+        BaseAudioFile()                             { close(); }
+        virtual ~BaseAudioFile()                    {}
     
-        FileType getFileType() const;
-        PCMFormat getPCMFormat() const;
-        Endianness getHeaderEndianness() const;
-        Endianness getAudioEndianness() const;
-        double getSamplingRate() const;
-        uint16_t getChannels() const;
-        FrameCount getFrames() const;
-        uint16_t getBitDepth() const;
-        uint16_t getByteDepth() const;
-        ByteCount getFrameByteCount() const;
-        NumberFormat getNumberFormat() const;
-
-        static std::string getErrorString(Error error);
-        static std::vector<Error> extractErrorsFromFlags(int flags);
-        std::vector<Error> getErrors() const;
+        FileType getFileType() const                { return mFileType; }
+        PCMFormat getPCMFormat() const              { return mPCMFormat; }
+        Endianness getHeaderEndianness() const      { return mHeaderEndianness; }
+        Endianness getAudioEndianness() const       { return mAudioEndianness; }
+        double getSamplingRate() const              { return mSamplingRate; }
+        uint16_t getChannels() const                { return mNumChannels; }
+        uint32_t getFrames() const                  { return mNumFrames; }
+        uint16_t getBitDepth() const                { return findBitDepth(getPCMFormat()); }
+        uint16_t getByteDepth() const               { return getBitDepth() / 8U; }
+        uintptr_t getFrameByteCount() const         { return getChannels() * getByteDepth(); }
+        NumberFormat getNumberFormat() const        { return findNumberFormat(getPCMFormat()); }
         
-        int getErrorFlags() const;
-        bool getIsError() const;
-        void clearErrorFlags();
+        int getErrorFlags() const                   { return mErrorFlags; }
+        bool getIsError() const                     { return mErrorFlags != ERR_NONE; }
+        void clearErrorFlags()                      { setErrorFlags(ERR_NONE); }
 
-        static uint16_t findBitDepth(PCMFormat);
-        static NumberFormat findNumberFormat(PCMFormat);
+        static std::string getErrorString(Error error)
+        {
+            switch (error)
+            {
+                case ERR_MEM_COULD_NOT_ALLOCATE:        return "mem could not allocate";
+                case ERR_FILE_ERROR:                    return "file error";
+                case ERR_FILE_COULDNT_OPEN:             return "file couldn't open";
+                case ERR_FILE_BAD_FORMAT:               return "file bad format";
+                case ERR_FILE_UNKNOWN_FORMAT:           return "file unknown format";
+                case ERR_FILE_UNSUPPORTED_PCM_FORMAT:   return "file unsupported pcm format";
+                case ERR_AIFC_WRONG_VERSION:            return "aifc wrong version";
+                case ERR_AIFC_UNSUPPORTED_FORMAT:       return "aifc unsupported format";
+                case ERR_WAVE_UNSUPPORTED_FORMAT:       return "wave unsupported format";
+                case ERR_FILE_COULDNT_WRITE:            return "file couldn't write";
+                default:                                return "no error";
+            }
+        }
+        
+        static std::vector<Error> extractErrorsFromFlags(int flags)
+        {
+            std::vector<Error> result;
+            
+            for (int i = 0; i != sizeof(int) * 4; i++)
+            {
+                if (flags & (1 << i))
+                    result.push_back(static_cast<Error>(i));
+            }
+            
+            return result;
+        }
+        
+        std::vector<Error> getErrors() const
+        {
+            return extractErrorsFromFlags(getErrorFlags());
+        }
+        
+        static uint16_t findBitDepth(PCMFormat format)
+        {
+            switch (format)
+            {
+                case kAudioFileInt8:        return  8U;
+                case kAudioFileInt16:       return 16U;
+                case kAudioFileInt24:       return 24U;
+                case kAudioFileInt32:       return 32U;
+                case kAudioFileFloat32:     return 32U;
+                case kAudioFileFloat64:     return 64U;
+                default:                    return 16U;
+            }
+        }
+        
+        static NumberFormat findNumberFormat(PCMFormat format)
+        {
+            switch (format)
+            {
+                case kAudioFileFloat32:
+                case kAudioFileFloat64:
+                    return kAudioFileFloat;
+                    
+                case kAudioFileInt8:
+                case kAudioFileInt16:
+                case kAudioFileInt24:
+                case kAudioFileInt32:
+                default:
+                    return kAudioFileInt;
+            }
+        }
 
-        virtual void close();
+        virtual void close()
+        {
+            setFileType(kAudioFileNone);
+            setPCMFormat(kAudioFileInt8);
+            setHeaderEndianness(kAudioFileLittleEndian);
+            setAudioEndianness(kAudioFileLittleEndian);
+            setSamplingRate(0);
+            setChannels(0);
+            setFrames(0);
+            setPCMOffset(0);
+            clearErrorFlags();
+        }
+        
         virtual bool isOpen() = 0;
-        virtual void seek(FrameCount position) = 0;
-        virtual FrameCount getPosition() = 0;
+        virtual void seek(uint32_t position) = 0;
+        virtual uint32_t getPosition() = 0;
 
     protected:
         
-        ByteCount getPCMOffset() const;
+        uintptr_t getPCMOffset() const                      { return mPCMOffset; }
         
-        void setFileType(FileType);
-        void setPCMFormat(PCMFormat);
-        void setHeaderEndianness(Endianness);
-        void setAudioEndianness(Endianness);
-        void setSamplingRate(double);
-        void setChannels(uint16_t);
-        void setFrames(FrameCount);
-        void setPCMOffset(ByteCount);
+        void setFileType(FileType type)                     { mFileType = type; }
+        void setPCMFormat(PCMFormat format)                 { mPCMFormat = format; }
+        void setHeaderEndianness(Endianness endianness)     { mHeaderEndianness = endianness; }
+        void setAudioEndianness(Endianness endianness)      { mAudioEndianness = endianness; }
+        void setSamplingRate(double samplingRate)           { mSamplingRate = samplingRate; }
+        void setChannels(uint16_t chans)                    { mNumChannels = chans; }
+        void setFrames(uint32_t frames)                     { mNumFrames = frames; }
+        void setPCMOffset(uintptr_t offset)                 { mPCMOffset = offset; }
 
-        void setErrorFlags(int flags);
-        void setErrorBit(Error error);
+        void setErrorFlags(int flags)                       { mErrorFlags = flags; }
+        void setErrorBit(Error error)                       { mErrorFlags |= error; }
 
     private:
+        
         FileType mFileType;
         PCMFormat mPCMFormat;
         Endianness mHeaderEndianness;
@@ -123,7 +199,7 @@ namespace HISSTools
 
         double mSamplingRate;
         uint16_t mNumChannels;
-        FrameCount mNumFrames;
+        uint32_t mNumFrames;
         size_t mPCMOffset;
 
         int mErrorFlags;
