@@ -37,12 +37,11 @@ namespace impl
     template <class T>
     static constexpr T ilog2(T x)
     {
-        T bit_shift = x;
-        T bit_count = 0;
+        T count = 0;
     
-        for (; bit_shift; bit_count++, bit_shift >>= T(1));
+        for (; x >> count; count++);
     
-        return x == T(1) << (bit_count - T(1)) ? bit_count - T(1) : bit_count;
+        return x == T(1) << (count - T(1)) ? count - T(1) : count;
     }
 }
 
