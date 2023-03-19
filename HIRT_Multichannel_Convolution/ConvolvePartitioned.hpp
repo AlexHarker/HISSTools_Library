@@ -97,7 +97,7 @@ public:
     
     ConvolveError set_fft_size(uintptr_t fft_size)
     {
-        uintptr_t fft_size_log2 = log2(fft_size);
+        uintptr_t fft_size_log2 = impl::ilog2(fft_size);
         
         ConvolveError error = ConvolveError::None;
         
@@ -414,7 +414,7 @@ private:
 
     ConvolveError set_max_fft_size(uintptr_t max_fft_size)
     {
-        uintptr_t max_fft_size_log2 = log2(max_fft_size);
+        uintptr_t max_fft_size_log2 = impl::ilog2(max_fft_size);
         
         ConvolveError error = ConvolveError::None;
         
