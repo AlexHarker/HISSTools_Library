@@ -79,21 +79,23 @@ public:
         conformed_input<T, U> typed_input(input, length);
 
         m_impulse_length = 0;
+        uintptr_t new_length = 0;
         
         if (input && length > m_offset)
         {
             // Calculate impulse length and pad
             
-            m_impulse_length = std::min(length - m_offset, (m_length ? m_length : max_impulse_length));
-            uintptr_t pad = padded_length(m_impulse_length) - m_impulse_length;
+            new_length = std::min(length - m_offset, (m_length ? m_length : max_impulse_length));
+            uintptr_t pad = padded_length(new_length) - new_length;
 
             const T *offset_input = typed_input.get() + m_offset;
                         
             std::fill_n(m_impulse_buffer, pad, T(0));
-            std::reverse_copy(offset_input, offset_input + m_impulse_length, m_impulse_buffer + pad);
+            std::reverse_copy(offset_input, offset_input + new_length, m_impulse_buffer + pad);
         }
         
         reset();
+        m_impulse_length = new_length;
         
         return (!m_length && (length - m_offset) > max_impulse_length) ? ConvolveError::TimeImpulseTooLong : ConvolveError::None;
     }
