@@ -149,6 +149,8 @@ public:
         uintptr_t fft_size = get_fft_size();
         uintptr_t fft_size_halved = fft_size >> 1;
            
+        m_num_partitions = 0;
+        
         // Calculate how much of the buffer to load
         
         length = (!input || length <= m_offset) ? 0 : length - m_offset;
@@ -186,9 +188,9 @@ public:
             offset_split_pointer(buffer_temp_2, buffer_temp_2, fft_size_halved);
         }
         
-        m_num_partitions = num_partitions;
         reset();
-        
+        m_num_partitions = num_partitions;
+
         return error;
     }
 
