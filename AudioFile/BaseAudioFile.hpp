@@ -90,7 +90,7 @@ namespace HISSTools
         {
             std::vector<Error> errors;
             
-            for (int i = 0; i < static_cast<int>(Error::CouldNotWrite); i++)
+            for (int i = 0; i <= static_cast<int>(Error::CouldNotWrite); i++)
             {
                 if (flags & (1 << i))
                     errors.push_back(static_cast<Error>(i));
