@@ -1,7 +1,7 @@
 #ifndef _HISSTOOLS_IAUDIOFILE_
 #define _HISSTOOLS_IAUDIOFILE_
 
-#include "BaseAudioFile.h"
+#include "BaseAudioFile.hpp"
 #include <fstream>
 
 namespace HISSTools
@@ -10,57 +10,45 @@ namespace HISSTools
     
     class IAudioFile : public BaseAudioFile
     {
-        enum AiffTag
-        {
-            AIFC_TAG_UNKNOWN = 0x0,
-            AIFC_TAG_VERSION = 0x1,
-            AIFC_TAG_COMMON = 0x2,
-            AIFC_TAG_AUDIO = 0x4
-        };
-        enum AifcCompression
-        {
-            AIFC_COMPRESSION_UNKNOWN,
-            AIFC_COMPRESSION_NONE,
-            AIFC_COMPRESSION_LITTLE_ENDIAN,
-            AIFC_COMPRESSION_FLOAT
-        };
+        enum class AIFFTag          { Unknown = 0x0, Version = 0x1, Common = 0x2, Audio = 0x4 };
+        enum class AIFCCompression  { Unknown, None, LittleEndian, Float };
 
     public:
         
         // Constructor and Destructor
         
-        IAudioFile(const std::string& = std::string());
-        ~IAudioFile();
+        IAudioFile(const std::string& file) : mBuffer(nullptr) { open(file); }
+        ~IAudioFile() { close(); }
         
         // File Open / Close
         
-        void open(const std::string& i);
+        void open(const std::string& file);
         void close();
         bool isOpen();
         
         // File Position
         
-        void seek(FrameCount position = 0);
-        FrameCount getPosition();
+        void seek(uintptr_t position = 0);
+        uintptr_t getPosition();
 
         // File Reading
         
-        void readRaw(void* output, FrameCount numFrames);
+        void readRaw(void* output, uintptr_t numFrames);
 
-        void readInterleaved(double* output, FrameCount numFrames);
-        void readInterleaved(float* output, FrameCount numFrames);
+        void readInterleaved(double* output, uintptr_t numFrames) { readAudio(output, numFrames); }
+        void readInterleaved(float* output, uintptr_t numFrames)  { readAudio(output, numFrames); }
 
-        void readChannel(double* output, FrameCount numFrames, uint16_t channel);
-        void readChannel(float* output, FrameCount numFrames, uint16_t channel);
+        void readChannel(double* output, uintptr_t numFrames, uint16_t channel) { readAudio(output, numFrames, channel); }
+        void readChannel(float* output, uintptr_t numFrames, uint16_t channel)  { readAudio(output, numFrames, channel); }
 
     private:
         
         //  Internal File Handling
         
-        bool readInternal(char* buffer, ByteCount numBytes);
-        bool seekInternal(ByteCount position);
-        bool advanceInternal(ByteCount offset);
-        ByteCount positionInternal();
+        bool readInternal(char* buffer, uintptr_t numBytes);
+        bool seekInternal(uintptr_t position);
+        bool advanceInternal(uintptr_t offset);
+        uintptr_t positionInternal();
 
         //  Extracting Single Values
         
@@ -84,26 +72,28 @@ namespace HISSTools
         bool findChunk(const char* searchTag, uint32_t& chunkSize);
         bool readChunk(char* data, uint32_t readSize, uint32_t chunkSize);
 
-        //  PCM Format Helpers
+        //  PCM Format Helper
         
-        static Error findPCMFormat(uint16_t, NumberFormat, PCMFormat&);
-        void setPCMFormat(uint16_t bitDepth, NumberFormat format);
+        bool setPCMFormat(NumericType type, uint16_t bitDepth);
 
         //  AIFF Helpers
         
         bool getAIFFChunkHeader(AiffTag& enumeratedTag, uint32_t& chunkSize);
         AifcCompression getAIFCCompression(const char* tag, uint16_t& bitDepth) const;
 
+        bool getAIFFChunkHeader(AIFFTag& enumeratedTag, uint32_t& chunkSize);
+        AIFCCompression getAIFCCompression(const char* tag, uint16_t& bitDepth) const;
+
         //  Parse Headers
         
-        void parseHeader();
-        void parseAIFFHeader(const char* fileSubtype);
-        void parseWaveHeader(const char* fileType);
+        Error parseHeader();
+        Error parseAIFFHeader(const char* fileSubtype);
+        Error parseWaveHeader(const char* fileType);
 
         //  Internal Typed Audio Read
         
         template <class T>
-        void readAudio(T* output, FrameCount numFrames, int32_t channel = -1);
+        void readAudio(T* output, uintptr_t numFrames, int32_t channel = -1);
          
         //  Data
         
