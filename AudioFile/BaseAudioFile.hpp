@@ -31,7 +31,7 @@ namespace HISSTools
             UnsupportedWaveFormat   = 1 << 8,
             CouldNotWrite           = 1 << 9,
         };
-
+        
         enum AiffVersion
         {
             AIFC_CURRENT_SPECIFICATION = 0xA2805140
@@ -47,11 +47,10 @@ namespace HISSTools
         , mNumFrames(0)
         , mPCMOffset(0)
         , mErrorFlags(static_cast<int>(Error::None))
-        {
-        }
+        {}
         
         virtual ~BaseAudioFile() {}
-            
+        
         FileType getFileType() const            { return mFileType; }
         PCMFormat getPCMFormat() const          { return mPCMFormat; }
         Endianness getHeaderEndianness() const  { return mHeaderEndianness; }
@@ -63,11 +62,11 @@ namespace HISSTools
         uint16_t getByteDepth() const           { return getBitDepth() / 8; }
         uintptr_t getFrameByteCount() const     { return getChannels() * getByteDepth(); }
         NumericType getNumericType() const      { return findNumericType(getPCMFormat()); }
-
+        
         bool isError() const                    { return mErrorFlags != static_cast<int>(Error::None); }
         int getErrorFlags() const               { return mErrorFlags; }
         void clearErrorFlags()                  { mErrorFlags = static_cast<int>(Error::None); }
-
+        
         static std::string getErrorString(Error error)
         {
             switch (error)
@@ -85,7 +84,7 @@ namespace HISSTools
                 case Error::CouldNotWrite:              return "couldn't write file";
             }
         }
-    
+        
         static std::vector<Error> extractErrorsFromFlags(int flags)
         {
             std::vector<Error> errors;
@@ -100,7 +99,7 @@ namespace HISSTools
         }
         
         std::vector<Error> getErrors() const    { return extractErrorsFromFlags(getErrorFlags()); }
-
+        
         static uint16_t findBitDepth(PCMFormat format)
         {
             switch (format)
@@ -123,19 +122,19 @@ namespace HISSTools
                 case PCMFormat::Int24:
                 case PCMFormat::Int32:
                     return NumericType::Integer;
-
+                    
                 case PCMFormat::Float32:
                 case PCMFormat::Float64:
                     return NumericType::Float;
             }
         }
-
+        
     protected:
         
         void clear()                            { *this = BaseAudioFile(); }
-
+        
         uintptr_t getPCMOffset() const          { return mPCMOffset; }
-
+        
         void setErrorFlags(int flags)           { mErrorFlags = flags; }
         void setErrorBit(Error error)           { mErrorFlags |= static_cast<int>(error); }
         
@@ -143,12 +142,12 @@ namespace HISSTools
         PCMFormat mPCMFormat;
         Endianness mHeaderEndianness;
         Endianness mAudioEndianness;
-
+        
         double mSamplingRate;
         uint16_t mNumChannels;
         uintptr_t mNumFrames;
         size_t mPCMOffset;
-
+        
     private:
         
         int mErrorFlags;
