@@ -13,6 +13,24 @@ namespace HISSTools
         enum class AIFFTag          { Unknown = 0x0, Version = 0x1, Common = 0x2, Audio = 0x4 };
         enum class AIFCCompression  { Unknown, None, LittleEndian, Float };
 
+        struct PostionRestore
+        {
+            PostionRestore(IAudioFile &parent)
+            : mParent(parent)
+            , mPosition(parent.positionInternal())
+            {
+                mParent.mFile.seekg(12, std::ios_base::beg);
+            }
+            
+            ~PostionRestore()
+            {
+                mParent.seekInternal(mPosition);
+            }
+                
+            IAudioFile &mParent;
+            ByteCount mPosition;
+        };
+        
     public:
         
         // Constructor and Destructor
@@ -41,6 +59,12 @@ namespace HISSTools
         void readChannel(double* output, uintptr_t numFrames, uint16_t channel) { readAudio(output, numFrames, channel); }
         void readChannel(float* output, uintptr_t numFrames, uint16_t channel)  { readAudio(output, numFrames, channel); }
 
+        // Chunks
+        
+        std::vector<std::string> getChunkTags();
+        ByteCount getChunkSize(const char *tag);
+        void readRawChunk(void *output, const char *tag);
+        
     private:
         
         //  Internal File Handling

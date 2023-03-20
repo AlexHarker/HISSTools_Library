@@ -76,6 +76,53 @@ namespace HISSTools
         readInternal(static_cast<char *>(output), getFrameByteCount() * numFrames);
     }
     
+    // Chunks
+
+    std::vector<std::string> IAudioFile::getChunkTags()
+    {
+        PostionRestore restore(*this);
+
+        char tag[5] = {0, 0, 0, 0, 0};
+        uint32_t chunkSize;
+        
+        std::vector<std::string> tags;
+                        
+        // Iterate through chunks
+
+        while (readChunkHeader(tag, chunkSize))
+        {
+            tags.push_back(tag);
+            readChunk(NULL, 0, chunkSize);
+        }
+                
+        return tags;
+    }
+    
+    IAudioFile::ByteCount IAudioFile::getChunkSize(const char *tag)
+    {
+        PostionRestore restore(*this);
+        
+        uint32_t chunkSize = 0;
+        
+        if (strlen(tag) <= 4)
+            findChunk(tag, chunkSize);
+                
+        return chunkSize;
+    }
+
+    void IAudioFile::readRawChunk(void *output, const char *tag)
+    {
+        PostionRestore restore(*this);
+        
+        uint32_t chunkSize = 0;
+        
+        if (strlen(tag) <= 4)
+        {
+            findChunk(tag, chunkSize);
+            readInternal(static_cast<char *>(output), chunkSize);
+        }
+    }
+
     //  Internal File Handling
 
     bool IAudioFile::readInternal(char* buffer, uintptr_t numBytes)
