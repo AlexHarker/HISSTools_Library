@@ -71,8 +71,7 @@ namespace HISSTools
         {
             switch (error)
             {
-                case Error::None:                       return "no error";
-                case Error::CouldNotAllocate:           return "mem could not allocate";
+                case Error::CouldNotAllocate:           return "could not allocate memory";
                 case Error::FileError:                  return "file error";
                 case Error::CouldNotOpen:               return "couldn't open file";
                 case Error::BadFormat:                  return "bad format";
@@ -82,6 +81,8 @@ namespace HISSTools
                 case Error::UnsupportedAIFCFormat:      return "unsupported aifc format";
                 case Error::UnsupportedWaveFormat:      return "unsupported wave format";
                 case Error::CouldNotWrite:              return "couldn't write file";
+                    
+                default:                                return "no error";
             }
         }
         
@@ -110,6 +111,8 @@ namespace HISSTools
                 case PCMFormat::Int32:      return 32;
                 case PCMFormat::Float32:    return 32;
                 case PCMFormat::Float64:    return 64;
+                    
+                default:                    return 16;
             }
         }
         
@@ -126,6 +129,9 @@ namespace HISSTools
                 case PCMFormat::Float32:
                 case PCMFormat::Float64:
                     return NumericType::Float;
+                    
+                default:
+                    return NumericType::Integer;
             }
         }
         
