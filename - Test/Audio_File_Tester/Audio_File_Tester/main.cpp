@@ -89,6 +89,11 @@ private:
     clock::duration mStore2;
 };
 
+bool compareNans(double x, double y)
+{
+    return std::isnan(x) && std::isnan(y);
+}
+
 double convertIEEEExtended(double x)
 {
     char bytes[10];
@@ -96,7 +101,7 @@ double convertIEEEExtended(double x)
     HISSTools::IEEEDoubleExtendedConvertor()(x, reinterpret_cast<unsigned char *>(bytes));
     auto y = HISSTools::IEEEDoubleExtendedConvertor()(bytes);
     
-    if (x != y && !(std::isnan(x)))// && y == std::isnan(y)))
+    if (x != y && !(compareNans(x, y)))
         throw;
         
     return y;
