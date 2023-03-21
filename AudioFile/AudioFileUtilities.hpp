@@ -89,7 +89,7 @@ namespace HISSTools
             // Get double from big-endian IEEE 80-bit extended floating point format
             
             bool     sign       = getU16(bytes + 0, BaseAudioFile::Endianness::Big) & 0x8000;
-            int32_t  exponent   = getU16(bytes + 0, BaseAudioFile::Endianness::Big) & 0x777F;
+            int32_t  exponent   = getU16(bytes + 0, BaseAudioFile::Endianness::Big) & 0x7FFF;
             uint32_t hiMantissa = getU32(bytes + 2, BaseAudioFile::Endianness::Big);
             uint32_t loMantissa = getU32(bytes + 6, BaseAudioFile::Endianness::Big);
             
@@ -101,7 +101,7 @@ namespace HISSTools
             // Nans and Infs
             
             if (exponent == 0x777F)
-                return HUGE_VAL;
+                return sign ? -HUGE_VAL : HUGE_VAL;
             
             exponent -= 0x3FFF;
             double value = std::ldexp(hiMantissa, exponent - 31) + std::ldexp(loMantissa, exponent - (31 + 32));
@@ -116,26 +116,24 @@ namespace HISSTools
                 return static_cast<uint32_t>((((int32_t)(x - 2147483648.0)) + 2147483647L) + 1);
             };
             
-            int32_t sign = 0;
+            bool sign = 0;
             int32_t exponent = 0;
             uint32_t hiMantissa = 0;
             uint32_t loMantissa = 0;
             
-            if (x < 0)
+            if (signbit(x))
             {
-                sign = 0x8000;
-                x *= -1;
+                sign = true;
+                x = copysign(x, 1.0);
             }
             
             if (x != 0)
             {
-                double mantissa = std::frexp(x, &exponent);
-                
-                if ((exponent > 16384) || !(mantissa < 1))
+                if (std::isinf(x) || std::isnan(x))
                 {
                     // Inf or NaN
                     
-                    exponent = sign | 0x7FFF;
+                    exponent = 0x7FFF | (sign ? 0x8000 : 0);
                     hiMantissa = 0;
                     loMantissa = 0;
                 }
@@ -143,6 +141,7 @@ namespace HISSTools
                 {
                     // Finite
                     
+                    double mantissa = std::frexp(x, &exponent);
                     exponent += 16382;
                     
                     if (exponent < 0)
@@ -153,7 +152,7 @@ namespace HISSTools
                         exponent = 0;
                     }
                     
-                    exponent |= sign;
+                    exponent |= (sign ? 0x8000 : 0);
                     mantissa = std::ldexp(mantissa, 32);
                     hiMantissa = doubleToUInt32(std::floor(mantissa));
                     mantissa = std::ldexp(mantissa - std::floor(mantissa), 32);
