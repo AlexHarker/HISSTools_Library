@@ -189,7 +189,7 @@ namespace HISSTools
         // Get double from big-endian ieee 80 bit extended floating point format
         
         bool sign = getU16(bytes, kAudioFileBigEndian) & 0x8000;
-        int32_t exponent = getU16(bytes, kAudioFileBigEndian) & 0x777F;
+        int32_t exponent = getU16(bytes, kAudioFileBigEndian) & 0x7FFF;
         uint32_t hiSignificand = getU32(bytes + 2, kAudioFileBigEndian);
         uint32_t loSignificand = getU32(bytes + 6, kAudioFileBigEndian);
         
