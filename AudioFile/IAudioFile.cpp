@@ -201,7 +201,7 @@ namespace HISSTools
         
         if (!exponent && !hiSignificand && !loSignificand) return 0.0;
         
-        if (exponent == 0x777F) return HUGE_VAL;
+        if (exponent == 0x7FFF) return HUGE_VAL;
         
         exponent -= 16383;
         value = ldexp(static_cast<double>(hiSignificand), exponent - 31);
