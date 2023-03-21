@@ -100,7 +100,7 @@ namespace HISSTools
             
             // Nans and Infs
             
-            if (exponent == 0x777F)
+            if (exponent == 0x7FFF)
                 return sign ? -HUGE_VAL : HUGE_VAL;
             
             exponent -= 0x3FFF;
