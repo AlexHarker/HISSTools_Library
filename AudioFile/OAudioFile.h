@@ -2,7 +2,6 @@
 #define _HISSTOOLS_OAUDIOFILE_
 
 #include "BaseAudioFile.hpp"
-#include <fstream>
 
 namespace HISSTools
 {
@@ -18,8 +17,6 @@ namespace HISSTools
         void open(const std::string&, FileType, PCMFormat, uint16_t channels, double sr);
         void open(const std::string&, FileType, PCMFormat, uint16_t channels, double sr, Endianness);
         
-        bool isOpen() const { return mFile.is_open(); }
-        void close();
         void seek(uintptr_t position = 0);
         uintptr_t getPosition();
 
@@ -27,7 +24,7 @@ namespace HISSTools
         void writeInterleaved(const float* input, uintptr_t numFrames)  { writeAudio(input, numFrames); }
         
         void writeChannel(const double* input, uintptr_t numFrames, uint16_t channel)   { writeAudio(input, numFrames, channel); }
-        void writeChannel(const float* input, uintptr_t numFrames, uint16_t channel)    {  writeAudio(input, numFrames, channel); }
+        void writeChannel(const float* input, uintptr_t numFrames, uint16_t channel)    { writeAudio(input, numFrames, channel); }
         void writeRaw(const char *input, uintptr_t numFrames)                           { writePCMData(input, numFrames); }
             
     protected:
@@ -41,18 +38,21 @@ namespace HISSTools
         bool seekRelativeInternal(uintptr_t offset);
         bool writeInternal(const char* buffer, uintptr_t bytes);
         
-        bool putU64(uint64_t value, Endianness fileEndianness);
-        bool putU32(uint32_t value, Endianness fileEndianness);
-        bool putU24(uint32_t value, Endianness fileEndianness);
-        bool putU16(uint32_t value, Endianness fileEndianness);
+        bool putU64(uint64_t value, Endianness endianness);
+        bool putU32(uint32_t value, Endianness endianness);
+        bool putU24(uint32_t value, Endianness endianness);
+        bool putU16(uint32_t value, Endianness endianness);
         bool putU08(uint32_t value);
 
-        void rawU64(uint64_t value, Endianness fileEndianness, unsigned char* bytes);
-        void rawU32(uint32_t value, Endianness fileEndianness, unsigned char* bytes);
-        void rawU24(uint32_t value, Endianness fileEndianness, unsigned char* bytes);
-        void rawU16(uint32_t value, Endianness fileEndianness, unsigned char* bytes);
+        void rawU64(uint64_t value, Endianness endianness, unsigned char* bytes);
+        void rawU32(uint32_t value, Endianness endianness, unsigned char* bytes);
+        void rawU24(uint32_t value, Endianness endianness, unsigned char* bytes);
+        void rawU16(uint32_t value, Endianness endianness, unsigned char* bytes);
         void rawU08(uint32_t value, unsigned char* bytes);
 
+        template <class T, int N>
+        bool putBytes(T value, Endianness e);
+        
         bool putPadByte();
 
         bool putExtended(double);
@@ -63,22 +63,20 @@ namespace HISSTools
 
         void writeWaveHeader();
         void writeAIFCHeader();
-
-        uint32_t inputToU32(double input, int32_t bitDepth);
-        uint8_t inputToU8(double input);
         
         bool resize(uintptr_t numFrames);
         bool updateHeader();
-        template <class T> void writeAudio(const T* input, uintptr_t numFrames, int32_t channel = -1);
+        
+        template <class T, class U, int N, class V>
+        void writeLoop(const V* input, uintptr_t j, uintptr_t loopSamples, uintptr_t byteStep);
+        
+        template <class T>
+        void writeAudio(const T* input, uintptr_t numFrames, int32_t channel = -1);
+        
         bool writePCMData(const char* input, uintptr_t numFrames);
 
         const char *getCompressionTag() const;
         const char *getCompressionString() const;
-        
-        //  Data
-
-        std::fstream mFile;
-        unsigned char* mBuffer;
     };
 }
 

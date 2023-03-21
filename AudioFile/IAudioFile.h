@@ -2,7 +2,6 @@
 #define _HISSTOOLS_IAUDIOFILE_
 
 #include "BaseAudioFile.hpp"
-#include <fstream>
 
 namespace HISSTools
 {
@@ -35,14 +34,12 @@ namespace HISSTools
         
         // Constructor and Destructor
         
-        IAudioFile(const std::string& file) : mBuffer(nullptr) { open(file); }
+        IAudioFile(const std::string& file) { open(file); }
         ~IAudioFile() { close(); }
         
-        // File Open / Close
+        // File Open
         
         void open(const std::string& file);
-        void close();
-        bool isOpen();
         
         // File Position
         
@@ -76,19 +73,15 @@ namespace HISSTools
 
         //  Extracting Single Values
         
-        uint64_t getU64(const char* bytes, Endianness fileEndianness) const;
-        uint32_t getU32(const char* bytes, Endianness fileEndianness) const;
-        uint32_t getU24(const char* bytes, Endianness fileEndianness) const;
-        uint32_t getU16(const char* bytes, Endianness fileEndianness) const;
+        static uint64_t getU64(const char* bytes, Endianness endianness);
+        static uint32_t getU32(const char* bytes, Endianness endianness);
+        static uint32_t getU24(const char* bytes, Endianness endianness);
+        static uint32_t getU16(const char* bytes, Endianness endianness);
 
         //  Conversion
         
         double extendedToDouble(const char* bytes) const;
-        template <class T> void u32ToOutput(T* output, uint32_t value);
-        template <class T> void u8ToOutput(T* output, uint8_t value);
-        template <class T> void float32ToOutput(T* output, uint32_t value);
-        template <class T> void float64ToOutput(T* output, uint64_t value);
-
+        
         //  Chunk Reading
         
         static bool matchTag(const char* a, const char* b);
@@ -112,14 +105,12 @@ namespace HISSTools
         Error parseWaveHeader(const char* fileType);
 
         //  Internal Typed Audio Read
+
+        template <class T, class U, int N, int Shift, class V>
+        void readLoop(V* output, uintptr_t j, uintptr_t loopSamples, uintptr_t byteStep);
         
         template <class T>
         void readAudio(T* output, uintptr_t numFrames, int32_t channel = -1);
-         
-        //  Data
-        
-        std::ifstream mFile;
-        char *mBuffer;
     };
 }
 

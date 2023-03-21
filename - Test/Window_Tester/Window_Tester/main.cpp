@@ -205,7 +205,7 @@ int main(int argc, const char * argv[])
     
     if (argc > 1)
     {
-        HISSTools::OAudioFile file(argv[1], HISSTools::BaseAudioFile::kAudioFileWAVE, HISSTools::BaseAudioFile::kAudioFileFloat32, 1, 44100.0);
+        HISSTools::OAudioFile file(argv[1], HISSTools::BaseAudioFile::FileType::WAVE, HISSTools::BaseAudioFile::PCMFormat::Float32, 1, 44100.0);
         
         if (file.isOpen())
             file.writeChannel(window, size, 0);

@@ -6,31 +6,23 @@
 #include <vector>
 #include <algorithm>
 
-#define WORK_LOOP_SIZE 1024
+#include "AudioFileUtilities.hpp"
 
 namespace HISSTools
 {
-    // Length Helper
-    
-    template <typename T>
-    T paddedLength(T length)
-    {
-        return length + (length & 0x1);
-    }
-
     // File Opening / Close
     
-    void IAudioFile::open(const std::string& i)
+    void IAudioFile::open(const std::string& file)
     {
         close();
         
-        if (!i.empty())
+        if (!file.empty())
         {
-            mFile.open(i.c_str(), std::ios_base::binary);
+            mFile.open(file.c_str(), std::ios_base::binary);
             if (mFile.is_open())
             {
                 setErrorBit(parseHeader());
-                mBuffer = new char[WORK_LOOP_SIZE * getFrameByteCount()];
+                mBuffer.resize(WORK_LOOP_SIZE * getFrameByteCount());
                 seek();
             }
             else
@@ -38,22 +30,6 @@ namespace HISSTools
         }
     }
 
-    void IAudioFile::close()
-    {
-        mFile.close();
-        clear();
-        if (mBuffer)
-        {
-            delete[] mBuffer;
-            mBuffer = nullptr;
-        }
-    }
-
-    bool IAudioFile::isOpen()
-    {
-        return mFile.is_open();
-    }
-    
     // File Position
 
     void IAudioFile::seek(uintptr_t position)
@@ -129,8 +105,7 @@ namespace HISSTools
     {
         mFile.clear();
         mFile.read(buffer, numBytes);
-        
-       return static_cast<uintptr_t>(mFile.gcount()) == numBytes;
+        return static_cast<uintptr_t>(mFile.gcount()) == numBytes;
     }
     
     bool IAudioFile::seekInternal(uintptr_t position)
@@ -152,114 +127,41 @@ namespace HISSTools
     
     //  Extracting Single Values
     
-    uint64_t IAudioFile::getU64(const char* b, Endianness fileEndianness) const
-    {
-        const unsigned char* bytes = reinterpret_cast<const unsigned char*>(b);
-        
-        if (fileEndianness == Endianness::Big)
-            return ((uint64_t)bytes[0] << 56) | ((uint64_t)bytes[1] << 48)
-            | ((uint64_t)bytes[2] << 40) | ((uint64_t)bytes[3] << 32)
-            | ((uint64_t)bytes[4] << 24) | ((uint64_t)bytes[5] << 16)
-            | ((uint64_t)bytes[6] << 8) | (uint64_t)bytes[7];
-        else
-            return ((uint64_t)bytes[7] << 56) | ((uint64_t)bytes[6] << 48)
-            | ((uint64_t)bytes[5] << 40) | ((uint64_t)bytes[4] << 32)
-            | ((uint64_t)bytes[3] << 24) | ((uint64_t)bytes[2] << 16)
-            | ((uint64_t)bytes[1] << 8) | (uint64_t)bytes[0];
-    }
-    
-    uint32_t IAudioFile::getU32(const char* b, Endianness fileEndianness) const
-    {
-        const unsigned char* bytes = reinterpret_cast<const unsigned char*>(b);
-        
-        if (fileEndianness == Endianness::Big)
-            return (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3];
-        else
-            return (bytes[3] << 24) | (bytes[2] << 16) | (bytes[1] << 8) | bytes[0];
-    }
-    
-    uint32_t IAudioFile::getU24(const char* b, Endianness fileEndianness) const
-    {
-        const unsigned char* bytes = reinterpret_cast<const unsigned char*>(b);
-        
-        if (fileEndianness == Endianness::Big)
-            return (bytes[0] << 16) | (bytes[1] << 8) | bytes[2];
-        else
-            return (bytes[2] << 16) | (bytes[1] << 8) | bytes[0];
-    }
-    
-    uint32_t IAudioFile::getU16(const char* b, Endianness fileEndianness) const
-    {
-        const unsigned char* bytes = reinterpret_cast<const unsigned char*>(b);
-        
-        if (fileEndianness == Endianness::Big)
-            return (bytes[0] << 8) | bytes[1];
-        else
-            return (bytes[1] << 8) | bytes[0];
-    }
+    uint64_t IAudioFile::getU64(const char* b, Endianness e) { return getBytes<uint64_t, 8>(b, e); }
+    uint32_t IAudioFile::getU32(const char* b, Endianness e) { return getBytes<uint32_t, 4>(b, e); }
+    uint32_t IAudioFile::getU24(const char* b, Endianness e) { return getBytes<uint32_t, 3>(b, e); }
+    uint32_t IAudioFile::getU16(const char* b, Endianness e) { return getBytes<uint32_t, 2>(b, e); }
     
     // Conversion
     
     double IAudioFile::extendedToDouble(const char* bytes) const
     {
-        // Get double from big-endian ieee 80 bit extended floating point format
+        // Get double from big-endian IEEE 80-bit extended floating point format
         
-        bool sign = getU16(bytes, Endianness::Big) & 0x8000;
-        int32_t exponent = getU16(bytes, Endianness::Big) & 0x777F;
-        uint32_t hiSignificand = getU32(bytes + 2, Endianness::Big);
-        uint32_t loSignificand = getU32(bytes + 6, Endianness::Big);
+        bool     sign       = getU16(bytes + 0, Endianness::Big) & 0x8000;
+        int32_t  exponent   = getU16(bytes + 0, Endianness::Big) & 0x777F;
+        uint32_t hiMantissa = getU32(bytes + 2, Endianness::Big);
+        uint32_t loMantissa = getU32(bytes + 6, Endianness::Big);
+  
+        // Special handlers for zeros
         
-        double value;
+        if (!exponent && !hiMantissa && !loMantissa)
+            return 0.0;
         
-        // Special handlers for zeros and infs / NaNs (in either case the
-        // file is probably useless as the sampling rate *should* have a
-        // sensible value)
+        // Nans and Infs
         
-        if (!exponent && !hiSignificand && !loSignificand) return 0.0;
+        if (exponent == 0x777F)
+            return HUGE_VAL;
         
-        if (exponent == 0x777F) return HUGE_VAL;
-        
-        exponent -= 16383;
-        value = ldexp(static_cast<double>(hiSignificand), exponent - 31);
-        value += ldexp(static_cast<double>(loSignificand), exponent - (31 + 32));
-        
-        if (sign) value = -value;
-        
-        return value;
-    }
-
-    template <class T>
-    void IAudioFile::u32ToOutput(T* output, uint32_t value)
-    {
-        // N.B. the result of the shift is a negative int32_T value, hence the negation
-        
-        *output = *reinterpret_cast<int32_t*>(&value) * (T(-1.0) / static_cast<T>(int32_t(1) << int32_t(31)));
-    }
-    
-    template <class T>
-    void IAudioFile::u8ToOutput(T* output, uint8_t value)
-    {
-        *output = (T(value) - T(128)) / T(128);
-    }
-    
-    template <class T>
-    void IAudioFile::float32ToOutput(T* output, uint32_t value)
-    {
-        *output = *reinterpret_cast<float*>(&value);
-    }
-    
-    template <class T>
-    void IAudioFile::float64ToOutput(T* output, uint64_t value)
-    {
-        *output = static_cast<T>(*reinterpret_cast<double*>(&value));
+        exponent -= 0x3FFF;
+        double value = std::ldexp(hiMantissa, exponent - 31) + std::ldexp(loMantissa, exponent - (31 + 32));
+                
+        return sign ? -value : value;
     }
     
      //  Chunk Reading
     
-    bool IAudioFile::matchTag(const char* a, const char* b)
-    {
-        return (strncmp(a, b, 4) == 0);
-    }
+    bool IAudioFile::matchTag(const char* a, const char* b) { return (strncmp(a, b, 4) == 0); }
 
     bool IAudioFile::readChunkHeader(char* tag, uint32_t& chunkSize)
     {
@@ -442,8 +344,7 @@ namespace HISSTools
                     if (!readChunk(chunk, (chunkSize > 22) ? 22 : ((chunkSize < 18) ? 18 : chunkSize), chunkSize))
                         return Error::BadFormat;
                     
-                    // Retrieve relevant data (AIFF or AIFC) and set AIFF
-                    // defaults
+                    // Retrieve relevant data (AIFF or AIFC) and set AIFF defaults
                     
                     mNumChannels = getU16(chunk + 0, getHeaderEndianness());
                     mNumFrames = getU32(chunk + 2, getHeaderEndianness());
@@ -465,7 +366,7 @@ namespace HISSTools
                         
                         // Require a version chunk
                         
-                        formatValid |= static_cast<uint32_t>(AIFFTag::Version);
+                        //formatValid |= static_cast<uint32_t>(AIFFTag::Version);
                         
                         // Set parameters based on format
                         
@@ -587,7 +488,36 @@ namespace HISSTools
 
         return Error::None;
     }
+    
+    template <class T, class U, class V>
+    U convert(V value, T, U)
+    {
+        return static_cast<U>(*reinterpret_cast<T*>(&value));
+    }
 
+    template <class T>
+    T convert(uint8_t value, uint8_t, T)
+    {
+        return (static_cast<T>(value) - T(128)) / T(128);
+    }
+    
+    template <class T>
+    T convert(uint32_t value, uint32_t, T)
+    {
+        // N.B. the result of the shift is a negative int32_t value, hence the negation
+        
+        return convert<int32_t, T>(value, uint32_t(0), T(0)) * (T(-1.0) / static_cast<T>(int32_t(1) << int32_t(31)));
+    }
+    
+    template <class T, class U, int N, int Shift, class V>
+    void IAudioFile::readLoop(V* output, uintptr_t j, uintptr_t loopSamples, uintptr_t byteStep)
+    {
+        Endianness endianness = getAudioEndianness();
+        
+        for (uintptr_t i = 0; i < loopSamples; i++, j += byteStep)
+            output[i] = convert(getBytes<U, N>(mBuffer.data() + j, endianness) << Shift, T(0), V(0));
+    }
+    
     //  Internal Typed Audio Read
 
     template <class T>
@@ -604,56 +534,31 @@ namespace HISSTools
         
         while (numFrames)
         {
-            uintptr_t loopFrames = numFrames > WORK_LOOP_SIZE ? WORK_LOOP_SIZE : numFrames;
+            uintptr_t loopFrames = std::min(numFrames, WORK_LOOP_SIZE);
             uintptr_t loopSamples = loopFrames * numChannels;
             uintptr_t j = channel * byteDepth;
 
             // Read raw
 
-            readRaw(mBuffer, loopFrames);
+            readRaw(mBuffer.data(), loopFrames);
 
-            // Move to Output
+            // Copy and convert to Output
 
             switch (getPCMFormat())
             {
                 case PCMFormat::Int8:
                     if (getFileType() == FileType::WAVE)
-                    {
-                        for (uintptr_t i = 0; i < loopSamples; i++, j += byteStep)
-                            u8ToOutput(output + i, *(reinterpret_cast<uint8_t *>(mBuffer + j)));
-                    }
+                        readLoop<uint8_t, uint8_t, 1, 0>(output, j, loopSamples, byteStep);
                     else
-                    {
-                        for (uintptr_t i = 0; i < loopSamples; i++, j += byteStep)
-                            u32ToOutput(output + i, mBuffer[j] << 24);
-                    }
+                        readLoop<uint32_t, uint32_t, 1, 24>(output, j, loopSamples, byteStep);
                     break;
 
-                case PCMFormat::Int16:
-                    for (uintptr_t i = 0; i < loopSamples; i++, j += byteStep)
-                        u32ToOutput(output + i, getU16(mBuffer + j, getAudioEndianness()) << 16);
-                    break;
+                case PCMFormat::Int16:      readLoop<uint32_t, uint32_t, 2, 16>(output, j, loopSamples, byteStep);      break;
+                case PCMFormat::Int24:      readLoop<uint32_t, uint32_t, 3,  8>(output, j, loopSamples, byteStep);      break;
+                case PCMFormat::Int32:      readLoop<uint32_t, uint32_t, 4,  0>(output, j, loopSamples, byteStep);      break;
+                case PCMFormat::Float32:    readLoop<float, uint32_t, 4,  0>(output, j, loopSamples, byteStep);         break;
+                case PCMFormat::Float64:    readLoop<double, uint64_t, 8,  0>(output, j, loopSamples, byteStep);        break;
 
-                case PCMFormat::Int24:
-                    for (uintptr_t i = 0; i < loopSamples; i++, j += byteStep)
-                        u32ToOutput(output + i, getU24(mBuffer + j, getAudioEndianness()) << 8);
-                    break;
-
-                case PCMFormat::Int32:
-                    for (size_t i = 0; i < loopSamples; i++, j += byteStep)
-                        u32ToOutput(output + i, getU32(mBuffer + j, getAudioEndianness()));
-                    break;
-
-                case PCMFormat::Float32:
-                    for (size_t i = 0; i < loopSamples; i++, j += byteStep)
-                        float32ToOutput(output + i, getU32(mBuffer + j, getAudioEndianness()));
-                    break;
-
-                case PCMFormat::Float64:
-                    for (size_t i = 0; i < loopSamples; i++, j += byteStep)
-                        float64ToOutput(output + i, getU64(mBuffer + j, getAudioEndianness()));
-                    break;
-                    
                 default:
                     break;
             }

@@ -51,6 +51,23 @@ namespace HISSTools
         
         virtual ~BaseAudioFile() {}
         
+        bool isOpen() const                     { return mFile.is_open(); }
+
+        void close()
+        {
+            mFile.close();
+            
+            mFileType = FileType::None;
+            mPCMFormat = PCMFormat::Int8;
+            mHeaderEndianness = Endianness::Little;
+            mAudioEndianness = Endianness::Little;
+            mSamplingRate = 0;
+            mNumChannels = 0;
+            mNumFrames = 0;
+            mPCMOffset = 0;
+            mErrorFlags = static_cast<int>(Error::None);
+        }
+        
         FileType getFileType() const            { return mFileType; }
         PCMFormat getPCMFormat() const          { return mPCMFormat; }
         Endianness getHeaderEndianness() const  { return mHeaderEndianness; }
@@ -135,14 +152,23 @@ namespace HISSTools
             }
         }
         
+        template <int N, int M, Endianness E>
+        static constexpr int byteShift() { return E == Endianness::Big ? (N - (M + 1)) * 8 : M * 8; }
+
     protected:
         
-        void clear()                            { *this = BaseAudioFile(); }
+        static constexpr uintptr_t WORK_LOOP_SIZE = 1024;
         
         uintptr_t getPCMOffset() const          { return mPCMOffset; }
         
         void setErrorFlags(int flags)           { mErrorFlags = flags; }
         void setErrorBit(Error error)           { mErrorFlags |= static_cast<int>(error); }
+        
+        template <typename T>
+        static T paddedLength(T length)
+        {
+            return length + (length & 0x1);
+        }
         
         FileType mFileType;
         PCMFormat mPCMFormat;
@@ -153,6 +179,11 @@ namespace HISSTools
         uint16_t mNumChannels;
         uintptr_t mNumFrames;
         size_t mPCMOffset;
+        
+        //  Data
+        
+        std::fstream mFile;
+        std::vector<unsigned char> mBuffer;
         
     private:
         
