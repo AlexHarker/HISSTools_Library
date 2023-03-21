@@ -4,6 +4,8 @@
 
 #include "BaseAudioFile.hpp"
 
+#include <cmath>
+
 namespace HISSTools
 {
     // Byte Shift
@@ -107,7 +109,7 @@ namespace HISSTools
             return sign ? -value : value;
         }
         
-        void operator()(double num, unsigned char bytes[10])
+        void operator()(double x, unsigned char bytes[10])
         {
             auto doubleToUInt32 = [](double x)
             {
@@ -115,46 +117,53 @@ namespace HISSTools
             };
             
             int32_t sign = 0;
-            int32_t expon = 0;
-            uint32_t hiMant = 0;
-            uint32_t loMant = 0;
+            int32_t exponent = 0;
+            uint32_t hiMantissa = 0;
+            uint32_t loMantissa = 0;
             
-            if (num < 0)
+            if (x < 0)
             {
                 sign = 0x8000;
-                num *= -1;
+                x *= -1;
             }
             
-            if (num != 0)
+            if (x != 0)
             {
-                double fMant = frexp(num, &expon);
-                if ((expon > 16384) || !(fMant < 1))
-                { /* Infinity or NaN */
-                    expon = sign | 0x7FFF;
-                    hiMant = 0;
-                    loMant = 0; /* infinity */
+                double mantissa = std::frexp(x, &exponent);
+                
+                if ((exponent > 16384) || !(mantissa < 1))
+                {
+                    // Inf or NaN
+                    
+                    exponent = sign | 0x7FFF;
+                    hiMantissa = 0;
+                    loMantissa = 0;
                 }
                 else
-                { /* Finite */
-                    expon += 16382;
-                    if (expon < 0)
-                    { /* denormalized */
-                        fMant = ldexp(fMant, expon);
-                        expon = 0;
+                {
+                    // Finite
+                    
+                    exponent += 16382;
+                    
+                    if (exponent < 0)
+                    {
+                        // Denormalized
+                        
+                        mantissa = std::ldexp(mantissa, exponent);
+                        exponent = 0;
                     }
-                    expon |= sign;
-                    fMant = ldexp(fMant, 32);
-                    double fsMant = floor(fMant);
-                    hiMant = doubleToUInt32(fsMant);
-                    fMant = ldexp(fMant - fsMant, 32);
-                    fsMant = floor(fMant);
-                    loMant = doubleToUInt32(fsMant);
+                    
+                    exponent |= sign;
+                    mantissa = std::ldexp(mantissa, 32);
+                    hiMantissa = doubleToUInt32(std::floor(mantissa));
+                    mantissa = std::ldexp(mantissa - std::floor(mantissa), 32);
+                    loMantissa = doubleToUInt32(std::floor(mantissa));
                 }
             }
             
-            setBytes<2>(expon, BaseAudioFile::Endianness::Big, bytes + 0);
-            setBytes<4>(hiMant, BaseAudioFile::Endianness::Big, bytes + 2);
-            setBytes<4>(loMant, BaseAudioFile::Endianness::Big, bytes + 6);
+            setBytes<2>(exponent, BaseAudioFile::Endianness::Big, bytes + 0);
+            setBytes<4>(hiMantissa, BaseAudioFile::Endianness::Big, bytes + 2);
+            setBytes<4>(loMantissa, BaseAudioFile::Endianness::Big, bytes + 6);
         }
     };
 }
