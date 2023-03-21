@@ -98,7 +98,7 @@ namespace HISSTools
         return tags;
     }
     
-    IAudioFile::ByteCount IAudioFile::getChunkSize(const char *tag)
+    uintptr_t IAudioFile::getChunkSize(const char *tag)
     {
         PostionRestore restore(*this);
         

@@ -28,7 +28,7 @@ namespace HISSTools
             }
                 
             IAudioFile &mParent;
-            ByteCount mPosition;
+            uintptr_t mPosition;
         };
         
     public:
@@ -62,7 +62,7 @@ namespace HISSTools
         // Chunks
         
         std::vector<std::string> getChunkTags();
-        ByteCount getChunkSize(const char *tag);
+        uintptr_t getChunkSize(const char *tag);
         void readRawChunk(void *output, const char *tag);
         
     private:
@@ -102,9 +102,6 @@ namespace HISSTools
 
         //  AIFF Helpers
         
-        bool getAIFFChunkHeader(AiffTag& enumeratedTag, uint32_t& chunkSize);
-        AifcCompression getAIFCCompression(const char* tag, uint16_t& bitDepth) const;
-
         bool getAIFFChunkHeader(AIFFTag& enumeratedTag, uint32_t& chunkSize);
         AIFCCompression getAIFCCompression(const char* tag, uint16_t& bitDepth) const;
 
