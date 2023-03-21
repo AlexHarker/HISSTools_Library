@@ -44,12 +44,6 @@ namespace HISSTools
         bool putU16(uint32_t value, Endianness endianness);
         bool putU08(uint32_t value);
 
-        void rawU64(uint64_t value, Endianness endianness, unsigned char* bytes);
-        void rawU32(uint32_t value, Endianness endianness, unsigned char* bytes);
-        void rawU24(uint32_t value, Endianness endianness, unsigned char* bytes);
-        void rawU16(uint32_t value, Endianness endianness, unsigned char* bytes);
-        void rawU08(uint32_t value, unsigned char* bytes);
-
         template <class T, int N>
         bool putBytes(T value, Endianness e);
         
@@ -75,8 +69,8 @@ namespace HISSTools
         
         bool writePCMData(const char* input, uintptr_t numFrames);
 
-        const char *getCompressionTag() const;
-        const char *getCompressionString() const;
+        const char *getAIFCCompressionTag() const;
+        const char *getAIFCCompressionString() const;
     };
 }
 

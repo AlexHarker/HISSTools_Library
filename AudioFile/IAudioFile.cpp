@@ -125,40 +125,6 @@ namespace HISSTools
         return mFile.tellg();
     }
     
-    //  Extracting Single Values
-    
-    uint64_t IAudioFile::getU64(const char* b, Endianness e) { return getBytes<uint64_t, 8>(b, e); }
-    uint32_t IAudioFile::getU32(const char* b, Endianness e) { return getBytes<uint32_t, 4>(b, e); }
-    uint32_t IAudioFile::getU24(const char* b, Endianness e) { return getBytes<uint32_t, 3>(b, e); }
-    uint32_t IAudioFile::getU16(const char* b, Endianness e) { return getBytes<uint32_t, 2>(b, e); }
-    
-    // Conversion
-    
-    double IAudioFile::extendedToDouble(const char* bytes) const
-    {
-        // Get double from big-endian IEEE 80-bit extended floating point format
-        
-        bool     sign       = getU16(bytes + 0, Endianness::Big) & 0x8000;
-        int32_t  exponent   = getU16(bytes + 0, Endianness::Big) & 0x777F;
-        uint32_t hiMantissa = getU32(bytes + 2, Endianness::Big);
-        uint32_t loMantissa = getU32(bytes + 6, Endianness::Big);
-  
-        // Special handlers for zeros
-        
-        if (!exponent && !hiMantissa && !loMantissa)
-            return 0.0;
-        
-        // Nans and Infs
-        
-        if (exponent == 0x777F)
-            return HUGE_VAL;
-        
-        exponent -= 0x3FFF;
-        double value = std::ldexp(hiMantissa, exponent - 31) + std::ldexp(loMantissa, exponent - (31 + 32));
-                
-        return sign ? -value : value;
-    }
-    
      //  Chunk Reading
     
     bool IAudioFile::matchTag(const char* a, const char* b) { return (strncmp(a, b, 4) == 0); }
@@ -349,7 +315,7 @@ namespace HISSTools
                     mNumChannels = getU16(chunk + 0, getHeaderEndianness());
                     mNumFrames = getU32(chunk + 2, getHeaderEndianness());
                     uint16_t bitDepth = getU16(chunk + 6, getHeaderEndianness());
-                    mSamplingRate = extendedToDouble(chunk + 8);
+                    mSamplingRate = IEEEDoubleExtendedConvertor()(chunk + 8);
                     
                     NumericType type = NumericType::Integer;
                     mAudioEndianness = Endianness::Big;
@@ -372,14 +338,9 @@ namespace HISSTools
                         
                         switch (getAIFCCompression(chunk + 18, bitDepth))
                         {
-                            case AIFCCompression::None:
-                                break;
-                            case AIFCCompression::LittleEndian:
-                                mAudioEndianness = Endianness::Little;
-                                break;
-                            case AIFCCompression::Float:
-                                type = NumericType::Float;
-                                break;
+                            case AIFCCompression::None:                                                         break;
+                            case AIFCCompression::LittleEndian:     mAudioEndianness = Endianness::Little;      break;
+                            case AIFCCompression::Float:            type = NumericType::Float;                  break;
                             default:
                                 return Error::UnsupportedAIFCFormat;
                         }

@@ -152,9 +152,6 @@ namespace HISSTools
             }
         }
         
-        template <int N, int M, Endianness E>
-        static constexpr int byteShift() { return E == Endianness::Big ? (N - (M + 1)) * 8 : M * 8; }
-
     protected:
         
         static constexpr uintptr_t WORK_LOOP_SIZE = 1024;

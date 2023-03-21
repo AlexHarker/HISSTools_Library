@@ -71,17 +71,6 @@ namespace HISSTools
         bool advanceInternal(uintptr_t offset);
         uintptr_t positionInternal();
 
-        //  Extracting Single Values
-        
-        static uint64_t getU64(const char* bytes, Endianness endianness);
-        static uint32_t getU32(const char* bytes, Endianness endianness);
-        static uint32_t getU24(const char* bytes, Endianness endianness);
-        static uint32_t getU16(const char* bytes, Endianness endianness);
-
-        //  Conversion
-        
-        double extendedToDouble(const char* bytes) const;
-        
         //  Chunk Reading
         
         static bool matchTag(const char* a, const char* b);

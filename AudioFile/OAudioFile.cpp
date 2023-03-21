@@ -113,13 +113,6 @@ namespace HISSTools
         return writeInternal(reinterpret_cast<const char*>(bytes), N);
     }
     
-    void OAudioFile::rawU64(uint64_t value, Endianness e, unsigned char* b) { setBytes<8>(value, e, b); }
-    void OAudioFile::rawU32(uint32_t value, Endianness e, unsigned char* b) { setBytes<4>(value, e, b); }
-    void OAudioFile::rawU24(uint32_t value, Endianness e, unsigned char* b) { setBytes<3>(value, e, b); }
-    void OAudioFile::rawU16(uint32_t value, Endianness e, unsigned char* b) { setBytes<2>(value, e, b); }
-    
-    void OAudioFile::rawU08(uint32_t value, unsigned char* b) { b[0] = value & 0xFF; }
-
     bool OAudioFile::putU64(uint64_t value, Endianness e) { return putBytes<uint64_t, 8>(value, e); }
     bool OAudioFile::putU32(uint32_t value, Endianness e) { return putBytes<uint32_t, 4>(value, e); }
     bool OAudioFile::putU24(uint32_t value, Endianness e) { return putBytes<uint32_t, 3>(value, e); }
@@ -146,61 +139,11 @@ namespace HISSTools
         return writeInternal(tag, 4);
     }
 
-    uint32_t doubleToUInt32(double x)
-    {
-        return ((uint32_t)(((int32_t)(x - 2147483648.0)) + 2147483647L) + 1);
-    }
-
-    void doubleToExtended(double num, unsigned char* bytes)
-    {
-        int32_t sign = 0;
-        int32_t expon = 0;
-        uint32_t hiMant = 0;
-        uint32_t loMant = 0;
-
-        if (num < 0)
-        {
-            sign = 0x8000;
-            num *= -1;
-        }
-
-        if (num != 0)
-        {
-            double fMant = frexp(num, &expon);
-            if ((expon > 16384) || !(fMant < 1))
-            { /* Infinity or NaN */
-                expon = sign | 0x7FFF;
-                hiMant = 0;
-                loMant = 0; /* infinity */
-            }
-            else
-            { /* Finite */
-                expon += 16382;
-                if (expon < 0)
-                { /* denormalized */
-                    fMant = ldexp(fMant, expon);
-                    expon = 0;
-                }
-                expon |= sign;
-                fMant = ldexp(fMant, 32);
-                double fsMant = floor(fMant);
-                hiMant = doubleToUInt32(fsMant);
-                fMant = ldexp(fMant - fsMant, 32);
-                fsMant = floor(fMant);
-                loMant = doubleToUInt32(fsMant);
-            }
-        }
-
-        setBytes<2>(expon, BaseAudioFile::Endianness::Big, bytes + 0);
-        setBytes<4>(hiMant, BaseAudioFile::Endianness::Big, bytes + 2);
-        setBytes<4>(loMant, BaseAudioFile::Endianness::Big, bytes + 6);
-    }
-
     bool OAudioFile::putExtended(double value)
     {
         unsigned char bytes[10];
 
-        doubleToExtended(value, bytes);
+        IEEEDoubleExtendedConvertor()(value, bytes);
 
         return writeInternal(reinterpret_cast<const char*>(bytes), 10);
     }
@@ -253,7 +196,7 @@ namespace HISSTools
             setErrorBit(Error::CouldNotWrite);
     }
 
-    const char* OAudioFile::getCompressionTag() const
+    const char* OAudioFile::getAIFCCompressionTag() const
     {
         // FIX - doesn't deal with little endian... (return type)? "sowt"
         
@@ -271,7 +214,7 @@ namespace HISSTools
         }
     }
 
-    const char* OAudioFile::getCompressionString() const
+    const char* OAudioFile::getAIFCCompressionString() const
     {
         // FIX - doesn't deal with little endian... (return type)? "little endian"
         
@@ -295,7 +238,7 @@ namespace HISSTools
 
         // Set file type, data size offset frames and header size
 
-        uint32_t headerSize = 62 + lengthAsPString(getCompressionString());
+        uint32_t headerSize = 62 + lengthAsPString(getAIFCCompressionString());
 
         // File Header
 
@@ -309,13 +252,13 @@ namespace HISSTools
 
         // COMM Chunk
 
-        success &= putChunk("COMM", 22 + lengthAsPString(getCompressionString()));
+        success &= putChunk("COMM", 22 + lengthAsPString(getAIFCCompressionString()));
         success &= putU16(getChannels(), getHeaderEndianness());
         success &= putU32(getFrames(), getHeaderEndianness());
         success &= putU16(getBitDepth(), getHeaderEndianness());
         success &= putExtended(getSamplingRate());
-        success &= putTag(getCompressionTag());
-        success &= putPString(getCompressionString());
+        success &= putTag(getAIFCCompressionTag());
+        success &= putPString(getAIFCCompressionString());
 
         // SSND Chunk (zero size)
 
