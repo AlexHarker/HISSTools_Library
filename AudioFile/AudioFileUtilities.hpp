@@ -5,6 +5,7 @@
 #include "BaseAudioFile.hpp"
 
 #include <cmath>
+#include <limits>
 
 namespace HISSTools
 {
@@ -84,7 +85,10 @@ namespace HISSTools
     
     struct IEEEDoubleExtendedConvertor
     {
-        double operator()(const char* bytes) const
+        double infinity() { return std::numeric_limits<double>::infinity(); }
+        double quiet_NaN() { return std::numeric_limits<double>::quiet_NaN(); }
+        
+        double operator()(const char* bytes)
         {
             // Get double from big-endian IEEE 80-bit extended floating point format
             
@@ -101,10 +105,15 @@ namespace HISSTools
             // Nans and Infs
             
             if (exponent == 0x7FFF)
-                return sign ? -HUGE_VAL : HUGE_VAL;
+            {
+                if (hiMantissa || loMantissa)
+                    return quiet_NaN();
+                
+                return sign ? -infinity() : infinity();
+            }
             
             exponent -= 0x3FFF;
-            double value = std::ldexp(hiMantissa, exponent - 31) + std::ldexp(loMantissa, exponent - (31 + 32));
+            double value = std::ldexp(hiMantissa, exponent - 0x1F) + std::ldexp(loMantissa, exponent - 0x3F);
             
             return sign ? -value : value;
         }
@@ -134,15 +143,14 @@ namespace HISSTools
                     // Inf or NaN
                     
                     exponent = 0x7FFF | (sign ? 0x8000 : 0);
-                    hiMantissa = 0;
-                    loMantissa = 0;
+                    hiMantissa = loMantissa = std::isnan(x) ? 0xFFFFFFFF : 0;
                 }
                 else
                 {
                     // Finite
                     
                     double mantissa = std::frexp(x, &exponent);
-                    exponent += 16382;
+                    exponent += 0x3FFE;
                     
                     if (exponent < 0)
                     {
@@ -153,9 +161,9 @@ namespace HISSTools
                     }
                     
                     exponent |= (sign ? 0x8000 : 0);
-                    mantissa = std::ldexp(mantissa, 32);
+                    mantissa = std::ldexp(mantissa, 0x20);
                     hiMantissa = doubleToUInt32(std::floor(mantissa));
-                    mantissa = std::ldexp(mantissa - std::floor(mantissa), 32);
+                    mantissa = std::ldexp(mantissa - std::floor(mantissa), 0x20);
                     loMantissa = doubleToUInt32(std::floor(mantissa));
                 }
             }
