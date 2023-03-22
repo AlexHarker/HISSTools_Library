@@ -52,7 +52,7 @@ namespace HISSTools
     // Convenience Calls
     
     uint32_t getU32(const char* b, BaseAudioFile::Endianness e) { return getBytes<uint32_t, 4>(b, e); }
-    uint32_t getU16(const char* b, BaseAudioFile::Endianness e) { return getBytes<uint32_t, 2>(b, e); }
+    uint16_t getU16(const char* b, BaseAudioFile::Endianness e) { return getBytes<uint16_t, 2>(b, e); }
     
     // Byte Setter
     
