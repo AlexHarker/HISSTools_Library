@@ -8,7 +8,7 @@ namespace HISSTools
 {
     struct AIFCCompression
     {
-        enum class Type  { Unknown, None, Twos, Sowt, Float32, Float64 };
+        enum class Type  { Unknown, None, Sowt, Float32, Float64 };
 
         using FileType = AudioFileFormat::FileType;
         using PCMFormat = AudioFileFormat::PCMFormat;
@@ -29,6 +29,12 @@ namespace HISSTools
             if (matchTag(tag, "sowt") || matchTag(tag, "SOWT"))
                 return AudioFileFormat(FileType::AIFC, PCMFormat::Int16, Endianness::Little);
             
+            if (matchTag(tag, "in24") || matchTag(tag, "IN24"))
+                return AudioFileFormat(FileType::AIFC, PCMFormat::Int24, Endianness::Big);
+            
+            if (matchTag(tag, "in32") || matchTag(tag, "IN32"))
+                return AudioFileFormat(FileType::AIFC, PCMFormat::Int32, Endianness::Big);
+            
             if (matchTag(tag, "fl32") || matchTag(tag, "FL32"))
                 return AudioFileFormat(FileType::AIFC, PCMFormat::Float32, Endianness::Big);
             
@@ -44,8 +50,6 @@ namespace HISSTools
             {
                 case Type::None:
                     return "NONE";
-                case Type::Twos:
-                    return "twos";
                 case Type::Sowt:
                     return "sowt";
                 case Type::Float32:
@@ -65,7 +69,6 @@ namespace HISSTools
             {
                 case Type::None:
                 case Type::Sowt:
-                case Type::Twos:
                     return "not compressed";
                 case Type::Float32:
                     return "32-bit floating point";
