@@ -26,7 +26,7 @@ namespace HISSTools
             if (matchTag(tag, "twos"))
                 return AudioFileFormat(FileType::AIFC, PCMFormat::Int16, Endianness::Big);
             
-            if (matchTag(tag, "sowt"))
+            if (matchTag(tag, "sowt") || matchTag(tag, "SOWT"))
                 return AudioFileFormat(FileType::AIFC, PCMFormat::Int16, Endianness::Little);
             
             if (matchTag(tag, "fl32") || matchTag(tag, "FL32"))
@@ -86,6 +86,8 @@ namespace HISSTools
                 case PCMFormat::Int16:
                     if (format.getAudioEndianness() == Endianness::Little)
                         return Type::Sowt;
+                    else
+                        return Type::None;
                 case PCMFormat::Float32:
                     return Type::Float32;
                 case PCMFormat::Float64:
