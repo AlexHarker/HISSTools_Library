@@ -6,30 +6,32 @@
 #include <string>
 #include <vector>
 
+#include "AudioFileFormat.hpp"
+#include "AIFCCompression.hpp"
+
 namespace HISSTools
 {
     class BaseAudioFile
     {
     public:
         
-        enum class FileType     { None, AIFF, AIFC, WAVE };
-        enum class PCMFormat    { Int8, Int16, Int24, Int32, Float32, Float64 };
-        enum class Endianness   { Little, Big };
-        enum class NumericType  { Integer, Float };
-        
+        using FileType = AudioFileFormat::FileType;
+        using PCMFormat = AudioFileFormat::PCMFormat;
+        using NumericType = AudioFileFormat::NumericType;
+        using Endianness = AudioFileFormat::Endianness;
+   
         enum class Error
         {
             None                    = 0,
-            CouldNotAllocate        = 1 << 0,
-            FileError               = 1 << 1,
-            CouldNotOpen            = 1 << 2,
-            BadFormat               = 1 << 3,
-            UnknownFormat           = 1 << 4,
-            UnsupportedPCMFormat    = 1 << 5,
-            WrongAIFCVersion        = 1 << 6,
-            UnsupportedAIFCFormat   = 1 << 7,
-            UnsupportedWaveFormat   = 1 << 8,
-            CouldNotWrite           = 1 << 9,
+            FileError               = 1 << 0,
+            CouldNotOpen            = 1 << 1,
+            BadFormat               = 1 << 2,
+            UnknownFormat           = 1 << 3,
+            UnsupportedPCMFormat    = 1 << 4,
+            WrongAIFCVersion        = 1 << 5,
+            UnsupportedAIFCFormat   = 1 << 6,
+            UnsupportedWaveFormat   = 1 << 7,
+            CouldNotWrite           = 1 << 8,
         };
         
         enum AiffVersion
@@ -38,11 +40,7 @@ namespace HISSTools
         };
         
         BaseAudioFile()
-        : mFileType(FileType::None)
-        , mPCMFormat(PCMFormat::Int8)
-        , mHeaderEndianness(Endianness::Little)
-        , mAudioEndianness(Endianness::Little)
-        , mSamplingRate(0)
+        : mSamplingRate(0)
         , mNumChannels(0)
         , mNumFrames(0)
         , mPCMOffset(0)
@@ -57,28 +55,30 @@ namespace HISSTools
         {
             mFile.close();
             
-            mFileType = FileType::None;
-            mPCMFormat = PCMFormat::Int8;
-            mHeaderEndianness = Endianness::Little;
-            mAudioEndianness = Endianness::Little;
+            mFormat = AudioFileFormat();
+            
             mSamplingRate = 0;
             mNumChannels = 0;
             mNumFrames = 0;
             mPCMOffset = 0;
+            
             mErrorFlags = static_cast<int>(Error::None);
         }
         
-        FileType getFileType() const            { return mFileType; }
-        PCMFormat getPCMFormat() const          { return mPCMFormat; }
-        Endianness getHeaderEndianness() const  { return mHeaderEndianness; }
-        Endianness getAudioEndianness() const   { return mAudioEndianness; }
+        FileType getFileType() const            { return mFormat.getFileType(); }
+        PCMFormat getPCMFormat() const          { return mFormat.getPCMFormat(); }
+        NumericType getNumericType() const      { return mFormat.getNumericType(); }
+        
+        Endianness getHeaderEndianness() const  { return mFormat.getHeaderEndianness(); }
+        Endianness getAudioEndianness() const   { return mFormat.getAudioEndianness(); }
+        
         double getSamplingRate() const          { return mSamplingRate; }
         uint16_t getChannels() const            { return mNumChannels; }
+        
         uintptr_t getFrames() const             { return mNumFrames; }
-        uint16_t getBitDepth() const            { return findBitDepth(getPCMFormat()); }
-        uint16_t getByteDepth() const           { return getBitDepth() / 8; }
+        uint16_t getBitDepth() const            { return mFormat.getBitDepth(); }
+        uint16_t getByteDepth() const           { return mFormat.getByteDepth(); }
         uintptr_t getFrameByteCount() const     { return getChannels() * getByteDepth(); }
-        NumericType getNumericType() const      { return findNumericType(getPCMFormat()); }
         
         bool isError() const                    { return mErrorFlags != static_cast<int>(Error::None); }
         int getErrorFlags() const               { return mErrorFlags; }
@@ -88,7 +88,6 @@ namespace HISSTools
         {
             switch (error)
             {
-                case Error::CouldNotAllocate:           return "could not allocate memory";
                 case Error::FileError:                  return "file error";
                 case Error::CouldNotOpen:               return "couldn't open file";
                 case Error::BadFormat:                  return "bad format";
@@ -118,40 +117,6 @@ namespace HISSTools
         
         std::vector<Error> getErrors() const    { return extractErrorsFromFlags(getErrorFlags()); }
         
-        static uint16_t findBitDepth(PCMFormat format)
-        {
-            switch (format)
-            {
-                case PCMFormat::Int8:       return 8;
-                case PCMFormat::Int16:      return 16;
-                case PCMFormat::Int24:      return 24;
-                case PCMFormat::Int32:      return 32;
-                case PCMFormat::Float32:    return 32;
-                case PCMFormat::Float64:    return 64;
-                    
-                default:                    return 16;
-            }
-        }
-        
-        static NumericType findNumericType(PCMFormat format)
-        {
-            switch (format)
-            {
-                case PCMFormat::Int8:
-                case PCMFormat::Int16:
-                case PCMFormat::Int24:
-                case PCMFormat::Int32:
-                    return NumericType::Integer;
-                    
-                case PCMFormat::Float32:
-                case PCMFormat::Float64:
-                    return NumericType::Float;
-                    
-                default:
-                    return NumericType::Integer;
-            }
-        }
-        
     protected:
         
         static constexpr uintptr_t WORK_LOOP_SIZE = 1024;
@@ -167,10 +132,7 @@ namespace HISSTools
             return length + (length & 0x1);
         }
         
-        FileType mFileType;
-        PCMFormat mPCMFormat;
-        Endianness mHeaderEndianness;
-        Endianness mAudioEndianness;
+        AudioFileFormat mFormat;
         
         double mSamplingRate;
         uint16_t mNumChannels;

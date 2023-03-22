@@ -40,10 +40,9 @@ namespace HISSTools
 
         if (isOpen() && positionInternal() == 0)
         {
-            mFileType = type == FileType::AIFF ? FileType::AIFC : type;
-            mPCMFormat = format;
-            mHeaderEndianness = getFileType() == FileType::WAVE ? endianness : Endianness::Big;
-            mAudioEndianness = endianness;
+            type = type == FileType::AIFF ? FileType::AIFC : type;
+            
+            mFormat = AudioFileFormat(type, format, endianness);
             mSamplingRate = sr;
             mNumChannels  = channels;
             mNumFrames = 0;
@@ -196,49 +195,16 @@ namespace HISSTools
             setErrorBit(Error::CouldNotWrite);
     }
 
-    const char* OAudioFile::getAIFCCompressionTag() const
-    {
-        // FIX - doesn't deal with little endian... (return type)? "sowt"
-        
-        switch (getPCMFormat())
-        {
-            case PCMFormat::Int8:
-            case PCMFormat::Int16:
-            case PCMFormat::Int24:
-            case PCMFormat::Int32:
-                return "NONE";
-            case PCMFormat::Float32:
-                return "fl32";
-            case PCMFormat::Float64:
-                return "fl64";
-        }
-    }
-
-    const char* OAudioFile::getAIFCCompressionString() const
-    {
-        // FIX - doesn't deal with little endian... (return type)? "little endian"
-        
-        switch (getPCMFormat())
-        {
-            case PCMFormat::Int8:
-            case PCMFormat::Int16:
-            case PCMFormat::Int24:
-            case PCMFormat::Int32:
-                return "not compressed";
-            case PCMFormat::Float32:
-                return "32-bit floating point";
-            case PCMFormat::Float64:
-                return "64-bit floating point";
-        }
-    }
-
     void OAudioFile::writeAIFCHeader()
     {
         bool success = true;
 
+        const char *compressionString = AIFCCompression::getString(mFormat);
+        const char *compressionTag = AIFCCompression::getTag(mFormat);
+
         // Set file type, data size offset frames and header size
 
-        uint32_t headerSize = 62 + lengthAsPString(getAIFCCompressionString());
+        uint32_t headerSize = 62 + lengthAsPString(compressionString);
 
         // File Header
 
@@ -252,13 +218,13 @@ namespace HISSTools
 
         // COMM Chunk
 
-        success &= putChunk("COMM", 22 + lengthAsPString(getAIFCCompressionString()));
+        success &= putChunk("COMM", 22 + lengthAsPString(compressionString));
         success &= putU16(getChannels(), getHeaderEndianness());
         success &= putU32(getFrames(), getHeaderEndianness());
         success &= putU16(getBitDepth(), getHeaderEndianness());
         success &= putExtended(getSamplingRate());
-        success &= putTag(getAIFCCompressionTag());
-        success &= putPString(getAIFCCompressionString());
+        success &= putTag(compressionTag);
+        success &= putPString(compressionString);
 
         // SSND Chunk (zero size)
 

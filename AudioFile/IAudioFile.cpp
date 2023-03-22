@@ -68,7 +68,7 @@ namespace HISSTools
         while (readChunkHeader(tag, chunkSize))
         {
             tags.push_back(tag);
-            readChunk(NULL, 0, chunkSize);
+            readChunk(nullptr, 0, chunkSize);
         }
                 
         return tags;
@@ -166,31 +166,8 @@ namespace HISSTools
         
         return true;
     }
-    
-    // PCM Format Helpers
 
-    bool IAudioFile::setPCMFormat(NumericType type, uint16_t bitDepth)
-    {
-        auto matchFormat = [&](NumericType t, uint16_t d, PCMFormat format)
-        {
-            if (!(type == t && bitDepth == d))
-                return false;
-                
-            mPCMFormat = format;
-            return true;
-        };
-        
-        if (matchFormat(NumericType::Integer,  8, PCMFormat::Int8))    return true;
-        if (matchFormat(NumericType::Integer, 16, PCMFormat::Int16))   return true;
-        if (matchFormat(NumericType::Integer, 24, PCMFormat::Int24))   return true;
-        if (matchFormat(NumericType::Integer, 32, PCMFormat::Int32))   return true;
-        if (matchFormat(NumericType::Float,   32, PCMFormat::Float32)) return true;
-        if (matchFormat(NumericType::Float,   64, PCMFormat::Float64)) return true;
-
-        return false;
-    }
-
-    // AIFF Helpers
+    // AIFF Helper
     
     bool IAudioFile::getAIFFChunkHeader(AIFFTag& enumeratedTag, uint32_t& chunkSize)
     {
@@ -208,43 +185,11 @@ namespace HISSTools
         return true;
     }
     
-    IAudioFile::AIFCCompression IAudioFile::getAIFCCompression(const char* tag, uint16_t& bitDepth) const
-    {
-        if (matchTag(tag, "NONE"))
-            return AIFCCompression::None;
-        
-        if (matchTag(tag, "twos"))
-        {
-            bitDepth = 16;
-            return AIFCCompression::None;
-        }
-        
-        if (matchTag(tag, "sowt"))
-        {
-            bitDepth = 16;
-            return AIFCCompression::LittleEndian;
-        }
-        
-        if (matchTag(tag, "fl32") || matchTag(tag, "FL32"))
-        {
-            bitDepth = 32;
-            return AIFCCompression::Float;
-        }
-        
-        if (matchTag(tag, "fl64") || matchTag(tag, "FL64"))
-        {
-            bitDepth = 32;
-            return AIFCCompression::Float;
-        }
-         
-        return AIFCCompression::Unknown;
-    }
-    
     //  Parse Headers
 
     BaseAudioFile::Error IAudioFile::parseHeader()
     {
-        char chunk[12] = {}, fileType[4] = {}, fileSubtype[4] = {};
+        char chunk[12] = {};
 
         // `Read file header
 
@@ -253,8 +198,8 @@ namespace HISSTools
             
         // Get file type and subtype
 
-        strncpy(fileType, chunk, 4);
-        strncpy(fileSubtype, chunk + 8, 4);
+        const char *fileType = chunk;
+        const char *fileSubtype = chunk + 8;
 
         // AIFF or AIFC
 
@@ -280,8 +225,8 @@ namespace HISSTools
         char chunk[22];
         uint32_t chunkSize;
         
-        mHeaderEndianness = Endianness::Big;
-    
+        mFormat = AudioFileFormat(FileType::AIFF);
+        
         // Iterate over chunks
         
         while (getAIFFChunkHeader(tag, chunkSize))
@@ -316,39 +261,29 @@ namespace HISSTools
                     mNumFrames = getU32(chunk + 2, getHeaderEndianness());
                     uint16_t bitDepth = getU16(chunk + 6, getHeaderEndianness());
                     mSamplingRate = IEEEDoubleExtendedConvertor()(chunk + 8);
-                    
-                    NumericType type = NumericType::Integer;
-                    mAudioEndianness = Endianness::Big;
-                    
-                    // If there are no frames then it is not required for there
-                    // to be an audio (SSND) chunk
+                                        
+                    // If there are no frames then it is not required for there to be an audio (SSND) chunk
                     
                     if (!getFrames())
                         formatCheck |= static_cast<uint32_t>(AIFFTag::Audio);
                     
                     if (matchTag(fileSubtype, "AIFC"))
                     {
-                        mFileType = FileType::AIFC;
-                        
                         // Require a version chunk
                         
                         //formatValid |= static_cast<uint32_t>(AIFFTag::Version);
                         
                         // Set parameters based on format
                         
-                        switch (getAIFCCompression(chunk + 18, bitDepth))
-                        {
-                            case AIFCCompression::None:                                                         break;
-                            case AIFCCompression::LittleEndian:     mAudioEndianness = Endianness::Little;      break;
-                            case AIFCCompression::Float:            type = NumericType::Float;                  break;
-                            default:
-                                return Error::UnsupportedAIFCFormat;
-                        }
+                        mFormat = AIFCCompression::getFormat(chunk + 18, bitDepth);
+                        
+                        if (getFileType() == FileType::None)
+                            return Error::UnsupportedAIFCFormat;
                     }
                     else
-                        mFileType = FileType::AIFF;
+                        mFormat = AudioFileFormat(FileType::AIFF, NumericType::Integer, bitDepth, Endianness::Big);
                     
-                    if (!setPCMFormat(type, bitDepth))
+                    if (!mFormat.isValid())
                         return Error::UnsupportedPCMFormat;
                     
                     break;
@@ -393,11 +328,12 @@ namespace HISSTools
     {
         char chunk[40];
         uint32_t chunkSize;
-        
+
+        mFormat = AudioFileFormat(FileType::WAVE);
+
         // Check endianness
         
-        mHeaderEndianness = matchTag(fileType, "RIFX") ? Endianness::Big : Endianness::Little;
-        mAudioEndianness = getHeaderEndianness();
+        Endianness endianness = matchTag(fileType, "RIFX") ? Endianness::Big : Endianness::Little;
         
         // Search for the format chunk and read the format chunk as needed, checking for a valid size
         
@@ -433,19 +369,20 @@ namespace HISSTools
         mNumChannels = getU16(chunk + 2, getHeaderEndianness());
         mSamplingRate = getU32(chunk + 4, getHeaderEndianness());
         
-        // Set PCM Format
-        
-        if (!setPCMFormat(type, bitDepth))
-            return Error::UnsupportedPCMFormat;
-        
         // Search for the data chunk and retrieve frame size and file offset to audio data
         
         if (!findChunk("data", chunkSize))
             return Error::BadFormat;
+        
+        // Set Format
+
+        mFormat = AudioFileFormat(FileType::WAVE, type, bitDepth, endianness);
                 
+        if (!mFormat.isValid())
+            return Error::UnsupportedPCMFormat;
+    
         mNumFrames = chunkSize / getFrameByteCount();
         mPCMOffset = positionInternal();
-        mFileType = FileType::WAVE;
 
         return Error::None;
     }

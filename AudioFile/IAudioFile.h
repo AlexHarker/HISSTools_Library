@@ -10,7 +10,6 @@ namespace HISSTools
     class IAudioFile : public BaseAudioFile
     {
         enum class AIFFTag          { Unknown = 0x0, Version = 0x1, Common = 0x2, Audio = 0x4 };
-        enum class AIFCCompression  { Unknown, None, LittleEndian, Float };
 
         struct PostionRestore
         {
@@ -78,14 +77,9 @@ namespace HISSTools
         bool findChunk(const char* searchTag, uint32_t& chunkSize);
         bool readChunk(char* data, uint32_t readSize, uint32_t chunkSize);
 
-        //  PCM Format Helper
-        
-        bool setPCMFormat(NumericType type, uint16_t bitDepth);
-
-        //  AIFF Helpers
+        //  AIFF Helper
         
         bool getAIFFChunkHeader(AIFFTag& enumeratedTag, uint32_t& chunkSize);
-        AIFCCompression getAIFCCompression(const char* tag, uint16_t& bitDepth) const;
 
         //  Parse Headers
         

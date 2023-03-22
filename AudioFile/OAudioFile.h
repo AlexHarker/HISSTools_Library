@@ -68,9 +68,6 @@ namespace HISSTools
         void writeAudio(const T* input, uintptr_t numFrames, int32_t channel = -1);
         
         bool writePCMData(const char* input, uintptr_t numFrames);
-
-        const char *getAIFCCompressionTag() const;
-        const char *getAIFCCompressionString() const;
     };
 }
 
