@@ -8,6 +8,8 @@ namespace HISSTools
 {
     struct AIFCCompression
     {
+        enum class Type  { Unknown, None, Twos, Sowt, Float32, Float64 };
+
         using FileType = AudioFileFormat::FileType;
         using PCMFormat = AudioFileFormat::PCMFormat;
         using NumericType = AudioFileFormat::NumericType;
@@ -38,19 +40,20 @@ namespace HISSTools
         
         static const char* getTag(const AudioFileFormat& format)
         {
-            // FIX - doesn't deal with little endian... (return type)? "sowt"
-            
-            switch (format.getPCMFormat())
+            switch (getType(format))
             {
-                case PCMFormat::Int8:
-                case PCMFormat::Int16:
-                case PCMFormat::Int24:
-                case PCMFormat::Int32:
+                case Type::None:
                     return "NONE";
-                case PCMFormat::Float32:
+                case Type::Twos:
+                    return "twos";
+                case Type::Sowt:
+                    return "sowt";
+                case Type::Float32:
                     return "fl32";
-                case PCMFormat::Float64:
+                case Type::Float64:
                     return "fl64";
+                default:
+                    return "FIXFIXFIX";
             }
         }
         
@@ -58,17 +61,37 @@ namespace HISSTools
         {
             // FIX - doesn't deal with little endian... (return type)? "little endian"
             
+            switch (getType(format))
+            {
+                case Type::None:
+                case Type::Sowt:
+                case Type::Twos:
+                    return "not compressed";
+                case Type::Float32:
+                    return "32-bit floating point";
+                case Type::Float64:
+                    return "64-bit floating point";
+                default:
+                    return "FIXFIXFIX";
+            }
+        }
+        
+        static Type getType(const AudioFileFormat& format)
+        {
+            if (!format.isValid() || format.getFileType() == FileType::WAVE)
+                return Type::Unknown;
+            
             switch (format.getPCMFormat())
             {
-                case PCMFormat::Int8:
                 case PCMFormat::Int16:
-                case PCMFormat::Int24:
-                case PCMFormat::Int32:
-                    return "not compressed";
+                    if (format.getAudioEndianness() == Endianness::Little)
+                        return Type::Sowt;
                 case PCMFormat::Float32:
-                    return "32-bit floating point";
+                    return Type::Float32;
                 case PCMFormat::Float64:
-                    return "64-bit floating point";
+                    return Type::Float64;
+                default:
+                    return Type::None;
             }
         }
     };

@@ -127,16 +127,22 @@ namespace HISSTools
         
         bool getValidity()
         {
+            // If there's no file type then the format is invalid
+            
             if (mFileType == FileType::None)
                 return false;
             
-            if (mFileType == FileType::AIFF && findNumericType(mPCMFormat) == NumericType::Float )
+            // AIFF doesn't support float types or little-endianness
+
+            if (mFileType == FileType::AIFF && findNumericType(mPCMFormat) == NumericType::Float)
                 return false;
             
-            if (mFileType == FileType::AIFF && mEndianness != Endianness::Big )
+            if (mFileType == FileType::AIFF && mEndianness != Endianness::Big)
                 return false;
             
-            if (mFileType == FileType::AIFF && mEndianness != Endianness::Big )
+            // AIFC only supports little=endianness for 16 bit integers
+
+            if (mFileType == FileType::AIFC && mEndianness != Endianness::Big && mPCMFormat != PCMFormat::Int16)
                 return false;
             
             return true;
