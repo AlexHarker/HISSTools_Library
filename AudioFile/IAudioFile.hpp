@@ -26,19 +26,19 @@ namespace HISSTools
         struct PostionRestore
         {
             PostionRestore(IAudioFile &parent)
-            : mParent(parent)
-            , mPosition(parent.positionInternal())
+            : m_parent(parent)
+            , m_position(parent.position_internal())
             {
-                mParent.mFile.seekg(12, ios_base::beg);
+                m_parent.m_file.seekg(12, ios_base::beg);
             }
             
             ~PostionRestore()
             {
-                mParent.seekInternal(mPosition);
+                m_parent.seek_internal(m_position);
             }
                 
-            IAudioFile &mParent;
-            uintptr_t mPosition;
+            IAudioFile &m_parent;
+            uintptr_t m_position;
         };
         
     public:
@@ -65,15 +65,15 @@ namespace HISSTools
             
             if (!file.empty())
             {
-                mFile.open(file.c_str(), ios_base::binary);
-                if (mFile.is_open())
+                m_file.open(file.c_str(), ios_base::binary);
+                if (m_file.is_open())
                 {
-                    setErrorBit(parseHeader());
-                    mBuffer.resize(WORK_LOOP_SIZE * getFrameByteCount());
+                    set_error_bit(parseHeader());
+                    m_buffer.resize(WORK_LOOP_SIZE * getFrameByteCount());
                     seek();
                 }
                 else
-                    setErrorBit(Error::CouldNotOpen);
+                    set_error_bit(Error::CouldNotOpen);
             }
         }
         
@@ -81,13 +81,13 @@ namespace HISSTools
         
         void seek(uintptr_t position = 0)
         {
-            seekInternal(getPCMOffset() + getFrameByteCount() * position);
+            seek_internal(get_pcm_offset() + getFrameByteCount() * position);
         }
         
         uintptr_t getPosition()
         {
-            if (getPCMOffset())
-                return static_cast<uintptr_t>((positionInternal() - getPCMOffset()) / getFrameByteCount());
+            if (get_pcm_offset())
+                return static_cast<uintptr_t>((position_internal() - get_pcm_offset()) / getFrameByteCount());
             
             return 0;
         }
@@ -96,7 +96,7 @@ namespace HISSTools
         
         void readRaw(void* output, uintptr_t numFrames)
         {
-            readInternal(static_cast<char *>(output), getFrameByteCount() * numFrames);
+            read_internal(static_cast<char *>(output), getFrameByteCount() * numFrames);
         }
 
         void readInterleaved(double* output, uintptr_t numFrames)
@@ -162,7 +162,7 @@ namespace HISSTools
             if (strlen(tag) <= 4)
             {
                 findChunk(tag, chunkSize);
-                readInternal(static_cast<char *>(output), chunkSize);
+                read_internal(static_cast<char *>(output), chunkSize);
             }
         }
         
@@ -170,28 +170,28 @@ namespace HISSTools
         
         // Internal File Handling
         
-        bool readInternal(char* buffer, uintptr_t numBytes)
+        bool read_internal(char* buffer, uintptr_t numBytes)
         {
-            mFile.clear();
-            mFile.read(buffer, numBytes);
-            return static_cast<uintptr_t>(mFile.gcount()) == numBytes;
+            m_file.clear();
+            m_file.read(buffer, numBytes);
+            return static_cast<uintptr_t>(m_file.gcount()) == numBytes;
         }
         
-        bool seekInternal(uintptr_t position)
+        bool seek_internal(uintptr_t position)
         {
-            mFile.clear();
-            mFile.seekg(position, ios_base::beg);
-            return positionInternal() == position;
+            m_file.clear();
+            m_file.seekg(position, ios_base::beg);
+            return position_internal() == position;
         }
         
-        bool advanceInternal(uintptr_t offset)
+        bool advance_internal(uintptr_t offset)
         {
-            return seekInternal(positionInternal() + offset);
+            return seek_internal(position_internal() + offset);
         }
         
-        uintptr_t positionInternal()
+        uintptr_t position_internal()
         {
-            return mFile.tellg();
+            return m_file.tellg();
         }
         
         // Getters
@@ -217,7 +217,7 @@ namespace HISSTools
         {
             char header[8] = {};
             
-            if (!readInternal(header, 8))
+            if (!read_internal(header, 8))
                 return false;
             
             strncpy(tag, header, 4);
@@ -235,7 +235,7 @@ namespace HISSTools
                 if (matchTag(tag, searchTag))
                     return true;
                 
-                if (!advanceInternal(paddedLength(chunkSize)))
+                if (!advance_internal(padded_length(chunkSize)))
                     break;
             }
             
@@ -244,10 +244,10 @@ namespace HISSTools
         
         bool readChunk(char* data, uint32_t readSize, uint32_t chunkSize)
         {
-            if (readSize && (readSize > chunkSize || !readInternal(data, readSize)))
+            if (readSize && (readSize > chunkSize || !read_internal(data, readSize)))
                 return false;
             
-            if (!advanceInternal(paddedLength(chunkSize) - readSize))
+            if (!advance_internal(padded_length(chunkSize) - readSize))
                 return false;
             
             return true;
@@ -282,7 +282,7 @@ namespace HISSTools
             
             // `Read file header
             
-            if (!readInternal(chunk, 12))
+            if (!read_internal(chunk, 12))
                 return Error::BadFormat;
             
             // AIFF or AIFC
@@ -310,7 +310,7 @@ namespace HISSTools
             uint32_t formatCheck = 0;
             uint32_t chunkSize;
             
-            mFormat = AudioFileFormat(FileType::AIFF);
+            m_format = AudioFileFormat(FileType::AIFF);
             
             // Iterate over chunks
             
@@ -329,9 +329,9 @@ namespace HISSTools
                         
                         // Retrieve relevant data (AIFF or AIFC) and set AIFF defaults
                         
-                        mNumChannels = getU16(chunk + 0, getHeaderEndianness());
-                        mNumFrames = getU32(chunk + 2, getHeaderEndianness());
-                        mSamplingRate = IEEEDoubleExtendedConvertor()(chunk + 8);
+                        m_num_channels = getU16(chunk + 0, getHeaderEndianness());
+                        m_num_frames = getU32(chunk + 2, getHeaderEndianness());
+                        m_sampling_rate = IEEEDoubleExtendedConvertor()(chunk + 8);
                         
                         uint16_t bitDepth = getU16(chunk + 6, getHeaderEndianness());
                         
@@ -348,15 +348,15 @@ namespace HISSTools
                             
                             // Set parameters based on format
                             
-                            mFormat = AIFCCompression::getFormat(chunk + 18, bitDepth);
+                            m_format = AIFCCompression::getFormat(chunk + 18, bitDepth);
                             
                             if (getFileType() == FileType::None)
                                 return Error::UnsupportedAIFCFormat;
                         }
                         else
-                            mFormat = AudioFileFormat(FileType::AIFF, NumericType::Integer, bitDepth, Endianness::Big);
+                            m_format = AudioFileFormat(FileType::AIFF, NumericType::Integer, bitDepth, Endianness::Big);
                         
-                        if (!mFormat.isValid())
+                        if (!m_format.isValid())
                             return Error::UnsupportedPCMFormat;
                         
                         break;
@@ -382,7 +382,7 @@ namespace HISSTools
                         
                         // Audio data starts after a 32-bit block size value (ignored) plus an offset readh here
                         
-                        mPCMOffset = positionInternal() + 4 + getU32(chunk, getHeaderEndianness());
+                        m_pcm_offset = position_internal() + 4 + getU32(chunk, getHeaderEndianness());
                         
                         break;
                     }
@@ -416,7 +416,7 @@ namespace HISSTools
             
             uint32_t chunkSize;
             
-            mFormat = AudioFileFormat(FileType::WAVE);
+            m_format = AudioFileFormat(FileType::WAVE);
             
             // Check endianness
             
@@ -454,8 +454,8 @@ namespace HISSTools
             
             NumericType type = formatByte == 0x0003 ? NumericType::Float : NumericType::Integer;
             
-            mNumChannels = getU16(chunk + 2, getHeaderEndianness());
-            mSamplingRate = getU32(chunk + 4, getHeaderEndianness());
+            m_num_channels = getU16(chunk + 2, getHeaderEndianness());
+            m_sampling_rate = getU32(chunk + 4, getHeaderEndianness());
             
             // Search for the data chunk and retrieve frame size and file offset to audio data
             
@@ -464,13 +464,13 @@ namespace HISSTools
             
             // Set Format
             
-            mFormat = AudioFileFormat(FileType::WAVE, type, bitDepth, endianness);
+            m_format = AudioFileFormat(FileType::WAVE, type, bitDepth, endianness);
             
-            if (!mFormat.isValid())
+            if (!m_format.isValid())
                 return Error::UnsupportedPCMFormat;
             
-            mNumFrames = chunkSize / getFrameByteCount();
-            mPCMOffset = positionInternal();
+            m_num_frames = chunkSize / getFrameByteCount();
+            m_pcm_offset = position_internal();
             
             return Error::None;
         }
@@ -505,7 +505,7 @@ namespace HISSTools
             Endianness endianness = getAudioEndianness();
             
             for (uintptr_t i = 0; i < loopSamples; i++, j += byteStep)
-                output[i] = convert(getBytes<U, N>(mBuffer.data() + j, endianness) << Shift, T(0), V(0));
+                output[i] = convert(getBytes<U, N>(m_buffer.data() + j, endianness) << Shift, T(0), V(0));
         }
         
         template <class T>
@@ -525,7 +525,7 @@ namespace HISSTools
                 
                 // Read raw
                 
-                readRaw(mBuffer.data(), loopFrames);
+                readRaw(m_buffer.data(), loopFrames);
                 
                 // Copy and convert to Output
                 
