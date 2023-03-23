@@ -341,17 +341,14 @@ namespace HISSTools
             // Calculate sizes
             
             uint16_t numChannels = (channel < 0) ? getChannels() : 1;
-            uint16_t channelStep = (channel < 0) ? 1 : getChannels();
             uint32_t byteDepth = getByteDepth();
-            uintptr_t byteStep = byteDepth * channelStep;
-            
-            channel = std::max(channel, 0);
+            uintptr_t byteStep = (channel < 0) ? byteDepth : byteDepth * getChannels();
+            uintptr_t j = std::max(channel, 0) * byteDepth;
             
             while (numFrames)
             {
                 uintptr_t loopFrames = std::min(numFrames, WORK_LOOP_SIZE);
                 uintptr_t loopSamples = loopFrames * numChannels;
-                uintptr_t j = channel * byteDepth;
                 
                 // Read raw
                 
