@@ -3,165 +3,9 @@
 #include <algorithm>
 #include <cmath>
 #include <cstring>
-#include <vector>
-
-#include "AudioFileUtilities.hpp"
 
 namespace HISSTools
-{    
-    uint32_t lengthAsPString(const char* string)
-    {
-        uint32_t length = static_cast<uint32_t>(strlen(string));
-        return ((length + 1) & 0x1) ? length + 2 : length + 1;
-    }
-
-    OAudioFile::OAudioFile(const std::string& i, FileType type, PCMFormat format, uint16_t channels, double sr)
-    {
-        open(i, type, format, channels, sr);
-    }
-
-    OAudioFile::OAudioFile(const std::string& i, FileType type, PCMFormat format, uint16_t channels, double sr, Endianness e)
-    {
-        open(i, type, format, channels, sr, e);
-    }
-
-    void OAudioFile::open(const std::string& i, FileType type, PCMFormat format, uint16_t channels, double sr)
-    {
-        open(i, type, format, channels, sr,type == FileType::WAVE ? Endianness::Little : Endianness::Big);
-    }
-
-    void OAudioFile::open(const std::string& i, FileType type, PCMFormat format, uint16_t channels, double sr, Endianness endianness)
-    {
-        close();
-        using std::ios_base;
-        mFile.open(i.c_str(), ios_base::binary | ios_base::in | ios_base::out | ios_base::trunc);
-
-        seekInternal(0);
-
-        if (isOpen() && positionInternal() == 0)
-        {
-            type = type == FileType::AIFF ? FileType::AIFC : type;
-            
-            mFormat = AudioFileFormat(type, format, endianness);
-            mSamplingRate = sr;
-            mNumChannels  = channels;
-            mNumFrames = 0;
-            mPCMOffset = 0;
-
-            if (getFileType() == FileType::WAVE)
-                writeWaveHeader();
-            else
-                writeAIFCHeader();
-                
-            mBuffer.resize(WORK_LOOP_SIZE * getFrameByteCount());
-        }
-        else
-            setErrorBit(Error::CouldNotOpen);
-    }
-
-    void OAudioFile::seek(uintptr_t position)
-    {
-        if (getPCMOffset() != 0)
-            seekInternal(getPCMOffset() + getFrameByteCount() * position);
-    }
-
-    uintptr_t OAudioFile::getPosition()
-    {
-        if (getPCMOffset())
-            return static_cast<uintptr_t>((positionInternal() - getPCMOffset()) / getFrameByteCount());
-
-        return 0;
-    }
-
-    uintptr_t OAudioFile::positionInternal()
-    {
-        return mFile.tellp();
-    }
-
-    bool OAudioFile::seekInternal(uintptr_t position)
-    {
-        mFile.clear();
-        mFile.seekp(position, std::ios_base::beg);
-        return positionInternal() == position;
-    }
-
-    bool OAudioFile::seekRelativeInternal(uintptr_t offset)
-    {
-        if (!offset)
-            return true;
-        mFile.clear();
-        uintptr_t newPosition = positionInternal() + offset;
-        mFile.seekp(offset, std::ios_base::cur);
-        return positionInternal() == newPosition;
-    }
-
-    bool OAudioFile::writeInternal(const char* buffer, uintptr_t bytes)
-    {
-        mFile.clear();
-        mFile.write(buffer, bytes);
-        return mFile.good();
-    }
-
-    template <class T, int N>
-    bool OAudioFile::putBytes(T value, Endianness e)
-    {
-        unsigned char bytes[N];
-        
-        setBytes<N>(value, e, bytes);
-        
-        return writeInternal(reinterpret_cast<const char*>(bytes), N);
-    }
-    
-    bool OAudioFile::putU64(uint64_t value, Endianness e) { return putBytes<uint64_t, 8>(value, e); }
-    bool OAudioFile::putU32(uint32_t value, Endianness e) { return putBytes<uint32_t, 4>(value, e); }
-    bool OAudioFile::putU24(uint32_t value, Endianness e) { return putBytes<uint32_t, 3>(value, e); }
-    bool OAudioFile::putU16(uint32_t value, Endianness e) { return putBytes<uint32_t, 2>(value, e); }
-
-    bool OAudioFile::putPadByte()
-    {
-        char padByte = 0;
-        return writeInternal(&padByte, 1);
-    }
-
-    bool OAudioFile::putChunk(const char* tag, uint32_t size)
-    {
-        bool success = true;
-        
-        success &= writeInternal(tag, 4);
-        success &= putU32(size, getHeaderEndianness());
-        
-        return success;
-    }
-
-    bool OAudioFile::putTag(const char* tag)
-    {
-        return writeInternal(tag, 4);
-    }
-
-    bool OAudioFile::putExtended(double value)
-    {
-        unsigned char bytes[10];
-
-        IEEEDoubleExtendedConvertor()(value, bytes);
-
-        return writeInternal(reinterpret_cast<const char*>(bytes), 10);
-    }
-
-    bool OAudioFile::putPString(const char* string)
-    {
-        char length = strlen(string);
-        bool success = true;
-
-        success &= writeInternal(&length, 1);
-        success &= writeInternal(string, length);
-
-        // Pad byte if necessary (number of bytes written so far is odd)
-
-        if ((length + 1) & 0x1) success &= putPadByte();
-
-        return success;
-    }
-
+{
     void OAudioFile::writeWaveHeader()
     {
         bool success = true;
@@ -172,6 +16,7 @@ namespace HISSTools
             success &= putChunk("RIFF", 36);
         else
             success &= putChunk("RIFX", 36);
+        
         success &= putTag("WAVE");
 
         // Format Chunk
@@ -199,12 +44,21 @@ namespace HISSTools
     {
         bool success = true;
 
+        // Compression Type
+        
+        auto lengthAsPString = [](const char* string)
+        {
+            uint32_t length = static_cast<uint32_t>(strlen(string));
+            return ((length + 1) & 0x1) ? length + 2 : length + 1;
+        };
+        
         const char *compressionString = AIFCCompression::getString(mFormat);
         const char *compressionTag = AIFCCompression::getTag(mFormat);
-
+        uint32_t compressionStringLength = lengthAsPString(compressionString);
+        
         // Set file type, data size offset frames and header size
 
-        uint32_t headerSize = 62 + lengthAsPString(compressionString);
+        uint32_t headerSize = 62 + compressionStringLength;
 
         // File Header
 
@@ -218,7 +72,7 @@ namespace HISSTools
 
         // COMM Chunk
 
-        success &= putChunk("COMM", 22 + lengthAsPString(compressionString));
+        success &= putChunk("COMM", 22 + compressionStringLength);
         success &= putU16(getChannels(), getHeaderEndianness());
         success &= putU32(getFrames(), getHeaderEndianness());
         success &= putU16(getBitDepth(), getHeaderEndianness());
@@ -260,10 +114,10 @@ namespace HISSTools
 
             // Write padding byte if relevant
 
-            if (dataBytes & 0x1) success &= putPadByte();
+            if (dataBytes & 0x1)
+                success &= putPadByte();
 
-            // Update chunk size for file and audio data and frames for aifc
-            // and reset position to the end of the data
+            // Update chunk size for file and audio data and frames for aifc and reset position to the end of the data
 
             if (getFileType() == FileType::WAVE)
             {
@@ -288,45 +142,7 @@ namespace HISSTools
         }
 
         return success;
-    }
-
-    bool OAudioFile::resize(uintptr_t numFrames)
-    {
-        bool success = true;
-
-        if (numFrames > getFrames())
-        {
-            // Calculate new data length and end of data
-
-            uintptr_t dataBytes = (getFrameByteCount() * getFrames());
-            uintptr_t endBytes = (getFrameByteCount() * numFrames);
-            uintptr_t dataEnd = positionInternal();
-
-            seek(getFrames());
-
-            for (uintptr_t i = 0; i < endBytes - dataBytes; i++)
-                success &= putPadByte();
-
-            // Return to end of data
-
-            success &= seekInternal(dataEnd);
-        }
-
-        return success;
-    }
-
-    bool OAudioFile::writePCMData(const char* input, uintptr_t numFrames)
-    {
-        // Write audio
-
-        bool success = writeInternal(input, getFrameByteCount() * numFrames);
-
-        // Update number of frames
-
-        success &= updateHeader();
-
-        return success;
-    }
+    }    
     
     template <int N, class T, class U, class V>
     T convert(V value, T, U)
