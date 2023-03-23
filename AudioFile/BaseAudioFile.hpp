@@ -139,7 +139,7 @@ namespace HISSTools
         uintptr_t mNumFrames;
         size_t mPCMOffset;
         
-        //  Data
+        // Data
         
         std::fstream mFile;
         std::vector<unsigned char> mBuffer;
