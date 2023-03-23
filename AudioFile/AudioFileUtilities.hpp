@@ -49,11 +49,6 @@ namespace HISSTools
         return getBytes<T, N>(reinterpret_cast<const unsigned char *>(bytes), endianness);
     }
     
-    // Convenience Calls
-    
-    uint32_t getU32(const char* b, BaseAudioFile::Endianness e) { return getBytes<uint32_t, 4>(b, e); }
-    uint16_t getU16(const char* b, BaseAudioFile::Endianness e) { return getBytes<uint16_t, 2>(b, e); }
-    
     // Byte Setter
     
     template <class T, int N, int M, BaseAudioFile::Endianness E>
@@ -83,17 +78,29 @@ namespace HISSTools
     
     struct IEEEDoubleExtendedConvertor
     {
+        using Endianness = BaseAudioFile::Endianness;
+        
         double infinity() { return std::numeric_limits<double>::infinity(); }
         double quiet_NaN() { return std::numeric_limits<double>::quiet_NaN(); }
+        
+        uint32_t getU32(const char* bytes, Endianness endianness)
+        {
+            return getBytes<uint32_t, 4>(bytes, endianness);
+        }
+        
+        uint16_t getU16(const char* bytes, Endianness endianness)
+        {
+            return getBytes<uint16_t, 2>(bytes, endianness);
+        }
         
         double operator()(const char* bytes)
         {
             // Get double from big-endian IEEE 80-bit extended floating point format
             
-            bool     sign       = getU16(bytes + 0, BaseAudioFile::Endianness::Big) & 0x8000;
-            int32_t  exponent   = getU16(bytes + 0, BaseAudioFile::Endianness::Big) & 0x7FFF;
-            uint32_t hiMantissa = getU32(bytes + 2, BaseAudioFile::Endianness::Big);
-            uint32_t loMantissa = getU32(bytes + 6, BaseAudioFile::Endianness::Big);
+            bool     sign       = getU16(bytes + 0, Endianness::Big) & 0x8000;
+            int32_t  exponent   = getU16(bytes + 0, Endianness::Big) & 0x7FFF;
+            uint32_t hiMantissa = getU32(bytes + 2, Endianness::Big);
+            uint32_t loMantissa = getU32(bytes + 6, Endianness::Big);
             
             // Special handlers for zeros
             
@@ -166,9 +173,9 @@ namespace HISSTools
                 }
             }
             
-            setBytes<2>(exponent, BaseAudioFile::Endianness::Big, bytes + 0);
-            setBytes<4>(hiMantissa, BaseAudioFile::Endianness::Big, bytes + 2);
-            setBytes<4>(loMantissa, BaseAudioFile::Endianness::Big, bytes + 6);
+            setBytes<2>(exponent, Endianness::Big, bytes + 0);
+            setBytes<4>(hiMantissa, Endianness::Big, bytes + 2);
+            setBytes<4>(loMantissa, Endianness::Big, bytes + 6);
         }
     };
 }

@@ -158,8 +158,15 @@ namespace HISSTools
             return writeInternal(reinterpret_cast<const char*>(bytes), N);
         }
         
-        bool putU32(uint32_t value, Endianness e) { return putBytes<uint32_t, 4>(value, e); }
-        bool putU16(uint16_t value, Endianness e) { return putBytes<uint16_t, 2>(value, e); }
+        bool putU32(uint32_t value, Endianness endianness)
+        {
+            return putBytes<uint32_t, 4>(value, endianness);
+        }
+        
+        bool putU16(uint16_t value, Endianness endianness)
+        {
+            return putBytes<uint16_t, 2>(value, endianness);
+        }
 
         bool putTag(const char* tag)
         {

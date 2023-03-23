@@ -193,6 +193,18 @@ namespace HISSTools
             return mFile.tellg();
         }
         
+        // Getters
+        
+        uint32_t getU32(const char* bytes, Endianness endianness)
+        {
+            return getBytes<uint32_t, 4>(bytes, endianness);
+        }
+        
+        uint16_t getU16(const char* bytes, Endianness endianness)
+        {
+            return getBytes<uint16_t, 2>(bytes, endianness);
+        }
+        
         // Chunk Reading
         
         static bool matchTag(const char* a, const char* b)
