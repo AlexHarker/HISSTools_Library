@@ -2,6 +2,7 @@
 #ifndef AUDIO_FILE_FORMAT_HPP
 #define AUDIO_FILE_FORMAT_HPP
 
+#include <cstdint>
 #include <vector>
 
 namespace HISSTools
