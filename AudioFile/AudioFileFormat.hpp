@@ -17,39 +17,40 @@ namespace HISSTools
         enum class Endianness   { Little, Big };
         
         AudioFileFormat()
-        : mFileType(FileType::None)
-        , mPCMFormat(PCMFormat::Int16)
-        , mEndianness(Endianness::Little)
-        , mValid(false)
+        : m_file_type(FileType::None)
+        , m_pcm_format(PCMFormat::Int16)
+        , m_endianness(Endianness::Little)
+        , m_valid(false)
         {}
         
         AudioFileFormat(FileType type)
-        : mFileType(type)
-        , mPCMFormat(PCMFormat::Int16)
-        , mEndianness(type == FileType::WAVE ? Endianness::Little : Endianness::Big)
-        , mValid(false)
+        : m_file_type(type)
+        , m_pcm_format(PCMFormat::Int16)
+        , m_endianness(type == FileType::WAVE ? Endianness::Little : Endianness::Big)
+        , m_valid(false)
         {}
         
         AudioFileFormat(FileType type, PCMFormat format, Endianness endianness)
-        : mFileType(type)
-        , mPCMFormat(format)
-        , mEndianness(endianness)
-        , mValid(getValidity())
+        : m_file_type(type)
+        , m_pcm_format(format)
+        , m_endianness(endianness)
+        , m_valid(get_validity())
         {}
         
-        AudioFileFormat(FileType type, NumericType numericType, uint16_t bitDepth, Endianness endianness)
-        : mFileType(type)
-        , mEndianness(endianness)
-        , mValid(false)
+        AudioFileFormat(FileType type, NumericType numeric_type, uint16_t bit_depth, Endianness endianness)
+        : m_file_type(type)
+        , m_pcm_format(PCMFormat::Int16)
+        , m_endianness(endianness)
+        , m_valid(false)
         {            
-            struct ValidFormat
+            struct valid_format
             {
-                NumericType mType;
-                uint16_t mDepth;
-                PCMFormat mFormat;
+                NumericType m_type;
+                uint16_t m_depth;
+                PCMFormat m_format;
             };
             
-            std::vector<ValidFormat> validFormats =
+            std::vector<valid_format> valid_formats =
             {
                 { NumericType::Integer,  8, PCMFormat::Int8 },
                 { NumericType::Integer,  8, PCMFormat::Int8 },
@@ -60,37 +61,37 @@ namespace HISSTools
                 { NumericType::Float,   64, PCMFormat::Float64 },
             };
             
-            for (int i = 0; i < validFormats.size(); i++)
+            for (int i = 0; i < valid_formats.size(); i++)
             {
-                if (numericType == validFormats[i].mType && bitDepth == validFormats[i].mDepth)
+                if (numeric_type == valid_formats[i].m_type && bit_depth == valid_formats[i].m_depth)
                 {
-                    mPCMFormat = validFormats[i].mFormat;
-                    mValid = getValidity();
+                    m_pcm_format = valid_formats[i].m_format;
+                    m_valid = get_validity();
                     break;
                 }
             }
         }
         
-        FileType getFileType() const            { return mFileType; }
-        PCMFormat getPCMFormat() const          { return mPCMFormat; }
-        NumericType getNumericType() const      { return findNumericType(getPCMFormat()); }
+        bool isValid() const                    { return m_valid; }
+
+        FileType getFileType() const            { return m_file_type; }
+        PCMFormat getPCMFormat() const          { return m_pcm_format; }
+        NumericType getNumericType() const      { return find_numeric_type(getPCMFormat()); }
         
-        uint16_t getBitDepth() const            { return findBitDepth(getPCMFormat()); }
+        uint16_t getBitDepth() const            { return find_bit_depth(getPCMFormat()); }
         uint16_t getByteDepth() const           { return getBitDepth() / 8; }
         
         Endianness getHeaderEndianness() const
         {
-            return FileType() == FileType::WAVE ? mEndianness : Endianness::Big;
+            return FileType() == FileType::WAVE ? m_endianness : Endianness::Big;
         }
         
         Endianness getAudioEndianness() const
         {
-            return mEndianness;
+            return m_endianness;
         }
         
-        bool isValid() const { return mValid; }
-        
-        static uint16_t findBitDepth(PCMFormat format)
+        static uint16_t find_bit_depth(PCMFormat format)
         {
             switch (format)
             {
@@ -105,7 +106,7 @@ namespace HISSTools
             }
         }
         
-        static NumericType findNumericType(PCMFormat format)
+        static NumericType find_numeric_type(PCMFormat format)
         {
             switch (format)
             {
@@ -126,33 +127,33 @@ namespace HISSTools
         
     private:
         
-        bool getValidity()
+        bool get_validity()
         {
             // If there's no file type then the format is invalid
             
-            if (mFileType == FileType::None)
+            if (m_file_type == FileType::None)
                 return false;
             
             // AIFF doesn't support float types or little-endianness
 
-            if (mFileType == FileType::AIFF && findNumericType(mPCMFormat) == NumericType::Float)
+            if (m_file_type == FileType::AIFF && find_numeric_type(m_pcm_format) == NumericType::Float)
                 return false;
             
-            if (mFileType == FileType::AIFF && mEndianness != Endianness::Big)
+            if (m_file_type == FileType::AIFF && m_endianness != Endianness::Big)
                 return false;
             
             // AIFC only supports little=endianness for 16 bit integers
 
-            if (mFileType == FileType::AIFC && mEndianness != Endianness::Big && mPCMFormat != PCMFormat::Int16)
+            if (m_file_type == FileType::AIFC && m_endianness != Endianness::Big && m_pcm_format != PCMFormat::Int16)
                 return false;
             
             return true;
         }
         
-        FileType mFileType;
-        PCMFormat mPCMFormat;
-        Endianness mEndianness;
-        bool mValid;
+        FileType m_file_type;
+        PCMFormat m_pcm_format;
+        Endianness m_endianness;
+        bool m_valid;
     };
 }
 
