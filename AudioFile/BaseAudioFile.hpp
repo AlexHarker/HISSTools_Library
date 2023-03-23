@@ -9,6 +9,8 @@
 #include "AudioFileFormat.hpp"
 #include "AIFCCompression.hpp"
 
+// FIX - frames type
+
 namespace HISSTools
 {
     class BaseAudioFile

@@ -25,9 +25,8 @@
 /* Begin PBXFileReference section */
 		B845BE3029C9FB0D00D95ED9 /* BaseAudioFile.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = BaseAudioFile.hpp; path = ../../../AudioFile/BaseAudioFile.hpp; sourceTree = "<group>"; };
 		B845BE3129C9FB0D00D95ED9 /* AudioFileUtilities.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = AudioFileUtilities.hpp; path = ../../../AudioFile/AudioFileUtilities.hpp; sourceTree = "<group>"; };
-		B845BE3229C9FB0D00D95ED9 /* OAudioFile.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = OAudioFile.h; path = ../../../AudioFile/OAudioFile.h; sourceTree = "<group>"; };
-		B845BE3329C9FB0E00D95ED9 /* IAudioFile.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = IAudioFile.h; path = ../../../AudioFile/IAudioFile.h; sourceTree = "<group>"; };
-		B845BE3629C9FB0E00D95ED9 /* BaseAudioFile.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = BaseAudioFile.h; path = ../../../AudioFile/BaseAudioFile.h; sourceTree = "<group>"; };
+		B845BE3229C9FB0D00D95ED9 /* OAudioFile.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = OAudioFile.hpp; path = ../../../AudioFile/OAudioFile.hpp; sourceTree = "<group>"; };
+		B845BE3329C9FB0E00D95ED9 /* IAudioFile.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = IAudioFile.hpp; path = ../../../AudioFile/IAudioFile.hpp; sourceTree = "<group>"; };
 		B845BE3929CA222500D95ED9 /* AIFCCompression.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; name = AIFCCompression.hpp; path = ../../../AudioFile/AIFCCompression.hpp; sourceTree = "<group>"; };
 		B8E2FD2D29C20CD3006F3CC7 /* Audio_File_Tester */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Audio_File_Tester; sourceTree = BUILT_PRODUCTS_DIR; };
 		B8E2FD3029C20CD3006F3CC7 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
@@ -71,9 +70,8 @@
 				B845BE3129C9FB0D00D95ED9 /* AudioFileUtilities.hpp */,
 				B845BE3929CA222500D95ED9 /* AIFCCompression.hpp */,
 				B845BE3029C9FB0D00D95ED9 /* BaseAudioFile.hpp */,
-				B845BE3329C9FB0E00D95ED9 /* IAudioFile.h */,
-				B845BE3229C9FB0D00D95ED9 /* OAudioFile.h */,
-				B845BE3629C9FB0E00D95ED9 /* BaseAudioFile.h */,
+				B845BE3329C9FB0E00D95ED9 /* IAudioFile.hpp */,
+				B845BE3229C9FB0D00D95ED9 /* OAudioFile.hpp */,
 			);
 			path = Audio_File_Tester;
 			sourceTree = "<group>";

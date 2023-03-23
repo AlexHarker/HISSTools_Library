@@ -503,7 +503,7 @@ namespace HISSTools
                 if (!allChannels)
                     mFile.seekp(pos);
                 
-                bool didwrite = writeInternal(reinterpret_cast<const char*>(mBuffer.data()), loopFrames * getFrameByteCount());
+                writeInternal(reinterpret_cast<const char*>(mBuffer.data()), loopFrames * getFrameByteCount());
                 
                 numFrames -= loopFrames;
                 input     += loopSamples;
