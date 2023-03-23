@@ -43,7 +43,7 @@ namespace HISSTools
         void open(const std::string& file, FileType type, PCMFormat format, uint16_t channels, double sr, Endianness endianness)
         {
             close();
-            mFile.open(file.c_str(), std::ios_base::binary | std::ios_base::in | std::ios_base::out | std::ios_base::trunc);
+            mFile.open(file.c_str(), ios_base::binary | ios_base::in | ios_base::out | ios_base::trunc);
             
             seekInternal(0);
             
@@ -129,7 +129,7 @@ namespace HISSTools
         bool seekInternal(uintptr_t position)
         {
             mFile.clear();
-            mFile.seekp(position, std::ios_base::beg);
+            mFile.seekp(position, ios_base::beg);
             return positionInternal() == position;
         }
         
@@ -139,7 +139,7 @@ namespace HISSTools
                 return true;
             mFile.clear();
             uintptr_t newPosition = positionInternal() + offset;
-            mFile.seekp(offset, std::ios_base::cur);
+            mFile.seekp(offset, ios_base::cur);
             return positionInternal() == newPosition;
         }
         
@@ -313,7 +313,7 @@ namespace HISSTools
         
         bool updateHeader()
         {
-            uintptr_t endFrame = getPosition();
+            const uintptr_t endFrame = getPosition();
             
             bool success = true;
             
@@ -323,15 +323,15 @@ namespace HISSTools
                 
                 mNumFrames = endFrame;
                 
-                uintptr_t dataBytes = (getFrameByteCount() * getFrames());
-                uintptr_t dataEnd = positionInternal();
+                const uintptr_t dataBytes = (getFrameByteCount() * getFrames());
+                const uintptr_t dataEnd = positionInternal();
                 
                 // Write padding byte if relevant
                 
                 if (dataBytes & 0x1)
                     success &= putPadByte();
                 
-                // Update chunk size for file and audio data and frames for aifc and reset position to the end of the data
+                // Update chunk sizes for (file, audio and also frames for AIFF/C)
                 
                 if (getFileType() == FileType::WAVE)
                 {
@@ -350,7 +350,7 @@ namespace HISSTools
                     success &= putU32(static_cast<uint32_t>(dataBytes) + 8, getHeaderEndianness());
                 }
                 
-                // Return to end of data
+                // Reset the position to end of the data
                 
                 success &= seekInternal(dataEnd);
             }

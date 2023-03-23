@@ -29,7 +29,7 @@ namespace HISSTools
             : mParent(parent)
             , mPosition(parent.positionInternal())
             {
-                mParent.mFile.seekg(12, std::ios_base::beg);
+                mParent.mFile.seekg(12, ios_base::beg);
             }
             
             ~PostionRestore()
@@ -65,7 +65,7 @@ namespace HISSTools
             
             if (!file.empty())
             {
-                mFile.open(file.c_str(), std::ios_base::binary);
+                mFile.open(file.c_str(), ios_base::binary);
                 if (mFile.is_open())
                 {
                     setErrorBit(parseHeader());
@@ -180,7 +180,7 @@ namespace HISSTools
         bool seekInternal(uintptr_t position)
         {
             mFile.clear();
-            mFile.seekg(position, std::ios_base::beg);
+            mFile.seekg(position, ios_base::beg);
             return positionInternal() == position;
         }
         
