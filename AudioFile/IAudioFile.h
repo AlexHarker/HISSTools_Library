@@ -513,15 +513,15 @@ namespace HISSTools
         {
             // Calculate sizes
             
-            uint16_t numChannels = (channel < 0) ? getChannels() : 1;
-            uint32_t byteDepth = getByteDepth();
-            uintptr_t byteStep = (channel < 0) ? byteDepth : byteDepth * getChannels();
-            uintptr_t j = std::max(channel, 0) * byteDepth;
+            const uint32_t byteDepth = getByteDepth();
+            const uint16_t numChannels = (channel < 0) ? getChannels() : 1;
+            const uintptr_t byteStep = byteDepth * ((channel < 0) ? 1 : numChannels);
+            const uintptr_t j = std::max(channel, 0) * byteDepth;
             
             while (numFrames)
             {
-                uintptr_t loopFrames = std::min(numFrames, WORK_LOOP_SIZE);
-                uintptr_t loopSamples = loopFrames * numChannels;
+                const uintptr_t loopFrames = std::min(numFrames, WORK_LOOP_SIZE);
+                const uintptr_t loopSamples = loopFrames * numChannels;
                 
                 // Read raw
                 
