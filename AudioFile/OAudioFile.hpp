@@ -492,11 +492,25 @@ namespace HISSTools
                             write_loop<uint32_t, uint32_t, 1>(input, j, loop_samples, byte_step);
                         break;
                         
-                    case PCMFormat::Int16:      write_loop<uint32_t, uint32_t, 2>(input, j, loop_samples, byte_step);  break;
-                    case PCMFormat::Int24:      write_loop<uint32_t, uint32_t, 3>(input, j, loop_samples, byte_step);  break;
-                    case PCMFormat::Int32:      write_loop<uint32_t, uint32_t, 4>(input, j, loop_samples, byte_step);  break;
-                    case PCMFormat::Float32:    write_loop<uint32_t, float, 4>(input, j, loop_samples, byte_step);     break;
-                    case PCMFormat::Float64:    write_loop<uint64_t, double, 8>(input, j, loop_samples, byte_step);    break;
+                    case PCMFormat::Int16:
+                        write_loop<uint32_t, uint32_t, 2>(input, j, loop_samples, byte_step);
+                        break;
+                        
+                    case PCMFormat::Int24:
+                        write_loop<uint32_t, uint32_t, 3>(input, j, loop_samples, byte_step);
+                        break;
+                        
+                    case PCMFormat::Int32:
+                        write_loop<uint32_t, uint32_t, 4>(input, j, loop_samples, byte_step);
+                        break;
+                        
+                    case PCMFormat::Float32:
+                        write_loop<uint32_t, float, 4>(input, j, loop_samples, byte_step);
+                        break;
+                        
+                    case PCMFormat::Float64:
+                        write_loop<uint64_t, double, 8>(input, j, loop_samples, byte_step);
+                        break;
                 }
                 
                 // Write buffer back to file

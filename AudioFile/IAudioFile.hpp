@@ -538,11 +538,25 @@ namespace HISSTools
                             read_loop<uint32_t, uint32_t, 1, 24>(output, j, loop_samples, byte_step);
                         break;
                         
-                    case PCMFormat::Int16:      read_loop<uint32_t, uint32_t, 2, 16>(output, j, loop_samples, byte_step);   break;
-                    case PCMFormat::Int24:      read_loop<uint32_t, uint32_t, 3,  8>(output, j, loop_samples, byte_step);   break;
-                    case PCMFormat::Int32:      read_loop<uint32_t, uint32_t, 4,  0>(output, j, loop_samples, byte_step);   break;
-                    case PCMFormat::Float32:    read_loop<float, uint32_t, 4,  0>(output, j, loop_samples, byte_step);      break;
-                    case PCMFormat::Float64:    read_loop<double, uint64_t, 8,  0>(output, j, loop_samples, byte_step);     break;
+                    case PCMFormat::Int16:
+                        read_loop<uint32_t, uint32_t, 2, 16>(output, j, loop_samples, byte_step);
+                        break;
+                        
+                    case PCMFormat::Int24:
+                        read_loop<uint32_t, uint32_t, 3,  8>(output, j, loop_samples, byte_step);
+                        break;
+                        
+                    case PCMFormat::Int32:
+                        read_loop<uint32_t, uint32_t, 4,  0>(output, j, loop_samples, byte_step);
+                        break;
+                        
+                    case PCMFormat::Float32:
+                        read_loop<float, uint32_t, 4,  0>(output, j, loop_samples, byte_step);
+                        break;
+                        
+                    case PCMFormat::Float64:
+                        read_loop<double, uint64_t, 8,  0>(output, j, loop_samples, byte_step);
+                        break;
                         
                     default:
                         break;
