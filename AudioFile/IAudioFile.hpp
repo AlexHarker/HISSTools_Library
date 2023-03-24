@@ -23,16 +23,16 @@ namespace HISSTools
             Audio = 0x4
         };
 
-        struct PostionRestore
+        struct postion_restore
         {
-            PostionRestore(IAudioFile &parent)
+            postion_restore(IAudioFile &parent)
             : m_parent(parent)
             , m_position(parent.position_internal())
             {
                 m_parent.m_file.seekg(12, ios_base::beg);
             }
             
-            ~PostionRestore()
+            ~postion_restore()
             {
                 m_parent.seek_internal(m_position);
             }
@@ -68,7 +68,7 @@ namespace HISSTools
                 m_file.open(file.c_str(), ios_base::binary);
                 if (m_file.is_open())
                 {
-                    set_error_bit(parseHeader());
+                    set_error_bit(parse_header());
                     m_buffer.resize(WORK_LOOP_SIZE * getFrameByteCount());
                     seek();
                 }
@@ -94,48 +94,48 @@ namespace HISSTools
 
         // File Reading
         
-        void readRaw(void* output, uintptr_t numFrames)
+        void readRaw(void* output, uintptr_t num_frames)
         {
-            read_internal(static_cast<char *>(output), getFrameByteCount() * numFrames);
+            read_internal(static_cast<char *>(output), getFrameByteCount() * num_frames);
         }
 
-        void readInterleaved(double* output, uintptr_t numFrames)
+        void readInterleaved(double* output, uintptr_t num_frames)
         {
-            readAudio(output, numFrames);
+            read_audio(output, num_frames);
         }
         
-        void readInterleaved(float* output, uintptr_t numFrames)
+        void readInterleaved(float* output, uintptr_t num_frames)
         {
-            readAudio(output, numFrames);
+            read_audio(output, num_frames);
         }
 
-        void readChannel(double* output, uintptr_t numFrames, uint16_t channel)
+        void readChannel(double* output, uintptr_t num_frames, uint16_t channel)
         {
-            readAudio(output, numFrames, channel);
+            read_audio(output, num_frames, channel);
         }
         
-        void readChannel(float* output, uintptr_t numFrames, uint16_t channel)
+        void readChannel(float* output, uintptr_t num_frames, uint16_t channel)
         {
-            readAudio(output, numFrames, channel);
+            read_audio(output, num_frames, channel);
         }
 
         // Chunks
         
         std::vector<std::string> getChunkTags()
         {
-            PostionRestore restore(*this);
+            postion_restore restore(*this);
             
             char tag[5] = {0, 0, 0, 0, 0};
-            uint32_t chunkSize;
+            uint32_t chunk_size;
             
             std::vector<std::string> tags;
             
             // Iterate through chunks
             
-            while (readChunkHeader(tag, chunkSize))
+            while (read_chunk_header(tag, chunk_size))
             {
                 tags.push_back(tag);
-                readChunk(nullptr, 0, chunkSize);
+                read_chunk(nullptr, 0, chunk_size);
             }
             
             return tags;
@@ -143,26 +143,26 @@ namespace HISSTools
         
         uintptr_t getChunkSize(const char *tag)
         {
-            PostionRestore restore(*this);
+            postion_restore restore(*this);
             
-            uint32_t chunkSize = 0;
+            uint32_t chunk_size = 0;
             
             if (strlen(tag) <= 4)
-                findChunk(tag, chunkSize);
+                find_chunk(tag, chunk_size);
             
-            return chunkSize;
+            return chunk_size;
         }
         
         void readRawChunk(void *output, const char *tag)
         {
-            PostionRestore restore(*this);
+            postion_restore restore(*this);
             
-            uint32_t chunkSize = 0;
+            uint32_t chunk_size = 0;
             
             if (strlen(tag) <= 4)
             {
-                findChunk(tag, chunkSize);
-                read_internal(static_cast<char *>(output), chunkSize);
+                find_chunk(tag, chunk_size);
+                read_internal(static_cast<char *>(output), chunk_size);
             }
         }
         
@@ -198,22 +198,22 @@ namespace HISSTools
         
         uint32_t getU32(const char* bytes, Endianness endianness)
         {
-            return getBytes<uint32_t, 4>(bytes, endianness);
+            return get_bytes<uint32_t, 4>(bytes, endianness);
         }
         
         uint16_t getU16(const char* bytes, Endianness endianness)
         {
-            return getBytes<uint16_t, 2>(bytes, endianness);
+            return get_bytes<uint16_t, 2>(bytes, endianness);
         }
         
         // Chunk Reading
         
-        static bool matchTag(const char* a, const char* b)
+        static bool match_tag(const char* a, const char* b)
         {
             return (strncmp(a, b, 4) == 0);
         }
         
-        bool readChunkHeader(char* tag, uint32_t& chunkSize)
+        bool read_chunk_header(char* tag, uint32_t& chunk_size)
         {
             char header[8] = {};
             
@@ -221,33 +221,33 @@ namespace HISSTools
                 return false;
             
             strncpy(tag, header, 4);
-            chunkSize = getU32(header + 4, getHeaderEndianness());
+            chunk_size = getU32(header + 4, getHeaderEndianness());
             
             return true;
         }
         
-        bool findChunk(const char* searchTag, uint32_t& chunkSize)
+        bool find_chunk(const char* search_tag, uint32_t& chunk_size)
         {
             char tag[4] = {};
             
-            while (readChunkHeader(tag, chunkSize))
+            while (read_chunk_header(tag, chunk_size))
             {
-                if (matchTag(tag, searchTag))
+                if (match_tag(tag, search_tag))
                     return true;
                 
-                if (!advance_internal(padded_length(chunkSize)))
+                if (!advance_internal(padded_length(chunk_size)))
                     break;
             }
             
             return false;
         }
         
-        bool readChunk(char* data, uint32_t readSize, uint32_t chunkSize)
+        bool read_chunk(char* data, uint32_t read_size, uint32_t chunk_size)
         {
-            if (readSize && (readSize > chunkSize || !read_internal(data, readSize)))
+            if (read_size && (read_size > chunk_size || !read_internal(data, read_size)))
                 return false;
             
-            if (!advance_internal(padded_length(chunkSize) - readSize))
+            if (!advance_internal(padded_length(chunk_size) - read_size))
                 return false;
             
             return true;
@@ -255,30 +255,30 @@ namespace HISSTools
 
         // AIFF Helper
         
-        bool getAIFFChunkHeader(AIFFTag& enumeratedTag, uint32_t& chunkSize)
+        bool get_aiff_chunk_header(AIFFTag& enumerated_tag, uint32_t& chunk_size)
         {
             char tag[4];
             
-            enumeratedTag = AIFFTag::Unknown;
+            enumerated_tag = AIFFTag::Unknown;
             
-            if (!readChunkHeader(tag, chunkSize))
+            if (!read_chunk_header(tag, chunk_size))
                 return false;
             
-            if      (matchTag(tag, "FVER")) enumeratedTag = AIFFTag::Version;
-            else if (matchTag(tag, "COMM")) enumeratedTag = AIFFTag::Common;
-            else if (matchTag(tag, "SSND")) enumeratedTag = AIFFTag::Audio;
+            if      (match_tag(tag, "FVER")) enumerated_tag = AIFFTag::Version;
+            else if (match_tag(tag, "COMM")) enumerated_tag = AIFFTag::Common;
+            else if (match_tag(tag, "SSND")) enumerated_tag = AIFFTag::Audio;
             
             return true;
         }
         
         // Parse Headers
         
-        Error parseHeader()
+        Error parse_header()
         {
             char chunk[12] = {};
             
-            const char *fileType = chunk;
-            const char *fileSubtype = chunk + 8;
+            const char *file_type = chunk;
+            const char *file_subtype = chunk + 8;
             
             // `Read file header
             
@@ -287,13 +287,13 @@ namespace HISSTools
             
             // AIFF or AIFC
             
-            if (matchTag(fileType, "FORM") && (matchTag(fileSubtype, "AIFF") || matchTag(fileSubtype, "AIFC")))
-                return parseAIFFHeader(fileSubtype);
+            if (match_tag(file_type, "FORM") && (match_tag(file_subtype, "AIFF") || match_tag(file_subtype, "AIFC")))
+                return parseAIFFHeader(file_subtype);
             
             // WAVE file format
             
-            if ((matchTag(fileType, "RIFF") || matchTag(fileType, "RIFX")) && matchTag(fileSubtype, "WAVE"))
-                return parseWaveHeader(fileType);
+            if ((match_tag(file_type, "RIFF") || match_tag(file_type, "RIFX")) && match_tag(file_subtype, "WAVE"))
+                return parse_wave_header(file_type);
             
             // No known format found
             
@@ -306,17 +306,17 @@ namespace HISSTools
             
             char chunk[22];
             
-            uint32_t formatValid = static_cast<uint32_t>(AIFFTag::Common) | static_cast<uint32_t>(AIFFTag::Audio);
-            uint32_t formatCheck = 0;
-            uint32_t chunkSize;
+            uint32_t format_valid = static_cast<uint32_t>(AIFFTag::Common) | static_cast<uint32_t>(AIFFTag::Audio);
+            uint32_t format_check = 0;
+            uint32_t chunk_size;
             
             m_format = AudioFileFormat(FileType::AIFF);
             
             // Iterate over chunks
             
-            while (getAIFFChunkHeader(tag, chunkSize))
+            while (get_aiff_chunk_header(tag, chunk_size))
             {
-                formatCheck |= static_cast<uint32_t>(tag);
+                format_check |= static_cast<uint32_t>(tag);
                 
                 switch (tag)
                 {
@@ -324,7 +324,7 @@ namespace HISSTools
                     {
                         // Read common chunk (at least 18 bytes and up to 22)
                         
-                        if (!readChunk(chunk, (chunkSize > 22) ? 22 : ((chunkSize < 18) ? 18 : chunkSize), chunkSize))
+                        if (!read_chunk(chunk, (chunk_size > 22) ? 22 : ((chunk_size < 18) ? 18 : chunk_size), chunk_size))
                             return Error::BadFormat;
                         
                         // Retrieve relevant data (AIFF or AIFC) and set AIFF defaults
@@ -333,14 +333,14 @@ namespace HISSTools
                         m_num_frames = getU32(chunk + 2, getHeaderEndianness());
                         m_sampling_rate = IEEEDoubleExtendedConvertor()(chunk + 8);
                         
-                        uint16_t bitDepth = getU16(chunk + 6, getHeaderEndianness());
+                        uint16_t bit_depth = getU16(chunk + 6, getHeaderEndianness());
                         
                         // If there are no frames then it is not required for there to be an audio (SSND) chunk
                         
                         if (!getFrames())
-                            formatCheck |= static_cast<uint32_t>(AIFFTag::Audio);
+                            format_check |= static_cast<uint32_t>(AIFFTag::Audio);
                         
-                        if (matchTag(fileSubtype, "AIFC"))
+                        if (match_tag(fileSubtype, "AIFC"))
                         {
                             // Require a version chunk
                             
@@ -348,15 +348,15 @@ namespace HISSTools
                             
                             // Set parameters based on format
                             
-                            m_format = AIFCCompression::getFormat(chunk + 18, bitDepth);
+                            m_format = AIFCCompression::getFormat(chunk + 18, bit_depth);
                             
                             if (getFileType() == FileType::None)
                                 return Error::UnsupportedAIFCFormat;
                         }
                         else
-                            m_format = AudioFileFormat(FileType::AIFF, NumericType::Integer, bitDepth, Endianness::Big);
+                            m_format = AudioFileFormat(FileType::AIFF, NumericType::Integer, bit_depth, Endianness::Big);
                         
-                        if (!m_format.isValid())
+                        if (!m_format.is_valid())
                             return Error::UnsupportedPCMFormat;
                         
                         break;
@@ -366,7 +366,7 @@ namespace HISSTools
                     {
                         // Read format number and check for the correct version of the AIFC specification
                         
-                        if (!readChunk(chunk, 4, chunkSize))
+                        if (!read_chunk(chunk, 4, chunk_size))
                             return Error::BadFormat;
                         
                         if (getU32(chunk, getHeaderEndianness()) != AIFC_CURRENT_SPECIFICATION)
@@ -377,7 +377,7 @@ namespace HISSTools
                         
                     case AIFFTag::Audio:
                     {
-                        if (!readChunk(chunk, 4, chunkSize))
+                        if (!read_chunk(chunk, 4, chunk_size))
                             return Error::BadFormat;
                         
                         // Audio data starts after a 32-bit block size value (ignored) plus an offset readh here
@@ -391,7 +391,7 @@ namespace HISSTools
                     {
                         // Read no data, but update the file position
                         
-                        if (!readChunk(nullptr, 0, chunkSize))
+                        if (!read_chunk(nullptr, 0, chunk_size))
                             return Error::BadFormat;
                         
                         break;
@@ -404,42 +404,42 @@ namespace HISSTools
             
             // Check that all relevant chunks were found
             
-            if ((~formatCheck) & formatValid)
+            if ((~format_check) & format_valid)
                 return Error::BadFormat;
             
             return Error::None;
         }
         
-        Error parseWaveHeader(const char* fileType)
+        Error parse_wave_header(const char* file_type)
         {
             char chunk[40];
             
-            uint32_t chunkSize;
+            uint32_t chunk_size;
             
             m_format = AudioFileFormat(FileType::WAVE);
             
             // Check endianness
             
-            Endianness endianness = matchTag(fileType, "RIFX") ? Endianness::Big : Endianness::Little;
+            Endianness endianness = match_tag(file_type, "RIFX") ? Endianness::Big : Endianness::Little;
             
             // Search for the format chunk and read the format chunk as needed, checking for a valid size
             
-            if (!(findChunk("fmt ", chunkSize)) || (chunkSize != 16 && chunkSize != 18 && chunkSize != 40))
+            if (!(find_chunk("fmt ", chunk_size)) || (chunk_size != 16 && chunk_size != 18 && chunk_size != 40))
                 return Error::BadFormat;
             
-            if (!readChunk(chunk, chunkSize, chunkSize))
+            if (!read_chunk(chunk, chunk_size, chunk_size))
                 return Error::BadFormat;
             
             // Retrieve relevant data
             
-            uint16_t formatByte = getU16(chunk, getHeaderEndianness());
-            uint16_t bitDepth = getU16(chunk + 14, getHeaderEndianness());
+            uint16_t format_byte = getU16(chunk, getHeaderEndianness());
+            uint16_t bit_depth = getU16(chunk + 14, getHeaderEndianness());
             
             // WAVE_FORMAT_EXTENSIBLE
             
-            if (formatByte == 0xFFFE)
+            if (format_byte == 0xFFFE)
             {
-                formatByte = getU16(chunk + 24, getHeaderEndianness());
+                format_byte = getU16(chunk + 24, getHeaderEndianness());
                 
                 constexpr unsigned char guid[14] = { 0x00,0x00,0x00,0x00,0x10,0x00,0x80,0x00,0x00,0xAA,0x00,0x38,0x9B,0x71 };
                 
@@ -449,27 +449,27 @@ namespace HISSTools
             
             // Check for a valid format byte (currently PCM or float only)
             
-            if (formatByte != 0x0001 && formatByte != 0x0003)
+            if (format_byte != 0x0001 && format_byte != 0x0003)
                 return Error::UnsupportedWaveFormat;
             
-            NumericType type = formatByte == 0x0003 ? NumericType::Float : NumericType::Integer;
+            NumericType type = format_byte == 0x0003 ? NumericType::Float : NumericType::Integer;
             
             m_num_channels = getU16(chunk + 2, getHeaderEndianness());
             m_sampling_rate = getU32(chunk + 4, getHeaderEndianness());
             
             // Search for the data chunk and retrieve frame size and file offset to audio data
             
-            if (!findChunk("data", chunkSize))
+            if (!find_chunk("data", chunk_size))
                 return Error::BadFormat;
             
             // Set Format
             
-            m_format = AudioFileFormat(FileType::WAVE, type, bitDepth, endianness);
+            m_format = AudioFileFormat(FileType::WAVE, type, bit_depth, endianness);
             
-            if (!m_format.isValid())
+            if (!m_format.is_valid())
                 return Error::UnsupportedPCMFormat;
             
-            m_num_frames = chunkSize / getFrameByteCount();
+            m_num_frames = chunk_size / getFrameByteCount();
             m_pcm_offset = position_internal();
             
             return Error::None;
@@ -500,32 +500,32 @@ namespace HISSTools
         // Internal Typed Audio Read
 
         template <class T, class U, int N, int Shift, class V>
-        void readLoop(V* output, uintptr_t j, uintptr_t loopSamples, uintptr_t byteStep)
+        void read_loop(V* output, uintptr_t j, uintptr_t loop_samples, uintptr_t byte_step)
         {
             Endianness endianness = getAudioEndianness();
             
-            for (uintptr_t i = 0; i < loopSamples; i++, j += byteStep)
-                output[i] = convert(getBytes<U, N>(m_buffer.data() + j, endianness) << Shift, T(0), V(0));
+            for (uintptr_t i = 0; i < loop_samples; i++, j += byte_step)
+                output[i] = convert(get_bytes<U, N>(m_buffer.data() + j, endianness) << Shift, T(0), V(0));
         }
         
         template <class T>
-        void readAudio(T* output, uintptr_t numFrames, int32_t channel = -1)
+        void read_audio(T* output, uintptr_t num_frames, int32_t channel = -1)
         {
             // Calculate sizes
             
-            const uint32_t byteDepth = getByteDepth();
-            const uint16_t numChannels = (channel < 0) ? getChannels() : 1;
-            const uintptr_t byteStep = byteDepth * ((channel < 0) ? 1 : numChannels);
-            const uintptr_t j = std::max(channel, 0) * byteDepth;
+            const uint32_t byte_depth = getByteDepth();
+            const uint16_t num_channels = (channel < 0) ? getChannels() : 1;
+            const uintptr_t byte_step = byte_depth * ((channel < 0) ? 1 : num_channels);
+            const uintptr_t j = std::max(channel, 0) * byte_depth;
             
-            while (numFrames)
+            while (num_frames)
             {
-                const uintptr_t loopFrames = std::min(numFrames, WORK_LOOP_SIZE);
-                const uintptr_t loopSamples = loopFrames * numChannels;
+                const uintptr_t loop_frames = std::min(num_frames, WORK_LOOP_SIZE);
+                const uintptr_t loop_samples = loop_frames * num_channels;
                 
                 // Read raw
                 
-                readRaw(m_buffer.data(), loopFrames);
+                readRaw(m_buffer.data(), loop_frames);
                 
                 // Copy and convert to Output
                 
@@ -533,23 +533,23 @@ namespace HISSTools
                 {
                     case PCMFormat::Int8:
                         if (getFileType() == FileType::WAVE)
-                            readLoop<uint8_t, uint8_t, 1, 0>(output, j, loopSamples, byteStep);
+                            read_loop<uint8_t, uint8_t, 1, 0>(output, j, loop_samples, byte_step);
                         else
-                            readLoop<uint32_t, uint32_t, 1, 24>(output, j, loopSamples, byteStep);
+                            read_loop<uint32_t, uint32_t, 1, 24>(output, j, loop_samples, byte_step);
                         break;
                         
-                    case PCMFormat::Int16:      readLoop<uint32_t, uint32_t, 2, 16>(output, j, loopSamples, byteStep);      break;
-                    case PCMFormat::Int24:      readLoop<uint32_t, uint32_t, 3,  8>(output, j, loopSamples, byteStep);      break;
-                    case PCMFormat::Int32:      readLoop<uint32_t, uint32_t, 4,  0>(output, j, loopSamples, byteStep);      break;
-                    case PCMFormat::Float32:    readLoop<float, uint32_t, 4,  0>(output, j, loopSamples, byteStep);         break;
-                    case PCMFormat::Float64:    readLoop<double, uint64_t, 8,  0>(output, j, loopSamples, byteStep);        break;
+                    case PCMFormat::Int16:      read_loop<uint32_t, uint32_t, 2, 16>(output, j, loop_samples, byte_step);   break;
+                    case PCMFormat::Int24:      read_loop<uint32_t, uint32_t, 3,  8>(output, j, loop_samples, byte_step);   break;
+                    case PCMFormat::Int32:      read_loop<uint32_t, uint32_t, 4,  0>(output, j, loop_samples, byte_step);   break;
+                    case PCMFormat::Float32:    read_loop<float, uint32_t, 4,  0>(output, j, loop_samples, byte_step);      break;
+                    case PCMFormat::Float64:    read_loop<double, uint64_t, 8,  0>(output, j, loop_samples, byte_step);     break;
                         
                     default:
                         break;
                 }
                 
-                numFrames -= loopFrames;
-                output += loopSamples;
+                num_frames -= loop_frames;
+                output += loop_samples;
             }
         }
     };

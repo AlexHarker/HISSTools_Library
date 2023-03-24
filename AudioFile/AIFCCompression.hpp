@@ -16,29 +16,29 @@ namespace HISSTools
         using Endianness = AudioFileFormat::Endianness;
 
         // FIX
-        static bool matchTag(const char* a, const char* b) { return (strncmp(a, b, 4) == 0); }
+        static bool match_tag(const char* a, const char* b) { return (strncmp(a, b, 4) == 0); }
 
         static AudioFileFormat getFormat(const char* tag, uint16_t bitDepth)
         {
-            if (matchTag(tag, "NONE"))
+            if (match_tag(tag, "NONE"))
                 return AudioFileFormat(FileType::AIFC, NumericType::Integer, bitDepth, Endianness::Big);
             
-            if (matchTag(tag, "twos"))
+            if (match_tag(tag, "twos"))
                 return AudioFileFormat(FileType::AIFC, PCMFormat::Int16, Endianness::Big);
             
-            if (matchTag(tag, "sowt") || matchTag(tag, "SOWT"))
+            if (match_tag(tag, "sowt") || match_tag(tag, "SOWT"))
                 return AudioFileFormat(FileType::AIFC, PCMFormat::Int16, Endianness::Little);
             
-            if (matchTag(tag, "in24") || matchTag(tag, "IN24"))
+            if (match_tag(tag, "in24") || match_tag(tag, "IN24"))
                 return AudioFileFormat(FileType::AIFC, PCMFormat::Int24, Endianness::Big);
             
-            if (matchTag(tag, "in32") || matchTag(tag, "IN32"))
+            if (match_tag(tag, "in32") || match_tag(tag, "IN32"))
                 return AudioFileFormat(FileType::AIFC, PCMFormat::Int32, Endianness::Big);
             
-            if (matchTag(tag, "fl32") || matchTag(tag, "FL32"))
+            if (match_tag(tag, "fl32") || match_tag(tag, "FL32"))
                 return AudioFileFormat(FileType::AIFC, PCMFormat::Float32, Endianness::Big);
             
-            if (matchTag(tag, "fl64") || matchTag(tag, "FL64"))
+            if (match_tag(tag, "fl64") || match_tag(tag, "FL64"))
                 return AudioFileFormat(FileType::AIFC, PCMFormat::Float64, Endianness::Big);
                 
             return AudioFileFormat();
@@ -62,9 +62,7 @@ namespace HISSTools
         }
         
         static const char* getString(const AudioFileFormat& format)
-        {
-            // FIX - doesn't deal with little endian... (return type)? "little endian"
-            
+        {            
             switch (getType(format))
             {
                 case Type::None:
@@ -81,7 +79,7 @@ namespace HISSTools
         
         static Type getType(const AudioFileFormat& format)
         {
-            if (!format.isValid() || format.getFileType() == FileType::WAVE)
+            if (!format.is_valid() || format.getFileType() == FileType::WAVE)
                 return Type::Unknown;
             
             switch (format.getPCMFormat())

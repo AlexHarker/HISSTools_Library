@@ -72,7 +72,7 @@ namespace HISSTools
             }
         }
         
-        bool isValid() const                    { return m_valid; }
+        bool is_valid() const                   { return m_valid; }
 
         FileType getFileType() const            { return m_file_type; }
         PCMFormat getPCMFormat() const          { return m_pcm_format; }
