@@ -288,7 +288,7 @@ namespace HISSTools
             // AIFF or AIFC
             
             if (match_tag(file_type, "FORM") && (match_tag(file_subtype, "AIFF") || match_tag(file_subtype, "AIFC")))
-                return parseAIFFHeader(file_subtype);
+                return parse_aiff_header(file_subtype);
             
             // WAVE file format
             
@@ -300,7 +300,7 @@ namespace HISSTools
             return Error::UnknownFormat;
         }
         
-        Error parseAIFFHeader(const char* fileSubtype)
+        Error parse_aiff_header(const char* fileSubtype)
         {
             AIFFTag tag;
             
