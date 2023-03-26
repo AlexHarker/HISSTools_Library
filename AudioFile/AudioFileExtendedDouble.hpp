@@ -2,6 +2,7 @@
 #ifndef AUDIO_FILE_EXTENDED_DOUBLE_HPP
 #define AUDIO_FILE_EXTENDED_DOUBLE_HPP
 
+#include "AudioFileUtilities.hpp"
 #include "BaseAudioFile.hpp"
 
 #include <cmath>
@@ -9,19 +10,19 @@
 
 namespace HISSTools
 {
-    struct IEEEDoubleExtendedConvertor
+    struct extended_double_convertor
     {
         using Endianness = BaseAudioFile::Endianness;
         
         double infinity() { return std::numeric_limits<double>::infinity(); }
         double quiet_NaN() { return std::numeric_limits<double>::quiet_NaN(); }
         
-        uint32_t getU32(const char* bytes, Endianness endianness)
+        uint32_t get_u32(const char* bytes, Endianness endianness)
         {
             return get_bytes<uint32_t, 4>(bytes, endianness);
         }
         
-        uint16_t getU16(const char* bytes, Endianness endianness)
+        uint16_t get_u16(const char* bytes, Endianness endianness)
         {
             return get_bytes<uint16_t, 2>(bytes, endianness);
         }
@@ -30,10 +31,10 @@ namespace HISSTools
         {
             // Get double from big-endian IEEE 80-bit extended floating point format
             
-            bool     sign        = getU16(bytes + 0, Endianness::Big) & 0x8000;
-            int32_t  exponent    = getU16(bytes + 0, Endianness::Big) & 0x7FFF;
-            uint32_t hi_mantissa = getU32(bytes + 2, Endianness::Big);
-            uint32_t lo_mantissa = getU32(bytes + 6, Endianness::Big);
+            bool     sign        = get_u16(bytes + 0, Endianness::Big) & 0x8000;
+            int32_t  exponent    = get_u16(bytes + 0, Endianness::Big) & 0x7FFF;
+            uint32_t hi_mantissa = get_u32(bytes + 2, Endianness::Big);
+            uint32_t lo_mantissa = get_u32(bytes + 6, Endianness::Big);
             
             // Special handlers for zeros
             
@@ -56,15 +57,15 @@ namespace HISSTools
             return sign ? -value : value;
         }
         
-        void operator()(double x, unsigned char bytes[10])
+        void operator()(unsigned char bytes[10], double x)
         {
             auto double_to_uint32 = [](double x)
             {
                 return static_cast<uint32_t>((((int32_t)(x - 2147483648.0)) + 2147483647L) + 1);
             };
             
-            bool sign = 0;
-            int32_t exponent = 0;
+            bool     sign        = 0;
+            int32_t  exponent    = 0;
             uint32_t hi_mantissa = 0;
             uint32_t lo_mantissa = 0;
             

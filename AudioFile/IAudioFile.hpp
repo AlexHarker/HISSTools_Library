@@ -332,7 +332,7 @@ namespace HISSTools
                         
                         m_num_channels = getU16(chunk + 0, getHeaderEndianness());
                         m_num_frames = getU32(chunk + 2, getHeaderEndianness());
-                        m_sampling_rate = IEEEDoubleExtendedConvertor()(chunk + 8);
+                        m_sampling_rate = extended_double_convertor()(chunk + 8);
                         
                         uint16_t bit_depth = getU16(chunk + 6, getHeaderEndianness());
                         
@@ -349,7 +349,7 @@ namespace HISSTools
                             
                             // Set parameters based on format
                             
-                            m_format = AIFCCompression::getFormat(chunk + 18, bit_depth);
+                            m_format = AIFCCompression::to_format(chunk + 18, bit_depth);
                             
                             if (getFileType() == FileType::None)
                                 return Error::UnsupportedAIFCFormat;

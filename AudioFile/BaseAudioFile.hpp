@@ -15,15 +15,16 @@ namespace HISSTools
 {
     class BaseAudioFile
     {
+    protected:
+        using ios_base = std::ios_base;
+
     public:
         
         using FileType = AudioFileFormat::FileType;
         using PCMFormat = AudioFileFormat::PCMFormat;
         using NumericType = AudioFileFormat::NumericType;
         using Endianness = AudioFileFormat::Endianness;
-   
-        using ios_base = std::ios_base;
-        
+           
         enum class Error
         {
             None                    = 0,

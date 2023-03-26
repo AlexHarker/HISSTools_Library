@@ -15,13 +15,15 @@ namespace HISSTools
         using NumericType = AudioFileFormat::NumericType;
         using Endianness = AudioFileFormat::Endianness;
 
-        // FIX
-        static bool match_tag(const char* a, const char* b) { return (strncmp(a, b, 4) == 0); }
+        static bool match_tag(const char* a, const char* b)
+        {
+            return (strncmp(a, b, 4) == 0);
+        }
 
-        static AudioFileFormat getFormat(const char* tag, uint16_t bitDepth)
+        static AudioFileFormat to_format(const char* tag, uint16_t bit_depth)
         {
             if (match_tag(tag, "NONE"))
-                return AudioFileFormat(FileType::AIFC, NumericType::Integer, bitDepth, Endianness::Big);
+                return AudioFileFormat(FileType::AIFC, NumericType::Integer, bit_depth, Endianness::Big);
             
             if (match_tag(tag, "twos"))
                 return AudioFileFormat(FileType::AIFC, PCMFormat::Int16, Endianness::Big);
@@ -44,9 +46,9 @@ namespace HISSTools
             return AudioFileFormat();
         }
         
-        static const char* getTag(const AudioFileFormat& format)
+        static const char* to_tag(const AudioFileFormat& format)
         {
-            switch (getType(format))
+            switch (to_type(format))
             {
                 case Type::None:
                     return "NONE";
@@ -61,9 +63,9 @@ namespace HISSTools
             }
         }
         
-        static const char* getString(const AudioFileFormat& format)
+        static const char* to_string(const AudioFileFormat& format)
         {            
-            switch (getType(format))
+            switch (to_type(format))
             {
                 case Type::None:
                 case Type::Sowt:
@@ -77,7 +79,7 @@ namespace HISSTools
             }
         }
         
-        static Type getType(const AudioFileFormat& format)
+        static Type to_type(const AudioFileFormat& format)
         {
             if (!format.is_valid() || format.getFileType() == FileType::WAVE)
                 return Type::Unknown;

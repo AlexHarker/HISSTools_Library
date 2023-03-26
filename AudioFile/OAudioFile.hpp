@@ -196,7 +196,7 @@ namespace HISSTools
         {
             unsigned char bytes[10];
             
-            IEEEDoubleExtendedConvertor()(value, bytes);
+            extended_double_convertor()(bytes, value);
             
             return write_internal(reinterpret_cast<const char*>(bytes), 10);
         }
@@ -267,8 +267,8 @@ namespace HISSTools
                 return ((length + 1) & 0x1) ? length + 2 : length + 1;
             };
             
-            const char *compression_string = AIFCCompression::getString(m_format);
-            const char *compression_tag = AIFCCompression::getTag(m_format);
+            const char *compression_string = AIFCCompression::to_string(m_format);
+            const char *compression_tag = AIFCCompression::to_tag(m_format);
             
             uint32_t compression_string_size = string_byte_size(compression_string);
             
