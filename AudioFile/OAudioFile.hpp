@@ -161,12 +161,12 @@ namespace HISSTools
             return write_internal(reinterpret_cast<const char*>(bytes), N);
         }
         
-        bool putU32(uint32_t value, Endianness endianness)
+        bool put_u32(uint32_t value, Endianness endianness)
         {
             return put_bytes<uint32_t, 4>(value, endianness);
         }
         
-        bool putU16(uint16_t value, Endianness endianness)
+        bool put_u16(uint16_t value, Endianness endianness)
         {
             return put_bytes<uint16_t, 2>(value, endianness);
         }
@@ -181,7 +181,7 @@ namespace HISSTools
             bool success = true;
             
             success &= write_internal(tag, 4);
-            success &= putU32(size, getHeaderEndianness());
+            success &= put_u32(size, getHeaderEndianness());
             
             return success;
         }
@@ -235,16 +235,16 @@ namespace HISSTools
             // Format Chunk
             
             success &= put_chunk("fmt ", 16);
-            success &= putU16(getNumericType() == NumericType::Integer ? 0x1 : 0x3, getHeaderEndianness());
-            success &= putU16(getChannels(), getHeaderEndianness());
-            success &= putU32(getSamplingRate(), getHeaderEndianness());
+            success &= put_u16(getNumericType() == NumericType::Integer ? 0x1 : 0x3, getHeaderEndianness());
+            success &= put_u16(getChannels(), getHeaderEndianness());
+            success &= put_u32(getSamplingRate(), getHeaderEndianness());
             
             // Bytes per second and block alignment
             
-            success &= putU32(getSamplingRate() * getFrameByteCount(), getHeaderEndianness());
-            success &= putU16(static_cast<uint16_t>(getFrameByteCount()), getHeaderEndianness());
+            success &= put_u32(getSamplingRate() * getFrameByteCount(), getHeaderEndianness());
+            success &= put_u16(static_cast<uint16_t>(getFrameByteCount()), getHeaderEndianness());
             
-            success &= putU16(getBitDepth(), getHeaderEndianness());
+            success &= put_u16(getBitDepth(), getHeaderEndianness());
             
             // Data Chunk (empty)
             
@@ -284,14 +284,14 @@ namespace HISSTools
             // FVER Chunk
             
             success &= put_chunk("FVER", 4);
-            success &= putU32(AIFC_CURRENT_SPECIFICATION, getHeaderEndianness());
+            success &= put_u32(AIFC_CURRENT_SPECIFICATION, getHeaderEndianness());
             
             // COMM Chunk
             
             success &= put_chunk("COMM", 22 + compression_string_size);
-            success &= putU16(getChannels(), getHeaderEndianness());
-            success &= putU32(getFrames(), getHeaderEndianness());
-            success &= putU16(getBitDepth(), getHeaderEndianness());
+            success &= put_u16(getChannels(), getHeaderEndianness());
+            success &= put_u32(getFrames(), getHeaderEndianness());
+            success &= put_u16(getBitDepth(), getHeaderEndianness());
             success &= put_extended(getSamplingRate());
             success &= put_tag(compression_tag);
             success &= put_string(compression_string);
@@ -302,8 +302,8 @@ namespace HISSTools
             
             // Set offset and block size to zero
             
-            success &= putU32(0, getHeaderEndianness());
-            success &= putU32(0, getHeaderEndianness());
+            success &= put_u32(0, getHeaderEndianness());
+            success &= put_u32(0, getHeaderEndianness());
             
             // Set offset to PCM Data
             
@@ -338,18 +338,18 @@ namespace HISSTools
                 if (getFileType() == FileType::WAVE)
                 {
                     success &= seek_internal(4);
-                    success &= putU32(static_cast<uint32_t>(get_header_size() + padded_length(data_size)), getHeaderEndianness());
+                    success &= put_u32(static_cast<uint32_t>(get_header_size() + padded_length(data_size)), getHeaderEndianness());
                     success &= seek_internal(get_pcm_offset() - 4);
-                    success &= putU32(static_cast<uint32_t>(data_size), getHeaderEndianness());
+                    success &= put_u32(static_cast<uint32_t>(data_size), getHeaderEndianness());
                 }
                 else
                 {
                     success &= seek_internal(4);
-                    success &= putU32(static_cast<uint32_t>(get_header_size() + padded_length(data_size)), getHeaderEndianness());
+                    success &= put_u32(static_cast<uint32_t>(get_header_size() + padded_length(data_size)), getHeaderEndianness());
                     success &= seek_internal(34);
-                    success &= putU32(static_cast<uint32_t>(getFrames()), getHeaderEndianness());
+                    success &= put_u32(static_cast<uint32_t>(getFrames()), getHeaderEndianness());
                     success &= seek_internal(get_pcm_offset() - 12);
-                    success &= putU32(static_cast<uint32_t>(data_size) + 8, getHeaderEndianness());
+                    success &= put_u32(static_cast<uint32_t>(data_size) + 8, getHeaderEndianness());
                 }
                 
                 // Reset the position to end of the data

@@ -197,12 +197,12 @@ namespace HISSTools
         
         // Getters
         
-        uint32_t getU32(const char* bytes, Endianness endianness)
+        uint32_t get_u32(const char* bytes, Endianness endianness)
         {
             return get_bytes<uint32_t, 4>(bytes, endianness);
         }
         
-        uint16_t getU16(const char* bytes, Endianness endianness)
+        uint16_t get_u16(const char* bytes, Endianness endianness)
         {
             return get_bytes<uint16_t, 2>(bytes, endianness);
         }
@@ -222,7 +222,7 @@ namespace HISSTools
                 return false;
             
             strncpy(tag, header, 4);
-            chunk_size = getU32(header + 4, getHeaderEndianness());
+            chunk_size = get_u32(header + 4, getHeaderEndianness());
             
             return true;
         }
@@ -330,11 +330,11 @@ namespace HISSTools
                         
                         // Retrieve relevant data (AIFF or AIFC) and set AIFF defaults
                         
-                        m_num_channels = getU16(chunk + 0, getHeaderEndianness());
-                        m_num_frames = getU32(chunk + 2, getHeaderEndianness());
+                        m_num_channels = get_u16(chunk + 0, getHeaderEndianness());
+                        m_num_frames = get_u32(chunk + 2, getHeaderEndianness());
                         m_sampling_rate = extended_double_convertor()(chunk + 8);
                         
-                        uint16_t bit_depth = getU16(chunk + 6, getHeaderEndianness());
+                        uint16_t bit_depth = get_u16(chunk + 6, getHeaderEndianness());
                         
                         // If there are no frames then it is not required for there to be an audio (SSND) chunk
                         
@@ -370,7 +370,7 @@ namespace HISSTools
                         if (!read_chunk(chunk, 4, chunk_size))
                             return Error::BadFormat;
                         
-                        if (getU32(chunk, getHeaderEndianness()) != AIFC_CURRENT_SPECIFICATION)
+                        if (get_u32(chunk, getHeaderEndianness()) != AIFC_CURRENT_SPECIFICATION)
                             return Error::WrongAIFCVersion;
                         
                         break;
@@ -383,7 +383,7 @@ namespace HISSTools
                         
                         // Audio data starts after a 32-bit block size value (ignored) plus an offset readh here
                         
-                        m_pcm_offset = position_internal() + 4 + getU32(chunk, getHeaderEndianness());
+                        m_pcm_offset = position_internal() + 4 + get_u32(chunk, getHeaderEndianness());
                         
                         break;
                     }
@@ -433,14 +433,14 @@ namespace HISSTools
             
             // Retrieve relevant data
             
-            uint16_t format_byte = getU16(chunk, getHeaderEndianness());
-            uint16_t bit_depth = getU16(chunk + 14, getHeaderEndianness());
+            uint16_t format_byte = get_u16(chunk, getHeaderEndianness());
+            uint16_t bit_depth = get_u16(chunk + 14, getHeaderEndianness());
             
             // WAVE_FORMAT_EXTENSIBLE
             
             if (format_byte == 0xFFFE)
             {
-                format_byte = getU16(chunk + 24, getHeaderEndianness());
+                format_byte = get_u16(chunk + 24, getHeaderEndianness());
                 
                 constexpr unsigned char guid[14] = { 0x00,0x00,0x00,0x00,0x10,0x00,0x80,0x00,0x00,0xAA,0x00,0x38,0x9B,0x71 };
                 
@@ -455,8 +455,8 @@ namespace HISSTools
             
             NumericType type = format_byte == 0x0003 ? NumericType::Float : NumericType::Integer;
             
-            m_num_channels = getU16(chunk + 2, getHeaderEndianness());
-            m_sampling_rate = getU32(chunk + 4, getHeaderEndianness());
+            m_num_channels = get_u16(chunk + 2, getHeaderEndianness());
+            m_sampling_rate = get_u32(chunk + 4, getHeaderEndianness());
             
             // Search for the data chunk and retrieve frame size and file offset to audio data
             
