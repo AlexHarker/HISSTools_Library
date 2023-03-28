@@ -79,7 +79,7 @@ public:
         }
         
         T *get() { return m_pointer; }
-        uintptr_t get_size() { return m_size; }
+        uintptr_t size() { return m_size; }
         
     private:
         

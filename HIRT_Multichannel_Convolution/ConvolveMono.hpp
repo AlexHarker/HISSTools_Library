@@ -112,7 +112,7 @@ public:
         if (part_4.get())
             part_4.get()->set_reset_offset(m_reset_offset);
         
-        return part_4.get_size() == length ? ConvolveError::None : ConvolveError::MemUnavailable;
+        return part_4.size() == length ? ConvolveError::None : ConvolveError::MemUnavailable;
     }
     
     template <class U>
@@ -136,7 +136,7 @@ public:
         if (length && !part4.get())
             return ConvolveError::MemUnavailable;
         
-        if (length > part4.get_size())
+        if (length > part4.size())
             return ConvolveError::MemAllocTooSmall;
         
         return ConvolveError::None;
@@ -154,7 +154,7 @@ public:
     {
         PartPtr part_4 = m_part_4.attempt();
         
-        if (m_length && m_length <= part_4.get_size())
+        if (m_length && m_length <= part_4.size())
         {
             if (m_reset)
             {

@@ -575,7 +575,7 @@ protected:
     template <SpectralOp Op, ComplexArrange arrange>
     void binary_op(T *r_out, T *i_out, in_ptr r_in1, in_ptr i_in1, in_ptr r_in2, in_ptr i_in2, EdgeMode mode)
     {
-        auto get_first = [](in_ptr ptr)
+        auto first = [](in_ptr ptr)
         {
             return ptr.m_size ? ptr.m_ptr[0] : 0.0;
         };
@@ -590,8 +590,8 @@ protected:
 
         if (size1 == 1 && size2 == 1)
         {
-            r_out[0] = get_first(r_in1) * get_first(r_in2) - get_first(i_in1) * get_first(i_in2);
-            i_out[0] = get_first(r_in1) * get_first(i_in2) + get_first(i_in1) * get_first(r_in2);
+            r_out[0] = first(r_in1) * first(r_in2) - first(i_in1) * first(i_in2);
+            i_out[0] = first(r_in1) * first(i_in2) + first(i_in1) * first(r_in2);
             return;
         }
         
