@@ -74,19 +74,19 @@ namespace HISSTools
         
         bool is_valid() const                   { return m_valid; }
 
-        FileType getFileType() const            { return m_file_type; }
-        PCMFormat getPCMFormat() const          { return m_pcm_format; }
-        NumericType getNumericType() const      { return find_numeric_type(getPCMFormat()); }
+        FileType get_file_type() const          { return m_file_type; }
+        PCMFormat get_pcm_format() const        { return m_pcm_format; }
+        NumericType get_numeric_type() const    { return find_numeric_type(get_pcm_format()); }
         
-        uint16_t getBitDepth() const            { return find_bit_depth(getPCMFormat()); }
-        uint16_t getByteDepth() const           { return getBitDepth() / 8; }
+        uint16_t bit_depth() const              { return find_bit_depth(get_pcm_format()); }
+        uint16_t byte_depth() const             { return bit_depth() / 8; }
         
-        Endianness getHeaderEndianness() const
+        Endianness header_endianness() const
         {
             return FileType() == FileType::WAVE ? m_endianness : Endianness::Big;
         }
         
-        Endianness getAudioEndianness() const
+        Endianness audio_endianness() const
         {
             return m_endianness;
         }

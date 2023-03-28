@@ -48,7 +48,7 @@ namespace HISSTools
             
             seek_internal(0);
             
-            if (isOpen() && position_internal() == 0)
+            if (is_open() && position_internal() == 0)
             {
                 type = type == FileType::AIFF ? FileType::AIFC : type;
                 
@@ -58,12 +58,12 @@ namespace HISSTools
                 m_num_frames = 0;
                 m_pcm_offset = 0;
                 
-                if (getFileType() == FileType::WAVE)
+                if (get_file_type() == FileType::WAVE)
                     write_wave_header();
                 else
                     write_aifc_header();
                 
-                m_buffer.resize(WORK_LOOP_SIZE * getFrameByteCount());
+                m_buffer.resize(work_loop_size * frame_byte_count());
             }
             else
                 set_error_bit(Error::CouldNotOpen);
@@ -74,40 +74,40 @@ namespace HISSTools
         void seek(uintptr_t position)
         {
             if (get_pcm_offset() != 0)
-                seek_internal(get_pcm_offset() + getFrameByteCount() * position);
+                seek_internal(get_pcm_offset() + frame_byte_count() * position);
         }
         
-        uintptr_t getPosition()
+        uintptr_t position()
         {
             if (get_pcm_offset())
-                return static_cast<uintptr_t>((position_internal() - get_pcm_offset()) / getFrameByteCount());
+                return static_cast<uintptr_t>((position_internal() - get_pcm_offset()) / frame_byte_count());
             
             return 0;
         }
         
         // File Writing
 
-        void writeRaw(const char *input, uintptr_t num_frames)
+        void write_raw(const char *input, uintptr_t num_frames)
         {
             write_pcm_data(input, num_frames);
         }
         
-        void writeInterleaved(const double* input, uintptr_t num_frames)
+        void write_interleaved(const double* input, uintptr_t num_frames)
         {
             write_audio(input, num_frames);
         }
         
-        void writeInterleaved(const float* input, uintptr_t num_frames)
+        void write_interleaved(const float* input, uintptr_t num_frames)
         {
             write_audio(input, num_frames);
         }
         
-        void writeChannel(const double* input, uintptr_t num_frames, uint16_t channel)
+        void write_channel(const double* input, uintptr_t num_frames, uint16_t channel)
         {
             write_audio(input, num_frames, channel);
         }
         
-        void writeChannel(const float* input, uintptr_t num_frames, uint16_t channel)
+        void write_channel(const float* input, uintptr_t num_frames, uint16_t channel)
         {
             write_audio(input, num_frames, channel);
         }
@@ -181,7 +181,7 @@ namespace HISSTools
             bool success = true;
             
             success &= write_internal(tag, 4);
-            success &= put_u32(size, getHeaderEndianness());
+            success &= put_u32(size, header_endianness());
             
             return success;
         }
@@ -225,7 +225,7 @@ namespace HISSTools
             
             // File Header
             
-            if (getHeaderEndianness() == Endianness::Little)
+            if (header_endianness() == Endianness::Little)
                 success &= put_chunk("RIFF", 36);
             else
                 success &= put_chunk("RIFX", 36);
@@ -235,16 +235,16 @@ namespace HISSTools
             // Format Chunk
             
             success &= put_chunk("fmt ", 16);
-            success &= put_u16(getNumericType() == NumericType::Integer ? 0x1 : 0x3, getHeaderEndianness());
-            success &= put_u16(getChannels(), getHeaderEndianness());
-            success &= put_u32(getSamplingRate(), getHeaderEndianness());
+            success &= put_u16(get_numeric_type() == NumericType::Integer ? 0x1 : 0x3, header_endianness());
+            success &= put_u16(channels(), header_endianness());
+            success &= put_u32(sampling_rate(), header_endianness());
             
             // Bytes per second and block alignment
             
-            success &= put_u32(getSamplingRate() * getFrameByteCount(), getHeaderEndianness());
-            success &= put_u16(static_cast<uint16_t>(getFrameByteCount()), getHeaderEndianness());
+            success &= put_u32(sampling_rate() * frame_byte_count(), header_endianness());
+            success &= put_u16(static_cast<uint16_t>(frame_byte_count()), header_endianness());
             
-            success &= put_u16(getBitDepth(), getHeaderEndianness());
+            success &= put_u16(bit_depth(), header_endianness());
             
             // Data Chunk (empty)
             
@@ -270,7 +270,7 @@ namespace HISSTools
             const char *compression_string = AIFCCompression::to_string(m_format);
             const char *compression_tag = AIFCCompression::to_tag(m_format);
             
-            uint32_t compression_string_size = string_byte_size(compression_string);
+            const uint32_t compression_string_size = string_byte_size(compression_string);
             
             // Set file type, data size offset frames and header size
             
@@ -284,15 +284,15 @@ namespace HISSTools
             // FVER Chunk
             
             success &= put_chunk("FVER", 4);
-            success &= put_u32(AIFC_CURRENT_SPECIFICATION, getHeaderEndianness());
+            success &= put_u32(AIFC_CURRENT_SPECIFICATION, header_endianness());
             
             // COMM Chunk
             
             success &= put_chunk("COMM", 22 + compression_string_size);
-            success &= put_u16(getChannels(), getHeaderEndianness());
-            success &= put_u32(getFrames(), getHeaderEndianness());
-            success &= put_u16(getBitDepth(), getHeaderEndianness());
-            success &= put_extended(getSamplingRate());
+            success &= put_u16(channels(), header_endianness());
+            success &= put_u32(frames(), header_endianness());
+            success &= put_u16(bit_depth(), header_endianness());
+            success &= put_extended(sampling_rate());
             success &= put_tag(compression_tag);
             success &= put_string(compression_string);
             
@@ -302,8 +302,8 @@ namespace HISSTools
             
             // Set offset and block size to zero
             
-            success &= put_u32(0, getHeaderEndianness());
-            success &= put_u32(0, getHeaderEndianness());
+            success &= put_u32(0, header_endianness());
+            success &= put_u32(0, header_endianness());
             
             // Set offset to PCM Data
             
@@ -315,17 +315,17 @@ namespace HISSTools
         
         bool update_header()
         {
-            const uintptr_t end_frame = getPosition();
+            const uintptr_t end_frame = position();
             
             bool success = true;
             
-            if (end_frame > getFrames())
+            if (end_frame > frames())
             {
                 // Calculate new data length and end of data
                 
                 m_num_frames = end_frame;
                 
-                const uintptr_t data_size = (getFrameByteCount() * getFrames());
+                const uintptr_t data_size = (frame_byte_count() * frames());
                 const uintptr_t data_end = position_internal();
                 
                 // Write padding byte if relevant
@@ -335,21 +335,21 @@ namespace HISSTools
                 
                 // Update chunk sizes for (file, audio and also frames for AIFF/C)
                 
-                if (getFileType() == FileType::WAVE)
+                if (get_file_type() == FileType::WAVE)
                 {
                     success &= seek_internal(4);
-                    success &= put_u32(static_cast<uint32_t>(get_header_size() + padded_length(data_size)), getHeaderEndianness());
+                    success &= put_u32(static_cast<uint32_t>(get_header_size() + padded_length(data_size)), header_endianness());
                     success &= seek_internal(get_pcm_offset() - 4);
-                    success &= put_u32(static_cast<uint32_t>(data_size), getHeaderEndianness());
+                    success &= put_u32(static_cast<uint32_t>(data_size), header_endianness());
                 }
                 else
                 {
                     success &= seek_internal(4);
-                    success &= put_u32(static_cast<uint32_t>(get_header_size() + padded_length(data_size)), getHeaderEndianness());
+                    success &= put_u32(static_cast<uint32_t>(get_header_size() + padded_length(data_size)), header_endianness());
                     success &= seek_internal(34);
-                    success &= put_u32(static_cast<uint32_t>(getFrames()), getHeaderEndianness());
+                    success &= put_u32(static_cast<uint32_t>(frames()), header_endianness());
                     success &= seek_internal(get_pcm_offset() - 12);
-                    success &= put_u32(static_cast<uint32_t>(data_size) + 8, getHeaderEndianness());
+                    success &= put_u32(static_cast<uint32_t>(data_size) + 8, header_endianness());
                 }
                 
                 // Reset the position to end of the data
@@ -366,15 +366,15 @@ namespace HISSTools
         {
             bool success = true;
             
-            if (num_frames > getFrames())
+            if (num_frames > frames())
             {
                 // Calculate new data length and end of data
                 
-                uintptr_t data_size = (getFrameByteCount() * getFrames());
-                uintptr_t new_size = (getFrameByteCount() * num_frames);
+                uintptr_t data_size = (frame_byte_count() * frames());
+                uintptr_t new_size = (frame_byte_count() * num_frames);
                 uintptr_t data_end = position_internal();
                 
-                seek(getFrames());
+                seek(frames());
                 
                 for (uintptr_t i = 0; i < new_size - data_size; i++)
                     success &= put_pad_byte();
@@ -393,7 +393,7 @@ namespace HISSTools
         {
             // Write audio and update the header
             
-            bool success = write_internal(input, getFrameByteCount() * num_frames);
+            bool success = write_internal(input, frame_byte_count() * num_frames);
             success &= update_header();
             
             return success;
@@ -432,8 +432,8 @@ namespace HISSTools
         template <class T, class U, int N, class V>
         void write_loop(const V* input, uintptr_t j, uintptr_t loop_samples, uintptr_t byte_step)
         {
-            Endianness endianness = getAudioEndianness();
-            
+            const Endianness endianness = audio_endianness();
+
             for (uintptr_t i = 0; i < loop_samples; i++, j += byte_step)
                 set_bytes<N>(convert<N>(input[i], T(0), U(0)), endianness, m_buffer.data() + j);
         }
@@ -443,11 +443,10 @@ namespace HISSTools
         {
             bool success = true;
             
-            const uint32_t byte_depth = getByteDepth();
-            const uint16_t num_channels = (channel < 0) ? getChannels() : 1;
-            const uintptr_t byte_step = byte_depth * ((channel < 0) ? 1 : num_channels);
-            const uintptr_t end_frame = getPosition() + num_frames;
-            const uintptr_t j = channel * byte_depth;
+            const uint16_t num_channels = (channel < 0) ? channels() : 1;
+            const uintptr_t byte_step = byte_depth() * ((channel < 0) ? 1 : num_channels);
+            const uintptr_t end_frame = position() + num_frames;
+            const uintptr_t j = channel * byte_depth();
             
             // Check if writing to all channels
             
@@ -464,7 +463,7 @@ namespace HISSTools
             
             while (num_frames)
             {
-                uintptr_t loop_frames = std::min(num_frames, WORK_LOOP_SIZE);
+                uintptr_t loop_frames = std::min(num_frames, work_loop_size);
                 uintptr_t loop_samples = loop_frames * num_channels;
                 uintptr_t pos = m_file.tellg();
                 
@@ -473,9 +472,9 @@ namespace HISSTools
                 if (!all_channels)
                 {
                     m_file.clear();
-                    m_file.read(reinterpret_cast<char*>(m_buffer.data()), loop_frames * getFrameByteCount());
+                    m_file.read(reinterpret_cast<char*>(m_buffer.data()), loop_frames * frame_byte_count());
                     
-                    if (m_file.gcount() != loop_frames * getFrameByteCount())
+                    if (m_file.gcount() != loop_frames * frame_byte_count())
                     {
                         set_error_bit(Error::CouldNotWrite);
                         return;
@@ -484,10 +483,10 @@ namespace HISSTools
                 
                 // Write audio data to a local buffer
                 
-                switch (getPCMFormat())
+                switch (get_pcm_format())
                 {
                     case PCMFormat::Int8:
-                        if (getFileType() == FileType::WAVE)
+                        if (get_file_type() == FileType::WAVE)
                             write_loop<uint8_t, uint8_t, 1>(input, j, loop_samples, byte_step);
                         else
                             write_loop<uint32_t, uint32_t, 1>(input, j, loop_samples, byte_step);
@@ -519,7 +518,7 @@ namespace HISSTools
                 if (!all_channels)
                     m_file.seekp(pos);
                 
-                write_internal(reinterpret_cast<const char*>(m_buffer.data()), loop_frames * getFrameByteCount());
+                write_internal(reinterpret_cast<const char*>(m_buffer.data()), loop_frames * frame_byte_count());
                 
                 num_frames -= loop_frames;
                 input += loop_samples;

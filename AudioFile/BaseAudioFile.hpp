@@ -54,7 +54,7 @@ namespace HISSTools
         
         virtual ~BaseAudioFile() {}
         
-        bool isOpen() const                     { return m_file.is_open(); }
+        bool is_open() const                    { return m_file.is_open(); }
 
         void close()
         {
@@ -70,26 +70,40 @@ namespace HISSTools
             m_error_flags = static_cast<int>(Error::None);
         }
         
-        FileType getFileType() const            { return m_format.getFileType(); }
-        PCMFormat getPCMFormat() const          { return m_format.getPCMFormat(); }
-        NumericType getNumericType() const      { return m_format.getNumericType(); }
+        FileType get_file_type() const          { return m_format.get_file_type(); }
+        PCMFormat get_pcm_format() const        { return m_format.get_pcm_format(); }
+        NumericType get_numeric_type() const    { return m_format.get_numeric_type(); }
         
-        Endianness getHeaderEndianness() const  { return m_format.getHeaderEndianness(); }
-        Endianness getAudioEndianness() const   { return m_format.getAudioEndianness(); }
+        Endianness header_endianness() const    { return m_format.header_endianness(); }
+        Endianness audio_endianness() const     { return m_format.audio_endianness(); }
         
-        double getSamplingRate() const          { return m_sampling_rate; }
-        uint16_t getChannels() const            { return m_num_channels; }
+        double sampling_rate() const            { return m_sampling_rate; }
+        uint16_t channels() const               { return m_num_channels; }
         
-        uintptr_t getFrames() const             { return m_num_frames; }
-        uint16_t getBitDepth() const            { return m_format.getBitDepth(); }
-        uint16_t getByteDepth() const           { return m_format.getByteDepth(); }
-        uintptr_t getFrameByteCount() const     { return getChannels() * getByteDepth(); }
+        uintptr_t frames() const                { return m_num_frames; }
+        uint16_t bit_depth() const              { return m_format.bit_depth(); }
+        uint16_t byte_depth() const             { return m_format.byte_depth(); }
+        uintptr_t frame_byte_count() const      { return channels() * byte_depth(); }
         
-        bool isError() const                    { return m_error_flags != static_cast<int>(Error::None); }
-        int getErrorFlags() const               { return m_error_flags; }
-        void clearErrorFlags()                  { m_error_flags = static_cast<int>(Error::None); }
+        bool is_error() const                   { return m_error_flags != static_cast<int>(Error::None); }
+        int error_flags() const                 { return m_error_flags; }
+        std::vector<Error> get_errors() const   { return extract_errors_from_flags(error_flags()); }
+        void clear_errors()                     { m_error_flags = static_cast<int>(Error::None); }
         
-        static std::string getErrorString(Error error)
+        static std::vector<Error> extract_errors_from_flags(int flags)
+        {
+            std::vector<Error> errors;
+            
+            for (int i = 0; i <= static_cast<int>(Error::CouldNotWrite); i++)
+            {
+                if (flags & (1 << i))
+                    errors.push_back(static_cast<Error>(i));
+            }
+            
+            return errors;
+        }
+                
+        static std::string error_string(Error error)
         {
             switch (error)
             {
@@ -107,24 +121,9 @@ namespace HISSTools
             }
         }
         
-        static std::vector<Error> extractErrorsFromFlags(int flags)
-        {
-            std::vector<Error> errors;
-            
-            for (int i = 0; i <= static_cast<int>(Error::CouldNotWrite); i++)
-            {
-                if (flags & (1 << i))
-                    errors.push_back(static_cast<Error>(i));
-            }
-            
-            return errors;
-        }
-        
-        std::vector<Error> getErrors() const    { return extractErrorsFromFlags(getErrorFlags()); }
-        
     protected:
         
-        static constexpr uintptr_t WORK_LOOP_SIZE = 1024;
+        static constexpr uintptr_t work_loop_size = 1024;
         
         uintptr_t get_pcm_offset() const        { return m_pcm_offset; }
         

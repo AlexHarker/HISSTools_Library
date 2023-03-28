@@ -81,13 +81,13 @@ namespace HISSTools
         
         static Type to_type(const AudioFileFormat& format)
         {
-            if (!format.is_valid() || format.getFileType() == FileType::WAVE)
+            if (!format.is_valid() || format.get_file_type() == FileType::WAVE)
                 return Type::Unknown;
             
-            switch (format.getPCMFormat())
+            switch (format.get_pcm_format())
             {
                 case PCMFormat::Int16:
-                    if (format.getAudioEndianness() == Endianness::Little)
+                    if (format.audio_endianness() == Endianness::Little)
                         return Type::Sowt;
                     else
                         return Type::None;
