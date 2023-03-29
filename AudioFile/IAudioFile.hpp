@@ -23,7 +23,7 @@ namespace HISSTools
             Common = 0x2,
             Audio = 0x4
         };
-
+        
         struct postion_restore
         {
             postion_restore(IAudioFile &parent)
@@ -37,7 +37,7 @@ namespace HISSTools
             {
                 m_parent.seek_internal(m_position);
             }
-                
+            
             IAudioFile &m_parent;
             uintptr_t m_position;
         };
@@ -92,14 +92,14 @@ namespace HISSTools
             
             return 0;
         }
-
+        
         // File Reading
         
         void read_raw(void* output, uintptr_t num_frames)
         {
             read_internal(static_cast<char *>(output), frame_byte_count() * num_frames);
         }
-
+        
         void read_interleaved(double* output, uintptr_t num_frames)
         {
             read_audio(output, num_frames);
@@ -109,7 +109,7 @@ namespace HISSTools
         {
             read_audio(output, num_frames);
         }
-
+        
         void read_channel(double* output, uintptr_t num_frames, uint16_t channel)
         {
             read_audio(output, num_frames, channel);
@@ -119,7 +119,7 @@ namespace HISSTools
         {
             read_audio(output, num_frames, channel);
         }
-
+        
         // Chunks
         
         std::vector<std::string> chunk_tags()
@@ -253,7 +253,7 @@ namespace HISSTools
             
             return true;
         }
-
+        
         // AIFF Helper
         
         bool get_aiff_chunk_header(AIFFTag& enumerated_tag, uint32_t& chunk_size)
@@ -499,7 +499,7 @@ namespace HISSTools
         }
         
         // Internal Typed Audio Read
-
+        
         template <class T, class U, int N, int Shift, class V>
         void read_loop(V* output, uintptr_t j, uintptr_t loop_samples, uintptr_t byte_step)
         {

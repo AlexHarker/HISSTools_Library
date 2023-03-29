@@ -9,17 +9,17 @@ namespace HISSTools
     struct AIFCCompression
     {
         enum class Type  { Unknown, None, Sowt, Float32, Float64 };
-
+        
         using FileType = AudioFileFormat::FileType;
         using PCMFormat = AudioFileFormat::PCMFormat;
         using NumericType = AudioFileFormat::NumericType;
         using Endianness = AudioFileFormat::Endianness;
-
+        
         static bool match_tag(const char* a, const char* b)
         {
             return (strncmp(a, b, 4) == 0);
         }
-
+        
         static AudioFileFormat to_format(const char* tag, uint16_t bit_depth)
         {
             if (match_tag(tag, "NONE"))
@@ -42,7 +42,7 @@ namespace HISSTools
             
             if (match_tag(tag, "fl64") || match_tag(tag, "FL64"))
                 return AudioFileFormat(FileType::AIFC, PCMFormat::Float64, Endianness::Big);
-                
+            
             return AudioFileFormat();
         }
         
@@ -64,7 +64,7 @@ namespace HISSTools
         }
         
         static const char* to_string(const AudioFileFormat& format)
-        {            
+        {
             switch (to_type(format))
             {
                 case Type::None:

@@ -42,7 +42,7 @@ namespace HISSTools
         , m_pcm_format(PCMFormat::Int16)
         , m_endianness(endianness)
         , m_valid(false)
-        {            
+        {
             struct valid_format
             {
                 NumericType m_type;
@@ -73,7 +73,7 @@ namespace HISSTools
         }
         
         bool is_valid() const                   { return m_valid; }
-
+        
         FileType get_file_type() const          { return m_file_type; }
         PCMFormat get_pcm_format() const        { return m_pcm_format; }
         NumericType get_numeric_type() const    { return find_numeric_type(get_pcm_format()); }
@@ -135,7 +135,7 @@ namespace HISSTools
                 return false;
             
             // AIFF doesn't support float types or little-endianness
-
+            
             if (m_file_type == FileType::AIFF && find_numeric_type(m_pcm_format) == NumericType::Float)
                 return false;
             
@@ -143,7 +143,7 @@ namespace HISSTools
                 return false;
             
             // AIFC only supports little=endianness for 16 bit integers
-
+            
             if (m_file_type == FileType::AIFC && m_endianness != Endianness::Big && m_pcm_format != PCMFormat::Int16)
                 return false;
             

@@ -16,7 +16,7 @@ namespace HISSTools
     public:
         
         // Constructor and Destructor
-
+        
         OAudioFile() {}
         
         OAudioFile(const std::string& file, FileType type, PCMFormat format, uint16_t channels, double sr)
@@ -28,19 +28,19 @@ namespace HISSTools
         {
             open(file, type, format, channels, sr, e);
         }
-    
+        
         ~OAudioFile()
         {
             close();
         }
-
+        
         // File Open
-
+        
         void open(const std::string& file, FileType type, PCMFormat format, uint16_t channels, double sr)
         {
             open(file, type, format, channels, sr, type == FileType::WAVE ? Endianness::Little : Endianness::Big);
         }
-    
+        
         void open(const std::string& file, FileType type, PCMFormat format, uint16_t channels, double sr, Endianness endianness)
         {
             close();
@@ -86,7 +86,7 @@ namespace HISSTools
         }
         
         // File Writing
-
+        
         void write_raw(const char *input, uintptr_t num_frames)
         {
             write_pcm_data(input, num_frames);
@@ -111,15 +111,15 @@ namespace HISSTools
         {
             write_audio(input, num_frames, channel);
         }
-            
+        
     protected:
         
         uintptr_t get_header_size() const { return get_pcm_offset() - 8; }
-
+        
     private:
         
         // Internal File Handling
-
+        
         bool write_internal(const char* buffer, uintptr_t bytes)
         {
             m_file.clear();
@@ -170,7 +170,7 @@ namespace HISSTools
         {
             return put_bytes<uint16_t, 2>(value, endianness);
         }
-
+        
         bool put_tag(const char* tag)
         {
             return write_internal(tag, 4);
@@ -191,7 +191,7 @@ namespace HISSTools
             char pad_byte = 0;
             return write_internal(&pad_byte, 1);
         }
-
+        
         bool put_extended(double value)
         {
             unsigned char bytes[10];
@@ -216,7 +216,7 @@ namespace HISSTools
             
             return success;
         }
-
+        
         // Header Manipulation
         
         void write_wave_header()
@@ -359,7 +359,7 @@ namespace HISSTools
             
             return success;
         }
-
+        
         // Resize
         
         bool resize(uintptr_t num_frames)
@@ -433,7 +433,7 @@ namespace HISSTools
         void write_loop(const V* input, uintptr_t j, uintptr_t loop_samples, uintptr_t byte_step)
         {
             const Endianness endianness = audio_endianness();
-
+            
             for (uintptr_t i = 0; i < loop_samples; i++, j += byte_step)
                 set_bytes<N>(convert<N>(input[i], T(0), U(0)), endianness, m_buffer.data() + j);
         }

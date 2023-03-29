@@ -17,14 +17,14 @@ namespace HISSTools
     {
     protected:
         using ios_base = std::ios_base;
-
+        
     public:
         
         using FileType = AudioFileFormat::FileType;
         using PCMFormat = AudioFileFormat::PCMFormat;
         using NumericType = AudioFileFormat::NumericType;
         using Endianness = AudioFileFormat::Endianness;
-           
+        
         enum class Error
         {
             None                    = 0,
@@ -55,7 +55,7 @@ namespace HISSTools
         virtual ~BaseAudioFile() {}
         
         bool is_open() const                    { return m_file.is_open(); }
-
+        
         void close()
         {
             m_file.close();
@@ -102,7 +102,7 @@ namespace HISSTools
             
             return errors;
         }
-                
+        
         static std::string error_string(Error error)
         {
             switch (error)
