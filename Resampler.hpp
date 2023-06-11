@@ -186,7 +186,7 @@ private:
     }
     
     template <bool B = Approx, typename std::enable_if<B, int>::type = 0>
-    static inline double apply_filter(T *a, IO *b, uintptr_t N)
+    static inline double apply_filter(const T *a, IO *b, uintptr_t N)
     {
         constexpr int vec_size_o = (SIMDLimits<T>::max_size > 4) ? 4 : SIMDLimits<T>::max_size;
         constexpr int vec_size_i = (SIMDLimits<IO>::max_size >= 4) ? 4 : 1;
