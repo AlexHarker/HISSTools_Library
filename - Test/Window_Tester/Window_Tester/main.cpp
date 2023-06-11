@@ -8,7 +8,7 @@
 #include <random>
 
 #include "../../../WindowFunctions.hpp"
-#include "../../../AudioFile/OAudioFile.h"
+#include "../../../AudioFile/OAudioFile.hpp"
 
 // Output
 
@@ -207,8 +207,8 @@ int main(int argc, const char * argv[])
     {
         HISSTools::OAudioFile file(argv[1], HISSTools::BaseAudioFile::FileType::WAVE, HISSTools::BaseAudioFile::PCMFormat::Float32, 1, 44100.0);
         
-        if (file.isOpen())
-            file.writeChannel(window, size, 0);
+        if (file.is_open())
+            file.write_channel(window, size, 0);
     }
     return 0;
 }

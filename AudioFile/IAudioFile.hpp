@@ -70,7 +70,7 @@ namespace HISSTools
                 if (m_file.is_open())
                 {
                     set_error_bit(parse_header());
-                    m_buffer.resize(work_loop_size * frame_byte_count());
+                    m_buffer.resize(work_loop_size() * frame_byte_count());
                     seek();
                 }
                 else
@@ -520,7 +520,7 @@ namespace HISSTools
             
             while (num_frames)
             {
-                const uintptr_t loop_frames = std::min(num_frames, work_loop_size);
+                const uintptr_t loop_frames = std::min(num_frames, work_loop_size());
                 const uintptr_t loop_samples = loop_frames * num_channels;
                 
                 // Read raw

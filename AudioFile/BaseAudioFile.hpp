@@ -123,7 +123,10 @@ namespace HISSTools
         
     protected:
         
-        static constexpr uintptr_t work_loop_size = 1024;
+        static constexpr uintptr_t work_loop_size()
+        {
+            return 1024;
+        }
         
         uintptr_t get_pcm_offset() const        { return m_pcm_offset; }
         

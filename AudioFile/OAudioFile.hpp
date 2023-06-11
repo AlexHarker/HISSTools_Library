@@ -63,7 +63,7 @@ namespace HISSTools
                 else
                     write_aifc_header();
                 
-                m_buffer.resize(work_loop_size * frame_byte_count());
+                m_buffer.resize(work_loop_size() * frame_byte_count());
             }
             else
                 set_error_bit(Error::CouldNotOpen);
@@ -463,7 +463,7 @@ namespace HISSTools
             
             while (num_frames)
             {
-                uintptr_t loop_frames = std::min(num_frames, work_loop_size);
+                uintptr_t loop_frames = std::min(num_frames, work_loop_size());
                 uintptr_t loop_samples = loop_frames * num_channels;
                 uintptr_t pos = m_file.tellg();
                 
