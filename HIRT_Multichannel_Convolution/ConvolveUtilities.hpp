@@ -47,14 +47,14 @@ namespace impl
 
 enum class ConvolveError
 {
-	None = 0,
-	InChanOutOfRange,
-	OutChanOutOfRange,
-	MemUnavailable,
-	MemAllocTooSmall,
-	TimeImpulseTooLong,
-	TimeLengthOutOfRange,
-	PartitionLengthTooLarge,
+    None = 0,
+    InChanOutOfRange,
+    OutChanOutOfRange,
+    MemUnavailable,
+    MemAllocTooSmall,
+    TimeImpulseTooLong,
+    TimeLengthOutOfRange,
+    PartitionLengthTooLarge,
     FFTSizeOutOfRange,
     FFTSizeNonPowerOfTwo,
 };
