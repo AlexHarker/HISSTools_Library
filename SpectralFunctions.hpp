@@ -36,11 +36,11 @@ namespace impl
         constexpr int M = N / 2 ? N / 2 : 1;
         
         if (fft_size == 1 || fft_size < M)
-            simd_operation<1>(out, in1, in2, fft_size, scale, op);
+            simd_operation<T, 1>(out, in1, in2, fft_size, scale, op);
         else if (fft_size < N)
-            simd_operation<M>(out, in1, in2, fft_size, scale, op);
+            simd_operation<T, M>(out, in1, in2, fft_size, scale, op);
         else
-            simd_operation<N>(out, in1, in2, fft_size, scale, op);
+            simd_operation<T, N>(out, in1, in2, fft_size, scale, op);
     }
     
     template <class T, typename Op>

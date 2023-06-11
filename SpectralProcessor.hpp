@@ -5,7 +5,7 @@
 #include <algorithm>
 
 #include "Allocator.hpp"
-#include "HISSTools_FFT/HISSTools_FFT.h"
+#include "HISSTools_FFT/HISSTools_FFT.hpp"
 #include "SpectralFunctions.hpp"
 #include <type_traits>
 
