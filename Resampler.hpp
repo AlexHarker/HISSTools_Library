@@ -72,7 +72,10 @@ public:
     
     void set_filter(uint32_t num_zeros, uint32_t num_points, double cf, double alpha)
     {
-        using namespace window_functions;
+        auto izero = [](double x)
+        {
+            return window_functions::impl::izero(x);
+        };
         
         assert(num_zeros != 0 && "resampler: number of zeros cannot be zero");
         assert(num_points != 0 && "resampler: number of points per zero cannot be zero");
@@ -88,7 +91,7 @@ public:
         // Calculate second half of filter only
         // First find the reciprocal of the bessel function of alpha
         
-        const double bessel_recip = 1.0 / impl::izero(alpha * alpha);
+        const double bessel_recip = 1.0 / izero(alpha * alpha);
         
         // Limit Value
         
@@ -99,7 +102,7 @@ public:
             // Kaiser Window multiplied by sinc filter
             
             const double x = divide(i, half_filter_length);
-            const double k = impl::izero((1.0 - x * x) * alpha * alpha) * bessel_recip;
+            const double k = izero((1.0 - x * x) * alpha * alpha) * bessel_recip;
             
             m_filter[i] = static_cast<T>(k * sinc_filter(divide(i, num_points), cf));
         }
