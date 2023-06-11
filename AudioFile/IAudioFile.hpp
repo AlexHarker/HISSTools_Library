@@ -66,7 +66,7 @@ namespace HISSTools
             
             if (!file.empty())
             {
-                m_file.open(file.c_str(), ios_base::binary);
+                m_file.open(file.c_str(), ios_base::binary | std::ios_base::in);
                 if (m_file.is_open())
                 {
                     set_error_bit(parse_header());

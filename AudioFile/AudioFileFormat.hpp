@@ -83,7 +83,7 @@ namespace HISSTools
         
         Endianness header_endianness() const
         {
-            return FileType() == FileType::WAVE ? m_endianness : Endianness::Big;
+            return m_file_type == FileType::WAVE ? m_endianness : Endianness::Big;
         }
         
         Endianness audio_endianness() const

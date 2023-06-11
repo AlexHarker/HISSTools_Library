@@ -9,7 +9,10 @@ namespace HISSTools
     // Byte Shift
     
     template <int N, int M, AudioFileFormat::Endianness E>
-    static constexpr int byte_shift() { return E == AudioFileFormat::Endianness::Big ? (N - (M + 1)) * 8 : M * 8; }
+    static constexpr int byte_shift()
+    {
+        return E == AudioFileFormat::Endianness::Big ? (N - (M + 1)) * 8 : M * 8;
+    }
     
     // Byte Getter
     
