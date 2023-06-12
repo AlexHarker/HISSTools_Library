@@ -148,13 +148,16 @@ private:
     {
         const double per_sample_recip = rate > 1.0 ? m_num_zeros * rate : m_num_zeros;
         const double mul = rate < 1.0 ? rate : 1.0;
+        
+        const uint32_t length = static_cast<uint32_t>((m_num_zeros << 1) * mul) + 1;
+        const uint32_t offset = length >> 1;
 
-        auto padded_input = copy_input_padded(input, in_length, filter_offset, filter_length - filter_offset);
+        auto padded_input = copy_input_padded(input, in_length, offset, length - offset);
 
         // Resample
         
         for (uintptr_t i = 0; i < nsamps; i++)
-            output[i] = mul * calculate_sample(padded_input, i * rate, per_sample_recip);
+            output[i] = mul * calculate_sample(padded_input.data(), (i * rate) + offset, per_sample_recip);
     }
     
     template <bool B = Approx, typename std::enable_if<B, int>::type = 0>
@@ -212,19 +215,17 @@ private:
     }
     
     /*
+        N.B. - The code above is equivalent to the following scalar code
      
-     N.B. - The code above is equivalent to the following scalar code
+        double apply_filter(T *a, IO *b, uintptr_t N)
+        {
+            T sum = 0.0;
      
-     double apply_filter(T *a, IO *b, uintptr_t N)
-     {
-     T sum = 0.0;
+            for (uintptr_t i ; i < N; i++)
+                sum += a[i] * static_cast<T>(b[i]);
      
-     for (uintptr_t i ; i < N; i++)
-     sum += a[i] * static_cast<T>(b[i]);
-     
-     return sum;
-     }
-     
+            return sum;
+        }
      */
     
     template <bool B = Approx, typename std::enable_if<B, int>::type = 0>
@@ -266,34 +267,21 @@ private:
     // Calculate one sample 
 
     template <bool B = Approx, typename std::enable_if<!B, int>::type = 0>
-    double calculate_sample(IO *input, double offset, double per_sample_recip)
+    double calculate_sample(const IO *input, double offset, double per_sample_recip)
     {
         double per_sample = 1.0 / per_sample_recip;
         
-        long i_offset = std::floor(offset - per_sample_recip);
-        long idx = (long) offset;
-        const double fract = offset - idx;
+        uint32_t i_offset = std::floor(offset);
         
         const IO *samples = input + i_offset;
-        
-        /*
-        long idx = (long) offset;
-        const double fract = offset - idx;
-        
-        // Get samples
-        
-        long i_offset = offset - per_sample_recip;
-        safe_samples(samples, input, in_length, i_offset, nsamps);
-        
-        samples = input + i_offset;
-        */
-        // Get to first relevant sample
-        
-        double position = (idx - i_offset + fract) * per_sample;
+                
+        double position = (offset - i_offset) * per_sample;
         double sum = 0.0;
 
-        for (; position > 1.0; position -= per_sample)
-            samples++;
+        // Get to first relevant sample
+
+        for (; (position + per_sample) < 1.0; position += per_sample)
+            samples--;
         
         // Do left wing of the filter
                 
@@ -307,39 +295,6 @@ private:
         
         return sum;
     }
-/*
-    // This will be redundant if we use padding in the temp....
-    
-    template <bool B = Approx, typename std::enable_if<!B, int>::type = 0>
-    void safe_samples(IO *output, IO *input, intptr_t in_length, long offset, long nsamps)
-    {
-        long temp_offset = 0;
-        long temp_nsamps = nsamps;
-        
-        // Do not read before the input
-        
-        if (offset < 0)
-        {
-            temp_offset = -offset;
-            temp_nsamps -= temp_offset;
-            offset = 0;
-        }
-        
-        if (temp_nsamps < 0)
-        {
-            temp_nsamps = 0;
-            temp_offset = nsamps;
-        }
-        
-        // Do not read beyond the input
-        
-        if (offset + temp_nsamps > in_length)
-            temp_nsamps = in_length - offset;
-        
-        if (temp_nsamps < 0)
-            temp_nsamps = 0;
-    }
- */
     
     // Get a filter value from a position 0-nzero on the RHS wing (translate for LHS)
     // N.B. position **MUST** be in the range 0 to nzero inclusive
