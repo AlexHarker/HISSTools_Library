@@ -11,7 +11,7 @@
 
 // Linux specific definitions
 
-namespace OS_Specific
+namespace os_specific
 {
     inline void thread_nano_sleep()
     {
@@ -23,7 +23,7 @@ namespace OS_Specific
 
 // OSX specific definitions
 
-namespace OS_Specific
+namespace os_specific
 {
     inline void thread_nano_sleep()
     {
@@ -37,7 +37,7 @@ namespace OS_Specific
 
 #include <windows.h>
 
-namespace OS_Specific
+namespace os_specific
 {
     inline void thread_nano_sleep()
     {
@@ -75,7 +75,7 @@ public:
                 return;
         
         while (!attempt())
-            OS_Specific::thread_nano_sleep();
+            os_specific::thread_nano_sleep();
     }
     
     bool attempt() { return !m_atomic_lock.test_and_set(); }
