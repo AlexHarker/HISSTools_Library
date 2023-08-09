@@ -2,7 +2,7 @@
 #ifndef HISSTOOLS_FFT_HPP
 #define HISSTOOLS_FFT_HPP
 
-#include "HISSTools_FFT_Types.hpp"
+#include "fft_types.hpp"
 
 #include <stdint.h>
 
