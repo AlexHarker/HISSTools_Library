@@ -6,7 +6,7 @@
 #include "../simd_support.hpp"
 
 #include "ConvolveUtilities.hpp"
-#include "ConvolveNToMono.hpp"
+#include "n_to_mono.hpp"
 
 #include <cstdint>
 #include <vector>
