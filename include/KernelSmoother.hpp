@@ -12,7 +12,7 @@
 #include "Allocator.hpp"
 #include "SIMDSupport.hpp"
 #include "SpectralProcessor.hpp"
-#include "TableReader.hpp"
+#include "table_reader.hpp"
 
 template <typename T, typename Allocator = aligned_allocator, bool auto_resize_fft = false>
 class kernel_smoother : private spectral_processor<T, Allocator>
