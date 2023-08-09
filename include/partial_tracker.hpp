@@ -7,7 +7,7 @@
 #include <limits>
 #include <tuple>
 
-#include "Allocator.hpp"
+#include "allocator.hpp"
 
 template <typename T>
 class peak

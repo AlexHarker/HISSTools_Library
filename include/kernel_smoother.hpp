@@ -9,7 +9,7 @@
 #include <limits>
 #include <type_traits>
 
-#include "Allocator.hpp"
+#include "allocator.hpp"
 #include "simd_support.hpp"
 
 #include "spectral_processor.hpp"
