@@ -3,7 +3,7 @@
 #define CONVOLVE_N_TO_MONO_HPP
 
 #include "ConvolveUtilities.hpp"
-#include "ConvolveMono.hpp"
+#include "mono.hpp"
 
 #include <algorithm>
 #include <cstdint>
