@@ -1,7 +1,7 @@
 #ifndef _HISSTOOLS_OAUDIOFILE_
 #define _HISSTOOLS_OAUDIOFILE_
 
-#include "AudioFileUtilities.hpp"
+#include "utilities.hpp"
 #include "extended_double.hpp"
 #include "BaseAudioFile.hpp"
 

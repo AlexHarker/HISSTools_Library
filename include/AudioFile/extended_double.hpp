@@ -2,7 +2,7 @@
 #ifndef AUDIO_FILE_EXTENDED_DOUBLE_HPP
 #define AUDIO_FILE_EXTENDED_DOUBLE_HPP
 
-#include "AudioFileUtilities.hpp"
+#include "utilities.hpp"
 #include "BaseAudioFile.hpp"
 
 #include <cmath>

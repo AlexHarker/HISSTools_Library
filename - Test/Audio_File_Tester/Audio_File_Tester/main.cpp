@@ -11,7 +11,7 @@
 
 #include "../../../AudioFile/IAudioFile.hpp"
 #include "../../../AudioFile/OAudioFile.hpp"
-#include "../../../AudioFile/AudioFileUtilities.hpp"
+#include "../../../include/AudioFile/utilities.hpp"
 #include "../../../include/random_generator.hpp"
 
 
