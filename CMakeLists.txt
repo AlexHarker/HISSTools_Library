@@ -23,50 +23,12 @@ target_compile_features(
 
 include(GNUInstallDirs)
 
-set(CMAKE_INSTALL_PREFIX
-    "${CMAKE_SOURCE_DIR}/install"
-    CACHE PATH "Where the library will be installed to" FORCE
-)
-
 target_include_directories(
     ${PROJECT_NAME}
-    INTERFACE 
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-        $<INSTALL_INTERFACE:include/hisstools>
+    INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 install(
-    TARGETS ${PROJECT_NAME} 
-    EXPORT HISSTools_Targets
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include
+    DESTINATION ${CMAKE_INSTALL_INCDIR}
 )
-
-install(
-    DIRECTORY ${PROJECT_SOURCE_DIR}
-    DESTINATION include
-)
-
-# include(CMakePackageConfigHelpers)
-
-# write_basic_package_version_file(
-#     "HISSToolsConfigVersion.cmake"
-#     VERSION ${PROJECT_VERSION}
-#     COMPATIBILITY AnyNewerVersion
-# )
-
-# configure_package_config_file(
-#     "${PROJECT_SOURCE_DIR}/cmake/HISSToolsConfig.cmake.in"
-#     "${PROJECT_BINARY_DIR}/HISSToolsConfig.cmake"
-#     INSTALL_DESTINATION
-#         ${CMAKE_INSTALL_LIBDIR}/cmake/hisstools
-# )
-
-# install(
-#     FILES 
-#         ${PROJECT_BINARY_DIR}/HISSToolsConfig.cmake
-#         ${CMAKE_CURRENT_BINARY_DIR}/HISSToolsConfigVersion.cmake 
-#     DESTINATION 
-#         ${CMAKE_INSTALL_LIBDIR}/cmake/hisstools
-# )
