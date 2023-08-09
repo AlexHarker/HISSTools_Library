@@ -6,7 +6,7 @@
 
 #include "Allocator.hpp"
 #include "HISSTools_FFT/HISSTools_FFT.hpp"
-#include "SpectralFunctions.hpp"
+#include "spectral_functions.hpp"
 #include <type_traits>
 
 template <typename T, typename Allocator = aligned_allocator>
