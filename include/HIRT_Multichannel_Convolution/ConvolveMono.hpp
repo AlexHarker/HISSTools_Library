@@ -5,7 +5,7 @@
 #include "ConvolveUtilities.hpp"
 #include "ConvolveTimeDomain.hpp"
 #include "ConvolvePartitioned.hpp"
-#include "../MemorySwap.hpp"
+#include "../memory_swap.hpp"
 
 #include <algorithm>
 #include <cassert>

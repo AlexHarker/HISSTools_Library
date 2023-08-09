@@ -2,7 +2,7 @@
 #ifndef CONVOLVE_MULTICHANNEL_HPP
 #define CONVOLVE_MULTICHANNEL_HPP
 
-#include "../MemorySwap.hpp"
+#include "../memory_swap.hpp"
 #include "../simd_support.hpp"
 
 #include "ConvolveUtilities.hpp"
