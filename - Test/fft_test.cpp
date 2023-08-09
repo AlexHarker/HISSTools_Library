@@ -5,7 +5,7 @@
 #include <iostream>
 #include <iomanip>
 
-#include "fft.hpp"
+#include "../include/fft/fft.hpp"
 
 // Output
 

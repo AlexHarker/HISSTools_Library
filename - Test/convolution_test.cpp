@@ -8,8 +8,8 @@
 #include <array>
 #include <chrono>
 
-#include "../../../include/convolution/multichannel.hpp"
-#include "../../../include/random_generator.hpp"
+#include "../include/convolution/multichannel.hpp"
+#include "../include/random_generator.hpp"
 
 
 // Output

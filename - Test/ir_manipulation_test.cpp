@@ -5,7 +5,7 @@
 #include <iostream>
 #include <iomanip>
 
-#include "../../../include/spectral_functions.hpp"
+#include "../include/spectral_functions.hpp"
 
 // Output
 

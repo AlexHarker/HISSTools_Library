@@ -7,8 +7,8 @@
 #include <iomanip>
 #include <random>
 
-#include "../../../include/window_functions.hpp"
-#include "../../../include/audio_file/out_file.hpp"
+#include "../include/window_functions.hpp"
+#include "../include/audio_file/out_file.hpp"
 
 // Output
 

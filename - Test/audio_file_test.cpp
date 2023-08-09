@@ -9,10 +9,10 @@
 #include <chrono>
 #include <limits>
 
-#include "../../../include/audio_file/in_file.hpp"
-#include "../../../include/audio_file/out_file.hpp"
-#include "../../../include/audio_file/utilities.hpp"
-#include "../../../include/random_generator.hpp"
+#include "../include/audio_file/in_file.hpp"
+#include "../include/audio_file/out_file.hpp"
+#include "../include/audio_file/utilities.hpp"
+#include "../include/random_generator.hpp"
 
 
 // Output

@@ -8,7 +8,7 @@
 
 #include <iostream>
 
-#include "../../../include/partial_tracker.hpp"
+#include "../include/partial_tracker.hpp"
 
 using Tracker = partial_tracker<double>;
 
