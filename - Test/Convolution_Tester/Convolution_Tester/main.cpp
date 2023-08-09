@@ -9,7 +9,7 @@
 #include <chrono>
 
 #include "../../../HIRT_Multichannel_Convolution/ConvolveMultichannel.hpp"
-#include "../../../RandomGenerator.hpp"
+#include "../../../include/random_generator.hpp"
 
 
 // Output

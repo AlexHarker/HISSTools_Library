@@ -12,7 +12,7 @@
 #include "../../../AudioFile/IAudioFile.hpp"
 #include "../../../AudioFile/OAudioFile.hpp"
 #include "../../../AudioFile/AudioFileUtilities.hpp"
-#include "../../../RandomGenerator.hpp"
+#include "../../../include/random_generator.hpp"
 
 
 // Output
