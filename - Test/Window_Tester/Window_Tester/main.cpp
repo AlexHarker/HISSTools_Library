@@ -8,7 +8,7 @@
 #include <random>
 
 #include "../../../include/window_functions.hpp"
-#include "../../../AudioFile/OAudioFile.hpp"
+#include "../../../include/AudioFile/out_file.hpp"
 
 // Output
 

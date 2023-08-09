@@ -10,7 +10,7 @@
 #include <limits>
 
 #include "../../../include/AudioFile/in_file.hpp"
-#include "../../../AudioFile/OAudioFile.hpp"
+#include "../../../include/AudioFile/out_file.hpp"
 #include "../../../include/AudioFile/utilities.hpp"
 #include "../../../include/random_generator.hpp"
 
