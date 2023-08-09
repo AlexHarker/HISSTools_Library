@@ -3,7 +3,8 @@
 #define CONVOLVE_MULTICHANNEL_HPP
 
 #include "../MemorySwap.hpp"
-#include "../SIMDSupport.hpp"
+#include "../simd_support.hpp"
+
 #include "ConvolveUtilities.hpp"
 #include "ConvolveNToMono.hpp"
 

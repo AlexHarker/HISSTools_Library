@@ -1,5 +1,5 @@
 
-#include "../../../SIMDSupport.hpp"
+#include "../../../include/simd_support.hpp"
 #include <iostream>
 
 int main(int argc, const char * argv[])

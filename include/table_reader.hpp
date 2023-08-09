@@ -2,7 +2,8 @@
 #ifndef TABLE_READER_HPP
 #define TABLE_READER_HPP
 
-#include "SIMDSupport.hpp"
+#include "simd_support.hpp"
+
 #include "Interpolation.hpp"
 #include <algorithm>
 

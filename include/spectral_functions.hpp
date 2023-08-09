@@ -3,7 +3,8 @@
 #define SPECTRAL_FUNCTIONS_HPP
 
 #include "HISSTools_FFT/HISSTools_FFT.hpp"
-#include "SIMDSupport.hpp"
+#include "simd_support.hpp"
+
 
 #include <algorithm>
 #include <cmath>

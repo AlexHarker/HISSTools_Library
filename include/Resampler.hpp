@@ -1,7 +1,8 @@
 
 #pragma once
 
-#include "SIMDSupport.hpp"
+#include "simd_support.hpp"
+
 #include "window_functions.hpp"
 
 #include <algorithm>

@@ -10,7 +10,8 @@
 #include <type_traits>
 
 #include "Allocator.hpp"
-#include "SIMDSupport.hpp"
+#include "simd_support.hpp"
+
 #include "spectral_processor.hpp"
 #include "table_reader.hpp"
 

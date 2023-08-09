@@ -3,7 +3,8 @@
 #define CONVOLVE_TIME_DOMAIN_HPP
 
 #include "ConvolveUtilities.hpp"
-#include "../SIMDSupport.hpp"
+#include "../simd_support.hpp"
+
 
 #include <array>
 #include <cstdint>

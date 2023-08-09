@@ -8,7 +8,8 @@
 #include <cstdlib>
 #include <functional>
 
-#include "../SIMDSupport.hpp"
+#include "../simd_support.hpp"
+
 
 // Type definitions for Apple / HISSTools FFT
 

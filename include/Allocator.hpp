@@ -4,7 +4,8 @@
 
 #include <cstdlib>
 
-#include "SIMDSupport.hpp"
+#include "simd_support.hpp"
+
 
 namespace impl
 {
