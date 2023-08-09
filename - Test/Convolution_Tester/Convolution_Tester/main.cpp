@@ -8,7 +8,7 @@
 #include <array>
 #include <chrono>
 
-#include "../../../HIRT_Multichannel_Convolution/ConvolveMultichannel.hpp"
+#include "../../../include/HIRT_Multichannel_Convolution/multichannel.hpp"
 #include "../../../include/random_generator.hpp"
 
 
