@@ -6,7 +6,7 @@
 
 #include <stdint.h>
 
-/** @file HISSTools_FFT.hpp @brief The interface for the HISSTools FFT.
+/** @file fft.hpp @brief The interface for the HISSTools FFT.
  
     The FFT is compatible with the FFT routines provided by Apple's vDSP library and can be configured to use this fast FFT when available.
  */

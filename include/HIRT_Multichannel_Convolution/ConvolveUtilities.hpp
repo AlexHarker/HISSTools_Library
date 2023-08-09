@@ -2,7 +2,7 @@
 #ifndef CONVOLVE_UTILITIES_HPP
 #define CONVOLVE_UTILITIES_HPP
 
-#include "../HISSTools_FFT/HISSTools_FFT.hpp"
+#include "../HISSTools_FFT/fft.hpp"
 
 #include <algorithm>
 #include <vector>

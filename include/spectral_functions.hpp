@@ -2,7 +2,7 @@
 #ifndef SPECTRAL_FUNCTIONS_HPP
 #define SPECTRAL_FUNCTIONS_HPP
 
-#include "HISSTools_FFT/HISSTools_FFT.hpp"
+#include "HISSTools_FFT/fft.hpp"
 #include "simd_support.hpp"
 
 

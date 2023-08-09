@@ -5,7 +5,7 @@
 #include <iostream>
 #include <iomanip>
 
-#include "HISSTools_FFT.hpp"
+#include "fft.hpp"
 
 // Output
 

@@ -2,7 +2,7 @@
 #ifndef CONVOLVE_PARTITIONED_HPP
 #define CONVOLVE_PARTITIONED_HPP
 
-#include "../HISSTools_FFT/HISSTools_FFT.hpp"
+#include "../HISSTools_FFT/fft.hpp"
 
 #include "ConvolveUtilities.hpp"
 #include "../simd_support.hpp"
