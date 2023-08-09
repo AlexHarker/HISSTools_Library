@@ -9,7 +9,7 @@
 #include <chrono>
 #include <limits>
 
-#include "../../../AudioFile/IAudioFile.hpp"
+#include "../../../include/AudioFile/in_file.hpp"
 #include "../../../AudioFile/OAudioFile.hpp"
 #include "../../../include/AudioFile/utilities.hpp"
 #include "../../../include/random_generator.hpp"
