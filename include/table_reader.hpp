@@ -4,7 +4,7 @@
 
 #include "simd_support.hpp"
 
-#include "Interpolation.hpp"
+#include "interpolation.hpp"
 #include <algorithm>
 
 // Enumeration of edge types
