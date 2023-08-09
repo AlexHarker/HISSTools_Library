@@ -2,7 +2,7 @@
 #define _HISSTOOLS_IAUDIOFILE_
 
 #include "AudioFileUtilities.hpp"
-#include "AudioFileExtendedDouble.hpp"
+#include "extended_double.hpp"
 #include "BaseAudioFile.hpp"
 
 #include <algorithm>
