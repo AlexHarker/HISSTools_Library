@@ -2,7 +2,7 @@
 #ifndef AUDIO_FILE_UTILITIES_HPP
 #define AUDIO_FILE_UTILITIES_HPP
 
-#include "AudioFileFormat.hpp"
+#include "format.hpp"
 
 namespace HISSTools
 {

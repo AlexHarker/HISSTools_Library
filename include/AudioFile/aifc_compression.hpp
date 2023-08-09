@@ -2,7 +2,7 @@
 #ifndef AIFC_COMPRESSION_HPP
 #define AIFC_COMPRESSION_HPP
 
-#include "AudioFileFormat.hpp"
+#include "format.hpp"
 
 namespace HISSTools
 {
