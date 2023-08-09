@@ -3,7 +3,7 @@
 
 #include "utilities.hpp"
 #include "extended_double.hpp"
-#include "BaseAudioFile.hpp"
+#include "base.hpp"
 
 #include <algorithm>
 #include <cmath>

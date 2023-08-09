@@ -3,7 +3,7 @@
 #define AUDIO_FILE_EXTENDED_DOUBLE_HPP
 
 #include "utilities.hpp"
-#include "BaseAudioFile.hpp"
+#include "base.hpp"
 
 #include <cmath>
 #include <limits>
