@@ -23,6 +23,11 @@ target_compile_features(
 
 include(GNUInstallDirs)
 
+set(CMAKE_INSTALL_PREFIX
+    "${CMAKE_SOURCE_DIR}/install"
+    CACHE PATH "Where the library will be installed to" FORCE
+)
+
 target_include_directories(
     ${PROJECT_NAME}
     INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -30,5 +35,5 @@ target_include_directories(
 
 install(
     DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include
-    DESTINATION ${CMAKE_INSTALL_INCDIR}
+    DESTINATION install
 )
