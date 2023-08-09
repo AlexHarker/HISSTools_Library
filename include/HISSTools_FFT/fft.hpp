@@ -47,7 +47,7 @@ struct Setup;
 
 // N.B. Include once basic types are defined
 
-#include "HISSTools_FFT_Core.hpp"
+#include "fft_core.hpp"
 
 /**
     hisstools_create_setup() creates an FFT setup suitable for FFTs and iFFTs up to a maximum specified size.
