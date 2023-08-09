@@ -5,7 +5,7 @@
 #include "../memory_swap.hpp"
 #include "../simd_support.hpp"
 
-#include "ConvolveUtilities.hpp"
+#include "utilities.hpp"
 #include "n_to_mono.hpp"
 
 #include <cstdint>

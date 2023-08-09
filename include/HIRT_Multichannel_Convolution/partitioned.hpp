@@ -4,7 +4,7 @@
 
 #include "../fft/fft.hpp"
 
-#include "ConvolveUtilities.hpp"
+#include "utilities.hpp"
 #include "../simd_support.hpp"
 
 

@@ -2,7 +2,7 @@
 #ifndef CONVOLVE_MONO_HPP
 #define CONVOLVE_MONO_HPP
 
-#include "ConvolveUtilities.hpp"
+#include "utilities.hpp"
 #include "time_domain.hpp"
 #include "partitioned.hpp"
 #include "../memory_swap.hpp"

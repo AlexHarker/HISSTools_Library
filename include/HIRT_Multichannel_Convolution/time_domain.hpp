@@ -2,7 +2,7 @@
 #ifndef CONVOLVE_TIME_DOMAIN_HPP
 #define CONVOLVE_TIME_DOMAIN_HPP
 
-#include "ConvolveUtilities.hpp"
+#include "utilities.hpp"
 #include "../simd_support.hpp"
 
 
