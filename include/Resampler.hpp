@@ -2,7 +2,7 @@
 #pragma once
 
 #include "SIMDSupport.hpp"
-#include "WindowFunctions.hpp"
+#include "window_functions.hpp"
 
 #include <algorithm>
 #include <cassert>

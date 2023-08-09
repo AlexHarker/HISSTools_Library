@@ -7,7 +7,7 @@
 #include <iomanip>
 #include <random>
 
-#include "../../../WindowFunctions.hpp"
+#include "../../../include/window_functions.hpp"
 #include "../../../AudioFile/OAudioFile.hpp"
 
 // Output
