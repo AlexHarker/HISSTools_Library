@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "AudioFileFormat.hpp"
-#include "AIFCCompression.hpp"
+#include "aifc_compression.hpp"
 
 // FIX - frames type
 
