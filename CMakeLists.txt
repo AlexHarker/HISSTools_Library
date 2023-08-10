@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.13)
 
 # library
 project(
-    HISSTools_Library 
+    hisstools 
     VERSION 1.0 
     LANGUAGES CXX
     DESCRIPTION "A C++ Library for DSP"
@@ -23,9 +23,7 @@ target_compile_features(
 )
 
 #tests
-option(BUILD_TESTS "Build test programs" OFF)
-
-if(BUILD_TESTS)
+if(BUILD_TESTING)
     enable_testing()
 
     file(GLOB TESTS test/*.cpp)
@@ -45,7 +43,7 @@ if(BUILD_TESTS)
             COMMAND $<TARGET_FILE:${TEST_NAME}>
         )
     endforeach()
-endif(BUILD_TESTS)
+endif(BUILD_TESTING)
 
 #install
 include(GNUInstallDirs)
