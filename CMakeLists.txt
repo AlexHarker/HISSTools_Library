@@ -26,7 +26,11 @@ target_compile_features(
 if(BUILD_TESTING)
     enable_testing()
 
-    file(GLOB TESTS test/*.cpp)
+    if(BUILD_TEST)
+        set(TESTS ${BUILD_TEST})
+    else()
+        file(GLOB TESTS test/*.cpp)
+    endif()
 
     foreach(TEST ${TESTS})
         get_filename_component(TEST_NAME ${TEST} NAME_WE)
