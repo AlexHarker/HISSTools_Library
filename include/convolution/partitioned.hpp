@@ -1,6 +1,6 @@
 
-#ifndef CONVOLVE_PARTITIONED_HPP
-#define CONVOLVE_PARTITIONED_HPP
+#ifndef HISSTOOLS_CONVOLUTION_PARTITIONED_HPP
+#define HISSTOOLS_CONVOLUTION_PARTITIONED_HPP
 
 #include "../fft/fft.hpp"
 
@@ -500,4 +500,4 @@ private:
     std::uniform_int_distribution<uintptr_t> m_rand_dist;
 };
 
-#endif /* CONVOLVE_PARTITIONED_HPP */
+#endif /* HISSTOOLS_CONVOLUTION_PARTITIONED_HPP */

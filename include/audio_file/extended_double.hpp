@@ -1,6 +1,6 @@
 
-#ifndef AUDIO_FILE_EXTENDED_DOUBLE_HPP
-#define AUDIO_FILE_EXTENDED_DOUBLE_HPP
+#ifndef HISSTOOLS_AUDIO_FILE_EXTENDED_DOUBLE_HPP
+#define HISSTOOLS_AUDIO_FILE_EXTENDED_DOUBLE_HPP
 
 #include "utilities.hpp"
 #include "base.hpp"
@@ -114,4 +114,4 @@ namespace HISSTools
     };
 }
 
-#endif /* AUDIO_FILE_EXTENDED_DOUBLE_HPP */
+#endif /* HISSTOOLS_AUDIO_FILE_EXTENDED_DOUBLE_HPP */

@@ -1,6 +1,6 @@
 
-#ifndef THREADLOCKS_HPP
-#define THREADLOCKS_HPP
+#ifndef HISSTOOLS_THREAD_LOCKS_HPP
+#define HISSTOOLS_THREAD_LOCKS_HPP
 
 #include <atomic>
 #include <algorithm>
@@ -117,4 +117,4 @@ private:
     thread_lock *m_lock;
 };
 
-#endif /* THREADLOCKS_HPP */
+#endif /* HISSTOOLS_THREAD_LOCKS_HPP */

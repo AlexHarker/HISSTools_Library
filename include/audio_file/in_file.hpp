@@ -1,5 +1,5 @@
-#ifndef _HISSTOOLS_IAUDIOFILE_
-#define _HISSTOOLS_IAUDIOFILE_
+#ifndef HISSTOOLS_AUDIO_FILE_IN_FILE_HPP
+#define HISSTOOLS_AUDIO_FILE_IN_FILE_HPP
 
 #include "utilities.hpp"
 #include "extended_double.hpp"
@@ -569,4 +569,4 @@ namespace HISSTools
     };
 }
 
-#endif
+#endif /* HISSTOOLS_AUDIO_FILE_IN_FILE_HPP */

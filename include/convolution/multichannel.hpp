@@ -1,6 +1,6 @@
 
-#ifndef CONVOLVE_MULTICHANNEL_HPP
-#define CONVOLVE_MULTICHANNEL_HPP
+#ifndef HISSTOOLS_CONVOLUTION_MULTICHANNEL_HPP
+#define HISSTOOLS_CONVOLUTION_MULTICHANNEL_HPP
 
 #include "../memory_swap.hpp"
 #include "../simd_support.hpp"
@@ -144,4 +144,4 @@ private:
     std::vector<CN> m_convolvers;
 };
 
-#endif /* CONVOLVE_MULTICHANNEL_HPP */
+#endif /* HISSTOOLS_CONVOLUTION_MULTICHANNEL_HPP */

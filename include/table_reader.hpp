@@ -1,6 +1,6 @@
 
-#ifndef TABLE_READER_HPP
-#define TABLE_READER_HPP
+#ifndef HISSTOOLS_TABLE_READER_HPP
+#define HISSTOOLS_TABLE_READER_HPP
 
 #include "simd_support.hpp"
 
@@ -399,4 +399,4 @@ void table_read_edges(Table fetcher, T *out, const U *positions, intptr_t n_samp
     }
 }
 
-#endif /* TABLE_READER_HPP */
+#endif /* HISSTOOLS_TABLE_READER_HPP */

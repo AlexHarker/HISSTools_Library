@@ -1,5 +1,6 @@
 
-#pragma once
+#ifndef HISSTOOLS_RESAMPLER_HPP
+#define HISSTOOLS_RESAMPLER_HPP
 
 #include "simd_support.hpp"
 
@@ -339,3 +340,5 @@ private:
     uint32_t m_num_zeros;
     uint32_t m_num_points;
 };
+
+#endif /* HISSTOOLS_RESAMPLER_HPP */

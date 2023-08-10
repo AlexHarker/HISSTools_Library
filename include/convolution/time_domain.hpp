@@ -1,6 +1,6 @@
 
-#ifndef CONVOLVE_TIME_DOMAIN_HPP
-#define CONVOLVE_TIME_DOMAIN_HPP
+#ifndef HISSTOOLS_CONVOLUTION_TIME_DOMAIN_HPP
+#define HISSTOOLS_CONVOLUTION_TIME_DOMAIN_HPP
 
 #include "utilities.hpp"
 #include "../simd_support.hpp"
@@ -300,4 +300,4 @@ private:
     bool m_reset;
 };
 
-#endif /* CONVOLVE_TIME_DOMAIN_HPP */
+#endif /* HISSTOOLS_CONVOLUTION_TIME_DOMAIN_HPP */

@@ -1,6 +1,6 @@
 
-#ifndef ALLOCATOR_HPP
-#define ALLOCATOR_HPP
+#ifndef HISSTOOLS_ALLOCATOR_HPP
+#define HISSTOOLS_ALLOCATOR_HPP
 
 #include <cstdlib>
 
@@ -38,4 +38,4 @@ struct aligned_allocator
     void deallocate(T *ptr) { deallocate_aligned(ptr); }
 };
 
-#endif /* ALLOCATOR_HPP */
+#endif /* HISSTOOLS_ALLOCATOR_HPP */

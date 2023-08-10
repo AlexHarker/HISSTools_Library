@@ -1,6 +1,6 @@
 
-#ifndef RANDOM_GENERATOR_HPP
-#define RANDOM_GENERATOR_HPP
+#ifndef HISSTOOLS_RANDOM_GENERATOR_HPP
+#define HISSTOOLS_RANDOM_GENERATOR_HPP
 
 #include <algorithm>
 #include <cmath>
@@ -338,4 +338,4 @@ private:
     Generator m_generator;
 };
 
-#endif /* RANDOM_GENERATOR_HPP */
+#endif /* HISSTOOLS_RANDOM_GENERATOR_HPP */

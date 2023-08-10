@@ -1,6 +1,6 @@
 
-#ifndef CONVOLVE_MONO_HPP
-#define CONVOLVE_MONO_HPP
+#ifndef HISSTOOLS_CONVOLUTION_MONO_HPP
+#define HISSTOOLS_CONVOLUTION_MONO_HPP
 
 #include "utilities.hpp"
 #include "time_domain.hpp"
@@ -294,4 +294,4 @@ private:
     std::uniform_int_distribution<uintptr_t> m_rand_dist;
 };
 
-#endif /* CONVOLVE_MONO_HPP */
+#endif /* HISSTOOLS_CONVOLUTION_MONO_HPP */

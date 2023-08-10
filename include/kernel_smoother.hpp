@@ -1,6 +1,6 @@
 
-#ifndef KERNEL_SMOOTHER_HPP
-#define KERNEL_SMOOTHER_HPP
+#ifndef HISSTOOLS_KERNEL_SMOOTHER_HPP
+#define HISSTOOLS_KERNEL_SMOOTHER_HPP
 
 #include <algorithm>
 #include <cmath>
@@ -333,4 +333,4 @@ private:
     }
 };
 
-#endif /* KERNEL_SMOOTHER_HPP */
+#endif /* HISSTOOLS_KERNEL_SMOOTHER_HPP */

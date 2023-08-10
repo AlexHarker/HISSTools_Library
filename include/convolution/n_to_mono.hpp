@@ -1,6 +1,6 @@
 
-#ifndef CONVOLVE_N_TO_MONO_HPP
-#define CONVOLVE_N_TO_MONO_HPP
+#ifndef HISSTOOLS_CONVOLUTION_N_TO_MONO_HPP
+#define HISSTOOLS_CONVOLUTION_N_TO_MONO_HPP
 
 #include "utilities.hpp"
 #include "mono.hpp"
@@ -102,4 +102,4 @@ private:
     std::vector<convolve_mono<T, IO>> m_convolvers;
 };
 
-#endif /* CONVOLVE_N_TO_MONO_HPP */
+#endif /* HISSTOOLS_CONVOLUTION_N_TO_MONO_HPP */

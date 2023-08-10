@@ -1,6 +1,6 @@
 
-#ifndef AUDIO_FILE_FORMAT_HPP
-#define AUDIO_FILE_FORMAT_HPP
+#ifndef HISSTOOLS_AUDIO_FILE_FORMAT_HPP
+#define HISSTOOLS_AUDIO_FILE_FORMAT_HPP
 
 #include <cstdint>
 #include <vector>
@@ -157,4 +157,4 @@ namespace HISSTools
     };
 }
 
-#endif /* AUDIO_FILE_FORMAT_HPP */
+#endif /* HISSTOOLS_AUDIO_FILE_FORMAT_HPP */

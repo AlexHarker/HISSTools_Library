@@ -1,6 +1,6 @@
 
-#ifndef CONVOLVE_UTILITIES_HPP
-#define CONVOLVE_UTILITIES_HPP
+#ifndef HISSTOOLS_CONVOLUTION_UTILITIES_HPP
+#define HISSTOOLS_CONVOLUTION_UTILITIES_HPP
 
 #include "../fft/fft.hpp"
 
@@ -90,4 +90,4 @@ private:
     const T *m_input;
 };
 
-#endif /* CONVOLVE_UTILITIES_HPP */
+#endif /* HISSTOOLS_CONVOLUTION_UTILITIES_HPP */

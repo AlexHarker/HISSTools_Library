@@ -1,6 +1,6 @@
 
-#ifndef AUDIO_FILE_UTILITIES_HPP
-#define AUDIO_FILE_UTILITIES_HPP
+#ifndef HISSTOOLS_AUDIO_FILE_UTILITIES_HPP
+#define HISSTOOLS_AUDIO_FILE_UTILITIES_HPP
 
 #include "format.hpp"
 
@@ -77,4 +77,4 @@ namespace HISSTools
     }
 }
 
-#endif /* AUDIO_FILE_UTILITIES_HPP */
+#endif /* HISSTOOLS_AUDIO_FILE_UTILITIES_HPP */

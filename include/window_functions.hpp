@@ -1,6 +1,6 @@
 
-#ifndef WINDOW_FUNCTIONS_HPP
-#define WINDOW_FUNCTIONS_HPP
+#ifndef HISSTOOLS_WINDOW_FUNCTIONS_HPP
+#define HISSTOOLS_WINDOW_FUNCTIONS_HPP
 
 #include <algorithm>
 #include <cstdint>
@@ -663,4 +663,4 @@ namespace window_functions
     };
 }
 
-#endif /* WINDOW_FUNCTIONS_HPP */
+#endif /* HISSTOOLS_WINDOW_FUNCTIONS_HPP */

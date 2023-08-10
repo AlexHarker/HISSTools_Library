@@ -1,6 +1,6 @@
 
-#ifndef STATISTICS_HPP
-#define STATISTICS_HPP
+#ifndef HISSTOOLS_STATISTICS_HPP
+#define HISSTOOLS_STATISTICS_HPP
 
 #include <algorithm>
 #include <limits>
@@ -381,4 +381,4 @@ double stat_crest(const T input, size_t size)
     return stat_max(input, size) / stat_rms(input, size);
 }
 
-#endif /* STATISTICS_HPP */
+#endif /* HISSTOOLS_STATISTICS_HPP */

@@ -1,6 +1,6 @@
 
-#ifndef INTERPOLATION_HPP
-#define INTERPOLATION_HPP
+#ifndef HISSTOOLS_INTERPOLATION_HPP
+#define HISSTOOLS_INTERPOLATION_HPP
 
 // Enumeration of interpolation types
 
@@ -87,4 +87,4 @@ private:
     const T _1div2;
 };
 
-#endif /* INTERPOLATION_HPP */
+#endif /* HISSTOOLS_INTERPOLATION_HPP */

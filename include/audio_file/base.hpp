@@ -1,5 +1,5 @@
-#ifndef _HISSTOOLS_BASEAUDIOFILE_
-#define _HISSTOOLS_BASEAUDIOFILE_
+#ifndef HISSTOOLS_AUDIO_FILE_BASE_HPP
+#define HISSTOOLS_AUDIO_FILE_BASE_HPP
 
 #include <cstdint>
 #include <fstream>
@@ -157,4 +157,4 @@ namespace HISSTools
     };
 }
 
-#endif
+#endif /* HISSTOOLS_AUDIO_FILE_BASE_HPP */

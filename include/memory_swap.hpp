@@ -1,6 +1,6 @@
 
-#ifndef MEMORY_SWAP_HPP
-#define MEMORY_SWAP_HPP
+#ifndef HISSTOOLS_MEMORY_SWAP_HPP
+#define HISSTOOLS_MEMORY_SWAP_HPP
 
 #include <cstdint>
 #include <cstdlib>
@@ -293,4 +293,4 @@ private:
     FreeFunc m_free_function;
 };
 
-#endif /* MEMORY_SWAP_HPP */
+#endif /* HISSTOOLS_MEMORY_SWAP_HPP */
