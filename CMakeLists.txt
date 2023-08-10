@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.13)
 
+# library
 project(
     HISSTools_Library 
     VERSION 1.0 
@@ -21,6 +22,32 @@ target_compile_features(
         cxx_std_11
 )
 
+#tests
+option(BUILD_TESTS "Build test programs" OFF)
+
+if(BUILD_TESTS)
+    enable_testing()
+
+    file(GLOB TESTS test/*.cpp)
+
+    foreach(TEST ${TESTS})
+        get_filename_component(TEST_NAME ${TEST} NAME_WE)
+
+        add_executable(
+            ${TEST_NAME}
+            ${TEST}
+        )
+
+        target_link_libraries(${TEST_NAME}  ${PROJECT_NAME})
+
+        add_test(
+            NAME ${TEST_NAME} 
+            COMMAND $<TARGET_FILE:${TEST_NAME}>
+        )
+    endforeach()
+endif(BUILD_TESTS)
+
+#install
 include(GNUInstallDirs)
 
 if(DEFINED CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
