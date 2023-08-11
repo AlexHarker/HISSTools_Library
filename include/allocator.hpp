@@ -5,7 +5,9 @@
 #include <cstdlib>
 
 #include "simd_support.hpp"
+#include "namespace.hpp"
 
+HISSTOOLS_NAMESPACE_START()
 
 namespace impl
 {
@@ -37,5 +39,7 @@ struct aligned_allocator
     template <typename T>
     void deallocate(T *ptr) { deallocate_aligned(ptr); }
 };
+
+HISSTOOLS_NAMESPACE_END()
 
 #endif /* HISSTOOLS_ALLOCATOR_HPP */

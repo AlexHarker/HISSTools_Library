@@ -2,6 +2,10 @@
 #ifndef HISSTOOLS_FFT_TYPES_HPP
 #define HISSTOOLS_FFT_TYPES_HPP
 
+#include "../namespace.hpp"
+
+HISSTOOLS_NAMESPACE_START()
+
 namespace impl
 {
     // TypeBase is a helper utility for binding a type to a scalar type
@@ -27,5 +31,7 @@ namespace impl
         U m_setup;
     };
 }
+
+HISSTOOLS_NAMESPACE_END()
 
 #endif /* HISSTOOLS_FFT_TYPES_HPP */

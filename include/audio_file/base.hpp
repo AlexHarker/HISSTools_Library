@@ -6,10 +6,13 @@
 #include <string>
 #include <vector>
 
+#include "../namespace.hpp"
 #include "format.hpp"
 #include "aifc_compression.hpp"
 
 // FIX - frames type
+
+HISSTOOLS_NAMESPACE_START()
 
 namespace HISSTools
 {
@@ -156,5 +159,7 @@ namespace HISSTools
         int m_error_flags;
     };
 }
+
+HISSTOOLS_NAMESPACE_END()
 
 #endif /* HISSTOOLS_AUDIO_FILE_BASE_HPP */

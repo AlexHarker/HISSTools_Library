@@ -8,6 +8,10 @@
 #include <limits>
 #include <vector>
 
+#include "namespace.hpp"
+
+HISSTOOLS_NAMESPACE_START()
+
 // Coefficients (and the basis for naming) can largely be found in:
 //
 // Nuttall, A. (1981). Some windows with very good sidelobe behavior.
@@ -662,5 +666,7 @@ namespace window_functions
         window_generator<T> *generators[sizeof...(gens)] = { gens... };
     };
 }
+
+HISSTOOLS_NAMESPACE_END()
 
 #endif /* HISSTOOLS_WINDOW_FUNCTIONS_HPP */

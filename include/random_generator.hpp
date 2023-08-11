@@ -7,6 +7,10 @@
 #include <cstdint>
 #include <random>
 
+#include "namespace.hpp"
+
+HISSTOOLS_NAMESPACE_START()
+
 namespace random_generators
 {
     // Basic CMWC Generator
@@ -337,5 +341,7 @@ private:
     
     Generator m_generator;
 };
+
+HISSTOOLS_NAMESPACE_END()
 
 #endif /* HISSTOOLS_RANDOM_GENERATOR_HPP */

@@ -8,6 +8,9 @@
 #include <tuple>
 
 #include "allocator.hpp"
+#include "namespace.hpp"
+
+HISSTOOLS_NAMESPACE_START()
 
 template <typename T>
 class peak
@@ -440,5 +443,7 @@ private:
     
     change_tracker<T, Changes> m_changes;
 };
+
+HISSTOOLS_NAMESPACE_END()
 
 #endif /* HISSTOOLS_PARTIAL_TRACKER_HPP */

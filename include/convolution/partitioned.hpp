@@ -2,15 +2,16 @@
 #ifndef HISSTOOLS_CONVOLUTION_PARTITIONED_HPP
 #define HISSTOOLS_CONVOLUTION_PARTITIONED_HPP
 
-#include "../fft/fft.hpp"
-
-#include "utilities.hpp"
-#include "../simd_support.hpp"
-
-
 #include <algorithm>
 #include <cstdint>
 #include <random>
+
+#include "../simd_support.hpp"
+#include "../namespace.hpp"
+#include "utilities.hpp"
+#include "../fft/fft.hpp"
+
+HISSTOOLS_NAMESPACE_START()
 
 template <class T, class IO = T>
 class convolve_partitioned
@@ -499,5 +500,7 @@ private:
     std::default_random_engine m_rand_gen;
     std::uniform_int_distribution<uintptr_t> m_rand_dist;
 };
+
+HISSTOOLS_NAMESPACE_END()
 
 #endif /* HISSTOOLS_CONVOLUTION_PARTITIONED_HPP */

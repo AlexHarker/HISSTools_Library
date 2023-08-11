@@ -2,12 +2,15 @@
 #ifndef HISSTOOLS_CONVOLUTION_N_TO_MONO_HPP
 #define HISSTOOLS_CONVOLUTION_N_TO_MONO_HPP
 
-#include "utilities.hpp"
-#include "mono.hpp"
-
 #include <algorithm>
 #include <cstdint>
 #include <vector>
+
+#include "../namespace.hpp"
+#include "utilities.hpp"
+#include "mono.hpp"
+
+HISSTOOLS_NAMESPACE_START()
 
 template <class T, class IO = T>
 class convolve_n_to_mono
@@ -101,5 +104,7 @@ private:
     
     std::vector<convolve_mono<T, IO>> m_convolvers;
 };
+
+HISSTOOLS_NAMESPACE_END()
 
 #endif /* HISSTOOLS_CONVOLUTION_N_TO_MONO_HPP */

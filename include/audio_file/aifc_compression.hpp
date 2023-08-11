@@ -2,7 +2,10 @@
 #ifndef HISSTOOLS_AUDIO_FILE_AIFC_COMPRESSION_HPP
 #define HISSTOOLS_AUDIO_FILE_AIFC_COMPRESSION_HPP
 
+#include "../namespace.hpp"
 #include "format.hpp"
+
+HISSTOOLS_NAMESPACE_START()
 
 namespace HISSTools
 {
@@ -101,5 +104,7 @@ namespace HISSTools
         }
     };
 }
+
+HISSTOOLS_NAMESPACE_END()
 
 #endif /* HISSTOOLS_AUDIO_FILE_AIFC_COMPRESSION_HPP */

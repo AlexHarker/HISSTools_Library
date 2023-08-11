@@ -2,17 +2,19 @@
 #ifndef HISSTOOLS_CONVOLUTION_TIME_DOMAIN_HPP
 #define HISSTOOLS_CONVOLUTION_TIME_DOMAIN_HPP
 
-#include "utilities.hpp"
-#include "../simd_support.hpp"
-
-
 #include <array>
 #include <cstdint>
 #include <algorithm>
 
+#include "../simd_support.hpp"
+#include "../namespace.hpp"
+#include "utilities.hpp"
+
 #if defined __APPLE__ && !defined NO_APPLE_ACCELERATE
 #include <Accelerate/Accelerate.h>
 #endif
+
+HISSTOOLS_NAMESPACE_START()
 
 template <class T, class IO = T>
 class convolve_time_domain
@@ -299,5 +301,7 @@ private:
     
     bool m_reset;
 };
+
+HISSTOOLS_NAMESPACE_END()
 
 #endif /* HISSTOOLS_CONVOLUTION_TIME_DOMAIN_HPP */

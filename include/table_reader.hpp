@@ -2,10 +2,13 @@
 #ifndef HISSTOOLS_TABLE_READER_HPP
 #define HISSTOOLS_TABLE_READER_HPP
 
-#include "simd_support.hpp"
-
-#include "interpolation.hpp"
 #include <algorithm>
+
+#include "simd_support.hpp"
+#include "interpolation.hpp"
+#include "namespace.hpp"
+
+HISSTOOLS_NAMESPACE_START()
 
 // Enumeration of edge types
 
@@ -398,5 +401,7 @@ void table_read_edges(Table fetcher, T *out, const U *positions, intptr_t n_samp
         case EdgeMode::Extrapolate: table_read_extrapolate(fetcher, out, positions, n_samps, mul, interp, bound);   break;
     }
 }
+
+HISSTOOLS_NAMESPACE_END()
 
 #endif /* HISSTOOLS_TABLE_READER_HPP */

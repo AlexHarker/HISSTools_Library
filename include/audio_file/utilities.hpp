@@ -2,7 +2,10 @@
 #ifndef HISSTOOLS_AUDIO_FILE_UTILITIES_HPP
 #define HISSTOOLS_AUDIO_FILE_UTILITIES_HPP
 
+#include "../namespace.hpp"
 #include "format.hpp"
+
+HISSTOOLS_NAMESPACE_START()
 
 namespace HISSTools
 {
@@ -76,5 +79,7 @@ namespace HISSTools
             return byte_setter<T, N, 0, AudioFileFormat::Endianness::Little>()(value, bytes);
     }
 }
+
+HISSTOOLS_NAMESPACE_END()
 
 #endif /* HISSTOOLS_AUDIO_FILE_UTILITIES_HPP */

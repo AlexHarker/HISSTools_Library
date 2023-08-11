@@ -7,6 +7,10 @@
 #include <chrono>
 #include <thread>
 
+#include "namespace.hpp"
+
+HISSTOOLS_NAMESPACE_START()
+
 #ifdef __linux__
 
 // Linux specific definitions
@@ -116,5 +120,7 @@ private:
     
     thread_lock *m_lock;
 };
+
+HISSTOOLS_NAMESPACE_END()
 
 #endif /* HISSTOOLS_THREAD_LOCKS_HPP */

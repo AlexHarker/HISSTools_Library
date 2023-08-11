@@ -9,6 +9,8 @@
 #include <cstdlib>
 #include <functional>
 
+#include "namespace.hpp"
+
 #if defined(__arm__) || defined(__arm64) || defined(__aarch64__)
 #include <arm_neon.h>
 #include <memory.h>
@@ -39,6 +41,8 @@
 #define SIMD_COMPILER_SUPPORT_VEC128 1
 #define SIMD_COMPILER_SUPPORT_VEC256 2
 #define SIMD_COMPILER_SUPPORT_VEC512 3
+
+HISSTOOLS_NAMESPACE_START()
 
 template <class T>
 struct SIMDLimits
@@ -1355,5 +1359,7 @@ SIMDType<float, N> abs(const SIMDType<float, N> a)
     
     return a & SIMDType<float, N>(bit_mask_32f);
 }
+
+HISSTOOLS_NAMESPACE_END()
 
 #endif /* HISSTOOLS_SIMD_SUPPORT_HPP */

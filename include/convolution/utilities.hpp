@@ -2,10 +2,13 @@
 #ifndef HISSTOOLS_CONVOLUTION_UTILITIES_HPP
 #define HISSTOOLS_CONVOLUTION_UTILITIES_HPP
 
-#include "../fft/fft.hpp"
-
 #include <algorithm>
 #include <vector>
+
+#include "../namespace.hpp"
+#include "../fft/fft.hpp"
+
+HISSTOOLS_NAMESPACE_START()
 
 namespace impl
 {
@@ -89,5 +92,7 @@ private:
 
     const T *m_input;
 };
+
+HISSTOOLS_NAMESPACE_END()
 
 #endif /* HISSTOOLS_CONVOLUTION_UTILITIES_HPP */

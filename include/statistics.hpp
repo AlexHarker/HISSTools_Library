@@ -7,6 +7,10 @@
 #include <numeric>
 #include <cmath>
 
+#include "namespace.hpp"
+
+HISSTOOLS_NAMESPACE_START()
+
 namespace impl
 {
     // Helper functors
@@ -380,5 +384,7 @@ double stat_crest(const T input, size_t size)
 {
     return stat_max(input, size) / stat_rms(input, size);
 }
+
+HISSTOOLS_NAMESPACE_END()
 
 #endif /* HISSTOOLS_STATISTICS_HPP */

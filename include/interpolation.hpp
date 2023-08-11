@@ -2,6 +2,10 @@
 #ifndef HISSTOOLS_INTERPOLATION_HPP
 #define HISSTOOLS_INTERPOLATION_HPP
 
+#include "namespace.hpp"
+
+HISSTOOLS_NAMESPACE_START()
+
 // Enumeration of interpolation types
 
 enum class InterpType { None, Linear, CubicHermite, CubicLagrange, CubicBSpline };
@@ -86,5 +90,7 @@ private:
     const T _1div6;
     const T _1div2;
 };
+
+HISSTOOLS_NAMESPACE_END()
 
 #endif /* HISSTOOLS_INTERPOLATION_HPP */

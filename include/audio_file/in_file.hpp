@@ -1,16 +1,19 @@
 #ifndef HISSTOOLS_AUDIO_FILE_IN_FILE_HPP
 #define HISSTOOLS_AUDIO_FILE_IN_FILE_HPP
 
-#include "utilities.hpp"
-#include "extended_double.hpp"
-#include "base.hpp"
-
 #include <algorithm>
 #include <cstring>
 #include <string>
 #include <vector>
 
+#include "../namespace.hpp"
+#include "utilities.hpp"
+#include "extended_double.hpp"
+#include "base.hpp"
+
 // FIX - check types, errors and returns
+
+HISSTOOLS_NAMESPACE_START()
 
 namespace HISSTools
 {
@@ -568,5 +571,7 @@ namespace HISSTools
         }
     };
 }
+
+HISSTOOLS_NAMESPACE_END()
 
 #endif /* HISSTOOLS_AUDIO_FILE_IN_FILE_HPP */

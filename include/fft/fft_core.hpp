@@ -9,7 +9,9 @@
 #include <functional>
 
 #include "../simd_support.hpp"
+#include "../namespace.hpp"
 
+HISSTOOLS_NAMESPACE_START()
 
 // Type definitions for Apple / HISSTools FFT
 
@@ -1182,5 +1184,7 @@ struct Setup : impl::SetupBase<T, hisstools_fft_impl::SetupType<T> *>
 };
 
 #endif
+
+HISSTOOLS_NAMESPACE_END()
 
 #endif /* HISSTOOLS_FFT_CORE_HPP */

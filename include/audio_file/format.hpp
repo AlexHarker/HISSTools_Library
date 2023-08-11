@@ -5,6 +5,10 @@
 #include <cstdint>
 #include <vector>
 
+#include "../namespace.hpp"
+
+HISSTOOLS_NAMESPACE_START()
+
 namespace HISSTools
 {
     class AudioFileFormat
@@ -156,5 +160,7 @@ namespace HISSTools
         bool m_valid;
     };
 }
+
+HISSTOOLS_NAMESPACE_END()
 
 #endif /* HISSTOOLS_AUDIO_FILE_FORMAT_HPP */

@@ -2,9 +2,10 @@
 #ifndef HISSTOOLS_FFT_HPP
 #define HISSTOOLS_FFT_HPP
 
-#include "fft_types.hpp"
-
 #include <stdint.h>
+
+#include "../namespace.hpp"
+#include "fft_types.hpp"
 
 /** @file fft.hpp @brief The interface for the HISSTools FFT.
  
@@ -20,6 +21,8 @@
 #if defined __APPLE__ && !defined NO_NATIVE_FFT
 #define USE_APPLE_FFT
 #endif
+
+HISSTOOLS_NAMESPACE_START()
 
 /**
     Split is a split of complex data (of a given type) for an FFT stored against two pointers (real and imaginary parts).
@@ -229,5 +232,7 @@ void hisstools_rifft(Setup<T> setup, Split<T> *input, T *output, uintptr_t log2n
     hisstools_rifft(setup, input, log2n);
     hisstools_zip(input, output, log2n);
 }
+
+HISSTOOLS_NAMESPACE_END()
 
 #endif /* HISSTOOLS_FFT_HPP */

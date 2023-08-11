@@ -14,6 +14,9 @@
 
 #include "spectral_processor.hpp"
 #include "table_reader.hpp"
+#include "namespace.hpp"
+
+HISSTOOLS_NAMESPACE_START()
 
 template <typename T, typename Allocator = aligned_allocator, bool auto_resize_fft = false>
 class kernel_smoother : private spectral_processor<T, Allocator>
@@ -332,5 +335,7 @@ private:
             out[i] = *p++ * gain;
     }
 };
+
+HISSTOOLS_NAMESPACE_END()
 
 #endif /* HISSTOOLS_KERNEL_SMOOTHER_HPP */

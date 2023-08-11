@@ -2,13 +2,15 @@
 #ifndef HISSTOOLS_SPECTRAL_FUNCTIONS_HPP
 #define HISSTOOLS_SPECTRAL_FUNCTIONS_HPP
 
-#include "fft/fft.hpp"
-#include "simd_support.hpp"
-
-
 #include <algorithm>
 #include <cmath>
 #include <complex>
+
+#include "simd_support.hpp"
+#include "namespace.hpp"
+#include "fft/fft.hpp"
+
+HISSTOOLS_NAMESPACE_START()
 
 namespace impl
 {
@@ -387,5 +389,7 @@ void ir_correlate_real(Split<T> *out, Split<T> *in1, Split<T> *in2, uintptr_t ff
 {
     impl::real_operation(out, in1, in2, fft_size, scale, impl::correlate());
 }
+
+HISSTOOLS_NAMESPACE_END()
 
 #endif /* HISSTOOLS_SPECTRAL_FUNCTIONS_HPP */

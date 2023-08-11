@@ -2,11 +2,6 @@
 #ifndef HISSTOOLS_CONVOLUTION_MONO_HPP
 #define HISSTOOLS_CONVOLUTION_MONO_HPP
 
-#include "utilities.hpp"
-#include "time_domain.hpp"
-#include "partitioned.hpp"
-#include "../memory_swap.hpp"
-
 #include <algorithm>
 #include <cassert>
 #include <cstdint>
@@ -14,6 +9,14 @@
 #include <random>
 #include <stdexcept>
 #include <vector>
+
+#include "../memory_swap.hpp"
+#include "../namespace.hpp"
+#include "utilities.hpp"
+#include "time_domain.hpp"
+#include "partitioned.hpp"
+
+HISSTOOLS_NAMESPACE_START()
 
 enum class LatencyMode
 {
@@ -293,5 +296,7 @@ private:
     std::default_random_engine m_rand_gen;
     std::uniform_int_distribution<uintptr_t> m_rand_dist;
 };
+
+HISSTOOLS_NAMESPACE_START()
 
 #endif /* HISSTOOLS_CONVOLUTION_MONO_HPP */

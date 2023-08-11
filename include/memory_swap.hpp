@@ -8,6 +8,7 @@
 #include <functional>
 
 #include "thread_locks.hpp"
+#include "namespace.hpp"
 
 #ifdef _WIN32
 #include <malloc.h>
@@ -17,6 +18,8 @@
 // Consider following the HISSTools C++ design for this....
 // Use separate freeing locks so the memory is always freed in the assignment thread
 // All memory assignments are aligned in order that the memory is suitable for vector ops etc.
+
+HISSTOOLS_NAMESPACE_START()
 
 template <class T>
 class memory_swap
@@ -292,5 +295,7 @@ private:
     uintptr_t m_size;
     FreeFunc m_free_function;
 };
+
+HISSTOOLS_NAMESPACE_END()
 
 #endif /* HISSTOOLS_MEMORY_SWAP_HPP */

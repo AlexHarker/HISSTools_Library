@@ -2,17 +2,19 @@
 #ifndef HISSTOOLS_RESAMPLER_HPP
 #define HISSTOOLS_RESAMPLER_HPP
 
-#include "simd_support.hpp"
-
-#include "window_functions.hpp"
-
 #include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <cstdint>
 #include <vector>
 
+#include "simd_support.hpp"
+#include "window_functions.hpp"
+#include "namespace.hpp"
+
 // N.B. - clean up for other usage (different phases / consider other windows etc.)
+
+HISSTOOLS_NAMESPACE_START()
 
 template <class T = double, class IO = float, bool Approx = true>
 class resampler
@@ -340,5 +342,7 @@ private:
     uint32_t m_num_zeros;
     uint32_t m_num_points;
 };
+
+HISSTOOLS_NAMESPACE_END()
 
 #endif /* HISSTOOLS_RESAMPLER_HPP */

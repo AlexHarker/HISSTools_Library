@@ -2,11 +2,14 @@
 #ifndef HISSTOOLS_AUDIO_FILE_EXTENDED_DOUBLE_HPP
 #define HISSTOOLS_AUDIO_FILE_EXTENDED_DOUBLE_HPP
 
+#include <cmath>
+#include <limits>
+
+#include "../namespace.hpp"
 #include "utilities.hpp"
 #include "base.hpp"
 
-#include <cmath>
-#include <limits>
+HISSTOOLS_NAMESPACE_START()
 
 namespace HISSTools
 {
@@ -113,5 +116,7 @@ namespace HISSTools
         }
     };
 }
+
+HISSTOOLS_NAMESPACE_END()
 
 #endif /* HISSTOOLS_AUDIO_FILE_EXTENDED_DOUBLE_HPP */
