@@ -350,7 +350,7 @@ private:
                         
                         // Set parameters based on format
                         
-                        m_format = AIFCCompression::to_format(chunk + 18, bit_depth);
+                        m_format = aifc_compression::to_format(chunk + 18, bit_depth);
                         
                         if (get_file_type() == file_type::NONE)
                             return error_type::AIFC_FMT_UNSUPPORTED;

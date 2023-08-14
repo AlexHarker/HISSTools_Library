@@ -7,14 +7,14 @@
 
 HISSTOOLS_NAMESPACE_START()
 
-struct AIFCCompression
+struct aifc_compression
 {
-    enum class Type  { Unknown, None, Sowt, Float32, Float64 };
+    enum class AIFC_TYPE  { UNKNOWN, NONE, SOWT, FLOAT32, FLOAT64 };
     
-    using FileType = audio_file_format::file_type;
-    using PCMFormat = audio_file_format::pcm_format;
-    using NumericType = audio_file_format::numeric_type;
-    using Endianness = audio_file_format::endianness;
+    using file_type = audio_file_format::file_type;
+    using pcm_format = audio_file_format::pcm_format;
+    using numeric_type = audio_file_format::numeric_type;
+    using endianness = audio_file_format::endianness;
     
     static bool match_tag(const char* a, const char* b)
     {
@@ -24,25 +24,25 @@ struct AIFCCompression
     static audio_file_format to_format(const char* tag, uint16_t bit_depth)
     {
         if (match_tag(tag, "NONE"))
-            return audio_file_format(FileType::AIFC, NumericType::INTEGER, bit_depth, Endianness::BIG);
+            return audio_file_format(file_type::AIFC, numeric_type::INTEGER, bit_depth, endianness::BIG);
         
         if (match_tag(tag, "twos"))
-            return audio_file_format(FileType::AIFC, PCMFormat::INT16, Endianness::BIG);
+            return audio_file_format(file_type::AIFC, pcm_format::INT16, endianness::BIG);
         
         if (match_tag(tag, "sowt") || match_tag(tag, "SOWT"))
-            return audio_file_format(FileType::AIFC, PCMFormat::INT16, Endianness::LITTLE);
+            return audio_file_format(file_type::AIFC, pcm_format::INT16, endianness::LITTLE);
         
         if (match_tag(tag, "in24") || match_tag(tag, "IN24"))
-            return audio_file_format(FileType::AIFC, PCMFormat::INT24, Endianness::BIG);
+            return audio_file_format(file_type::AIFC, pcm_format::INT24, endianness::BIG);
         
         if (match_tag(tag, "in32") || match_tag(tag, "IN32"))
-            return audio_file_format(FileType::AIFC, PCMFormat::INT32, Endianness::BIG);
+            return audio_file_format(file_type::AIFC, pcm_format::INT32, endianness::BIG);
         
         if (match_tag(tag, "fl32") || match_tag(tag, "FL32"))
-            return audio_file_format(FileType::AIFC, PCMFormat::FLOAT32, Endianness::BIG);
+            return audio_file_format(file_type::AIFC, pcm_format::FLOAT32, endianness::BIG);
         
         if (match_tag(tag, "fl64") || match_tag(tag, "FL64"))
-            return audio_file_format(FileType::AIFC, PCMFormat::FLOAT64, Endianness::BIG);
+            return audio_file_format(file_type::AIFC, pcm_format::FLOAT64, endianness::BIG);
         
         return audio_file_format();
     }
@@ -51,13 +51,13 @@ struct AIFCCompression
     {
         switch (to_type(format))
         {
-            case Type::None:
+            case AIFC_TYPE::NONE:
                 return "NONE";
-            case Type::Sowt:
+            case AIFC_TYPE::SOWT:
                 return "sowt";
-            case Type::Float32:
+            case AIFC_TYPE::FLOAT32:
                 return "fl32";
-            case Type::Float64:
+            case AIFC_TYPE::FLOAT64:
                 return "fl64";
             default:
                 return "FIXFIXFIX";
@@ -68,36 +68,36 @@ struct AIFCCompression
     {
         switch (to_type(format))
         {
-            case Type::None:
-            case Type::Sowt:
+            case AIFC_TYPE::NONE:
+            case AIFC_TYPE::SOWT:
                 return "not compressed";
-            case Type::Float32:
+            case AIFC_TYPE::FLOAT32:
                 return "32-bit floating point";
-            case Type::Float64:
+            case AIFC_TYPE::FLOAT64:
                 return "64-bit floating point";
             default:
                 return "FIXFIXFIX";
         }
     }
     
-    static Type to_type(const audio_file_format& format)
+    static AIFC_TYPE to_type(const audio_file_format& format)
     {
-        if (!format.is_valid() || format.get_file_type() == FileType::WAVE)
-            return Type::Unknown;
+        if (!format.is_valid() || format.get_file_type() == file_type::WAVE)
+            return AIFC_TYPE::UNKNOWN;
         
         switch (format.get_pcm_format())
         {
-            case PCMFormat::INT16:
-                if (format.audio_endianness() == Endianness::LITTLE)
-                    return Type::Sowt;
+            case pcm_format::INT16:
+                if (format.audio_endianness() == endianness::LITTLE)
+                    return AIFC_TYPE::SOWT;
                 else
-                    return Type::None;
-            case PCMFormat::FLOAT32:
-                return Type::Float32;
-            case PCMFormat::FLOAT64:
-                return Type::Float64;
+                    return AIFC_TYPE::NONE;
+            case pcm_format::FLOAT32:
+                return AIFC_TYPE::FLOAT32;
+            case pcm_format::FLOAT64:
+                return AIFC_TYPE::FLOAT64;
             default:
-                return Type::None;
+                return AIFC_TYPE::NONE;
         }
     }
 };
