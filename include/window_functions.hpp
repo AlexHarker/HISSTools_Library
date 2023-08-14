@@ -32,7 +32,7 @@ namespace window_functions
         constexpr params(double aa0 = 0, double aa1 = 0, double aa2 = 0, double aa3 = 0, double aa4 = 0, double exp = 1)
         : a0(aa0), a1(aa1), a2(aa2), a3(aa3), a4(aa4), exponent(exp) {}
         
-        constexpr params(const double *param_array, int N, double exp)
+        constexpr params(const double* param_array, int N, double exp)
         : a0(N > 0 ? param_array[0] : 0.0)
         , a1(N > 1 ? param_array[1] : 0.0)
         , a2(N > 2 ? param_array[2] : 0.0)
@@ -352,7 +352,7 @@ namespace window_functions
         // Abstract generator
         
         template <window_func Func, bool symmetric, class T>
-        void inline generate(T *window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
+        void inline generate(T* window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
         {
             constexpr int max_int = std::numeric_limits<int>().max();
             
@@ -361,9 +361,9 @@ namespace window_functions
             auto qb = [&](double x) { return sq(sq(x)); };
             auto toType = [](double x) { return static_cast<T>(x); };
             
-            const T *copy_first = nullptr;
-            const T *copy_last = nullptr;
-            T *out_first = nullptr;
+            const T* copy_first = nullptr;
+            const T* copy_last = nullptr;
+            T* out_first = nullptr;
             
             end = std::min(n + 1, end);
             begin = std::min(begin, end);
@@ -441,43 +441,43 @@ namespace window_functions
     // Specific window generators
     
     template <class T>
-    void rect(T *window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
+    void rect(T* window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
     {
         impl::generate<impl::rect, true>(window, n, begin, end, p);
     }
     
     template <class T>
-    void triangle(T *window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
+    void triangle(T* window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
     {
         impl::generate<impl::triangle, true>(window, n, begin, end, p);
     }
     
     template <class T>
-    void trapezoid(T *window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
+    void trapezoid(T* window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
     {
         impl::generate<impl::trapezoid, false>(window, n, begin, end, p);
     }
     
     template <class T>
-    void welch(T *window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
+    void welch(T* window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
     {
         impl::generate<impl::welch, true>(window, n, begin, end, p);
     }
     
     template <class T>
-    void parzen(T *window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
+    void parzen(T* window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
     {
         impl::generate<impl::parzen, true>(window, n, begin, end, p);
     }
     
     template <class T>
-    void sine(T *window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
+    void sine(T* window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
     {
         impl::generate<impl::sine, true>(window, n, begin, end, p);
     }
     
     template <class T>
-    void sine_taper(T *window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
+    void sine_taper(T* window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
     {
         params p1(std::round(p.a0));
         p1.exponent = p.exponent;
@@ -486,7 +486,7 @@ namespace window_functions
     }
     
     template <class T>
-    void tukey(T *window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
+    void tukey(T* window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
     {
         params p1(p.a0 * 0.5, 1.0 - (p.a0 * 0.5));
         p1.exponent = p.exponent;
@@ -495,7 +495,7 @@ namespace window_functions
     }
     
     template <class T>
-    void kaiser(T *window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
+    void kaiser(T* window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
     {
         params p1(p.a0, 1.0 / impl::izero(p.a0 * p.a0));
         p1.exponent = p.exponent;
@@ -504,151 +504,151 @@ namespace window_functions
     }
     
     template <class T>
-    void cosine_2_term(T *window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
+    void cosine_2_term(T* window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
     {
         impl::generate<impl::cosine_2_term, true>(window, n, begin, end, p);
     }
     
     template <class T>
-    void cosine_3_term(T *window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
+    void cosine_3_term(T* window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
     {
         impl::generate<impl::cosine_3_term, true>(window, n, begin, end, p);
     }
     
     template <class T>
-    void cosine_4_term(T *window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
+    void cosine_4_term(T* window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
     {
         impl::generate<impl::cosine_4_term, true>(window, n, begin, end, p);
     }
     
     template <class T>
-    void cosine_5_term(T *window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
+    void cosine_5_term(T* window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
     {
         impl::generate<impl::cosine_5_term, true>(window, n, begin, end, p);
     }
     
     template <class T>
-    void hann(T *window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
+    void hann(T* window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
     {
         impl::generate<impl::hann, true>(window, n, begin, end, p);
     }
     
     template <class T>
-    void hamming(T *window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
+    void hamming(T* window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
     {
         impl::generate<impl::hamming, true>(window, n, begin, end, p);
     }
     
     template <class T>
-    void blackman(T *window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
+    void blackman(T* window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
     {
         impl::generate<impl::blackman, true>(window, n, begin, end, p);
     }
     
     template <class T>
-    void exact_blackman(T *window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
+    void exact_blackman(T* window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
     {
         impl::generate<impl::exact_blackman, true>(window, n, begin, end, p);
     }
     
     template <class T>
-    void blackman_harris_62dB(T *window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
+    void blackman_harris_62dB(T* window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
     {
         impl::generate<impl::blackman_harris_62dB, true>(window, n, begin, end, p);
     }
     
     template <class T>
-    void blackman_harris_71dB(T *window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
+    void blackman_harris_71dB(T* window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
     {
         impl::generate<impl::blackman_harris_71dB, true>(window, n, begin, end, p);
     }
     
     template <class T>
-    void blackman_harris_74dB(T *window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
+    void blackman_harris_74dB(T* window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
     {
         impl::generate<impl::blackman_harris_74dB, true>(window, n, begin, end, p);
     }
     
     template <class T>
-    void blackman_harris_92dB(T *window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
+    void blackman_harris_92dB(T* window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
     {
         impl::generate<impl::blackman_harris_92dB, true>(window, n, begin, end, p);
     }
     
     template <class T>
-    void nuttall_1st_64dB(T *window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
+    void nuttall_1st_64dB(T* window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
     {
         impl::generate<impl::nuttall_1st_64dB, true>(window, n, begin, end, p);
     }
     
     template <class T>
-    void nuttall_1st_93dB(T *window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
+    void nuttall_1st_93dB(T* window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
     {
         impl::generate<impl::nuttall_1st_93dB, true>(window, n, begin, end, p);
     }
     
     template <class T>
-    void nuttall_3rd_47dB(T *window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
+    void nuttall_3rd_47dB(T* window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
     {
         impl::generate<impl::nuttall_3rd_47dB, true>(window, n, begin, end, p);
     }
     
     template <class T>
-    void nuttall_3rd_83dB(T *window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
+    void nuttall_3rd_83dB(T* window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
     {
         impl::generate<impl::nuttall_3rd_83dB, true>(window, n, begin, end, p);
     }
     
     template <class T>
-    void nuttall_5th_61dB(T *window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
+    void nuttall_5th_61dB(T* window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
     {
         impl::generate<impl::nuttall_5th_61dB, true>(window, n, begin, end, p);
     }
     
     template <class T>
-    void nuttall_minimal_71dB(T *window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
+    void nuttall_minimal_71dB(T* window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
     {
         impl::generate<impl::nuttall_minimal_71dB, true>(window, n, begin, end, p);
     }
     
     template <class T>
-    void nuttall_minimal_98dB(T *window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
+    void nuttall_minimal_98dB(T* window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
     {
         impl::generate<impl::nuttall_minimal_98dB, true>(window, n, begin, end, p);
     }
     
     template <class T>
-    void ni_flat_top(T *window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
+    void ni_flat_top(T* window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
     {
         impl::generate<impl::ni_flat_top, true>(window, n, begin, end, p);
     }
     
     template <class T>
-    void hp_flat_top(T *window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
+    void hp_flat_top(T* window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
     {
         impl::generate<impl::hp_flat_top, true>(window, n, begin, end, p);
     }
     
     template <class T>
-    void stanford_flat_top(T *window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
+    void stanford_flat_top(T* window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
     {
         impl::generate<impl::stanford_flat_top, true>(window, n, begin, end, p);
     }
     
     template <class T>
-    void heinzel_flat_top_70dB(T *window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
+    void heinzel_flat_top_70dB(T* window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
     {
         impl::generate<impl::heinzel_flat_top_70dB, true>(window, n, begin, end, p);
     }
     
     template <class T>
-    void heinzel_flat_top_90dB(T *window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
+    void heinzel_flat_top_90dB(T* window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
     {
         impl::generate<impl::heinzel_flat_top_90dB, true>(window, n, begin, end, p);
     }
     
     template <class T>
-    void heinzel_flat_top_95dB(T *window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
+    void heinzel_flat_top_95dB(T* window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
     {
         impl::generate<impl::heinzel_flat_top_95dB, true>(window, n, begin, end, p);
     }
@@ -656,14 +656,14 @@ namespace window_functions
     template <class T, window_generator<T> ...Gens>
     struct indexed_generator
     {
-        void operator()(size_t type, T *window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
+        void operator()(size_t type, T* window, uint32_t n, uint32_t begin, uint32_t end, const params& p)
         {
             return generators[type](window, n, begin, end, p);
         }
         
-        window_generator<T> *get(size_t type) { return generators[type]; }
+        window_generator<T>* get(size_t type) { return generators[type]; }
         
-        window_generator<T> *generators[sizeof...(Gens)] = { Gens... };
+        window_generator<T>* generators[sizeof...(Gens)] = { Gens... };
     };
 }
 

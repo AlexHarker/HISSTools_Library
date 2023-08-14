@@ -54,7 +54,7 @@ public:
     
     uintptr_t max_fft_size() { return processor::max_fft_size(); }
 
-    void smooth(T *out, const T *in, const T *kernel, uintptr_t length, uintptr_t kernel_length, double width_lo, double width_hi, bool symmetric, edge_mode edges)
+    void smooth(T* out, const T* in, const T* kernel, uintptr_t length, uintptr_t kernel_length, double width_lo, double width_hi, bool symmetric, edge_mode edges)
     {
         if (!length || !kernel_length)
             return;
@@ -85,11 +85,11 @@ public:
         
         uintptr_t fft_size = processor::max_fft_size() >= sizes.fft() ? sizes.fft() : 0;
         
-        T *ptr = allocator.template allocate<T>(fft_size * 2 + filter_full + length + filter_size * 2);
+        T* ptr = allocator.template allocate<T>(fft_size * 2 + filter_full + length + filter_size * 2);
         split_type<T> io { ptr, ptr + (fft_size >> 1) };
         split_type<T> st { io.realp + fft_size, io.imagp + fft_size };
-        T *filter = ptr + (fft_size << 1);
-        T *padded = filter + filter_full;
+        T* filter = ptr + (fft_size << 1);
+        T* padded = filter + filter_full;
         
         ends_type ends = ends_type::NON_ZERO;
         
@@ -137,7 +137,7 @@ public:
         {
             // Offsets into the data and the filter
         
-            const T *data = padded + filter_size;
+            const T* data = padded + filter_size;
             filter += filter_size - 1;
         
             // Symmetric filtering
@@ -156,8 +156,8 @@ public:
                 uintptr_t m = use_fft_n(n, half_width, fft_size);
                 uintptr_t k = 0;
                 
-                const double *data_fft = data - (half_width - 1);
-                const double *filter_fft = filter - (half_width - 1);
+                const double* data_fft = data - (half_width - 1);
+                const double* filter_fft = filter - (half_width - 1);
 
                 // Mirror the filter if required for the FFT processing
 
@@ -188,7 +188,7 @@ public:
                 const T filter_sum = make_filter(filter, kernel, kernel_length, width, ends);
                 const T gain = filter_sum ? T(1) / filter_sum : 1.0;
                 
-                const T *data = padded + filter_size - (half_width - 1);
+                const T* data = padded + filter_size - (half_width - 1);
 
                 for (j = i; (j < length) && half_width == half_width_calc(j); j++);
                 
@@ -214,16 +214,16 @@ private:
     
     struct fetcher : table_fetcher<double>
     {
-        fetcher(const T *in, intptr_t size)
+        fetcher(const T* in, intptr_t size)
         : table_fetcher<T>(size, 1.0), data(in) {}
         
         T operator()(intptr_t idx) { return data[idx]; }
         
-        const T *data;
+        const T* data;
     };
 
     template <template <class V> class U>
-    void copy_edges(const T *in, T *out, intptr_t length, intptr_t filter_size)
+    void copy_edges(const T* in, T* out, intptr_t length, intptr_t filter_size)
     {
         intptr_t in_size = static_cast<intptr_t>(length);
         intptr_t edge_size = static_cast<intptr_t>(filter_size);
@@ -246,7 +246,7 @@ private:
         return use_fft ? n : 0;
     }
 
-    T filter_kernel(const T *kernel, double position)
+    T filter_kernel(const T* kernel, double position)
     {
         uintptr_t index = static_cast<uintptr_t>(position);
         
@@ -256,7 +256,7 @@ private:
         return static_cast<T>(lo + (position - index) * (hi - lo));
     }
     
-    T make_filter(T *filter, const T *kernel, uintptr_t kernel_length, uintptr_t width, ends_type ends)
+    T make_filter(T* filter, const T* kernel, uintptr_t kernel_length, uintptr_t width, ends_type ends)
     {
         if (kernel_length == 1)
         {
@@ -289,7 +289,7 @@ private:
     }
     
     template <int N>
-    void apply_filter(T *out, const T *data, const T *filter, uintptr_t width, T gain)
+    void apply_filter(T* out, const T* data, const T* filter, uintptr_t width, T gain)
     {
         using vector_type = simd_type<double, N>;
         
@@ -303,7 +303,7 @@ private:
     }
     
     template <int N>
-    void apply_filter_symmetric(T *out, const T *data, const T *filter, uintptr_t half_width, T gain)
+    void apply_filter_symmetric(T* out, const T* data, const T* filter, uintptr_t half_width, T gain)
     {
         using vector_type = simd_type<double, N>;
         
@@ -316,7 +316,7 @@ private:
         filter_val.store(out);
     }
     
-    void apply_filter_fft(T *out, const T *data, const T *filter, split_type<T>& io, split_type<T>& temp, uintptr_t width, uintptr_t n, T gain)
+    void apply_filter_fft(T* out, const T* data, const T* filter, split_type<T>& io, split_type<T>& temp, uintptr_t width, uintptr_t n, T gain)
     {
         uintptr_t data_width = n + width - 1;
         op_sizes sizes(data_width, width, processor::edge_mode::LINEAR);

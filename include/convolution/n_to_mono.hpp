@@ -63,7 +63,7 @@ public:
     }
     
     template <class U>
-    convolve_error set(uint32_t in_chan, const U *input, uintptr_t length, bool resize)
+    convolve_error set(uint32_t in_chan, const U* input, uintptr_t length, bool resize)
     {
         conformed_input<T, U> typed_input(input, length);
 
@@ -72,7 +72,7 @@ public:
 
     // Process
     
-    void process(const IO * const* ins, IO *out, uintptr_t num_samples, uint32_t num_ins, bool accumulate = false)
+    void process(const IO * const* ins, IO* out, uintptr_t num_samples, uint32_t num_ins, bool accumulate = false)
     {
         num_ins = std::min(num_ins, get_num_ins());
 

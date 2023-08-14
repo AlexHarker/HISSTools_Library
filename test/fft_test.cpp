@@ -90,8 +90,8 @@ uint64_t crash_test(int min_log2, int max_log2)
     setup_type<T> setup;
     split_type<T> split;
     
-    split.realp = (T *) malloc(sizeof(T) * 1 << max_log2);
-    split.imagp = (T *) malloc(sizeof(T) * 1 << max_log2);
+    split.realp = (T*) malloc(sizeof(T) * 1 << max_log2);
+    split.imagp = (T*) malloc(sizeof(T) * 1 << max_log2);
     
     hisstools_create_setup(&setup, max_log2);
 
@@ -139,13 +139,13 @@ uint64_t crash_test(int min_log2, int max_log2)
 }
 
 template <class T>
-uint64_t single_test(int size, void (*Fn)(setup_type<T>, split_type<T> *, uintptr_t))
+uint64_t single_test(int size, void (*Fn)(setup_type<T>, split_type<T>* , uintptr_t))
 {
     setup_type<T> setup;
     split_type<T> split;
     
-    split.realp = (T *) malloc(sizeof(T) * 1 << size);
-    split.imagp = (T *) malloc(sizeof(T) * 1 << size);
+    split.realp = (T*) malloc(sizeof(T) * 1 << size);
+    split.imagp = (T*) malloc(sizeof(T) * 1 << size);
 
     hisstools_create_setup(&setup, size);
     
@@ -202,9 +202,9 @@ bool zip_correctness_test(int min_log2, int max_log2)
 {
     split_type<T> split;
     
-    U *ptr = (U *) malloc(sizeof(U) * 1 << max_log2);
-    split.realp = (T *) malloc(sizeof(T) * 1 << (max_log2 - 1));
-    split.imagp = (T *) malloc(sizeof(T) * 1 << (max_log2 - 1));
+    U* ptr = (U*) malloc(sizeof(U) * 1 << max_log2);
+    split.realp = (T*) malloc(sizeof(T) * 1 << (max_log2 - 1));
+    split.imagp = (T*) malloc(sizeof(T) * 1 << (max_log2 - 1));
     
     for (int i = min_log2; i < max_log2; i++)
     {
@@ -253,9 +253,9 @@ uint64_t zip_test(int min_log2, int max_log2)
 {
     split_type<T> split;
     
-    U *ptr = (U *) malloc(sizeof(U) * 1 << max_log2);
-    split.realp = (T *) malloc(sizeof(T) * 1 << (max_log2 - 1));
-    split.imagp = (T *) malloc(sizeof(T) * 1 << (max_log2 - 1));
+    U* ptr = (U*) malloc(sizeof(U) * 1 << max_log2);
+    split.realp = (T*) malloc(sizeof(T) * 1 << (max_log2 - 1));
+    split.imagp = (T*) malloc(sizeof(T) * 1 << (max_log2 - 1));
     
     Timer timer;
     timer.start();

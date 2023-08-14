@@ -101,8 +101,8 @@ uint64_t timing_test(std::string test, uintptr_t fft_log2, double phase, bool ze
     
     uintptr_t fft_size = 1 << fft_log2;
     
-    split.realp = (T *) malloc(sizeof(T) * fft_size);
-    split.imagp = (T *) malloc(sizeof(T) * fft_size);
+    split.realp = (T*) malloc(sizeof(T) * fft_size);
+    split.imagp = (T*) malloc(sizeof(T) * fft_size);
     
     hisstools_create_setup(&setup, fft_log2);
     

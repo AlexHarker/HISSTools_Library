@@ -269,8 +269,8 @@ private:
             return ((length + 1) & 0x1) ? length + 2 : length + 1;
         };
         
-        const char *compression_string = aifc_compression::to_string(m_format);
-        const char *compression_tag = aifc_compression::to_tag(m_format);
+        const char* compression_string = aifc_compression::to_string(m_format);
+        const char* compression_tag = aifc_compression::to_tag(m_format);
         
         const uint32_t compression_string_size = string_byte_size(compression_string);
         
@@ -405,7 +405,7 @@ private:
     static T convert(V value, T, U)
     {
         U typed_value = static_cast<U>(value);
-        return *(reinterpret_cast<T*>(&typed_value));
+        return* (reinterpret_cast<T*>(&typed_value));
     }
     
     template <int N, class T>

@@ -27,14 +27,14 @@ template<>
 struct split_type<double> : DSPDoubleSplitComplex, impl::type_base<double>
 {
     split_type() {}
-    split_type(double *real, double *imag) : DSPDoubleSplitComplex{ real, imag } {}
+    split_type(double* real, double* imag) : DSPDoubleSplitComplex{ real, imag } {}
 };
 
 template<>
 struct split_type<float> : DSPSplitComplex, impl::type_base<float>
 {
     split_type() {}
-    split_type(float *real, float *imag) : DSPSplitComplex{ real, imag } {}
+    split_type(float* real, float* imag) : DSPSplitComplex{ real, imag } {}
 };
 
 // setup_types
@@ -67,15 +67,15 @@ struct fft_impl
     struct fft_setup_type
     {
         template <typename U>
-        const U *get_realp(uintptr_t pass)
+        const U* get_realp(uintptr_t pass)
         {
-            return reinterpret_cast<U *>(m_tables[pass - (trig_table_offset - 1)].realp);
+            return reinterpret_cast<U*>(m_tables[pass - (trig_table_offset - 1)].realp);
         }
         
         template <typename U>
-        const U *get_imagp(uintptr_t pass)
+        const U* get_imagp(uintptr_t pass)
         {
-            return reinterpret_cast<U *>(m_tables[pass - (trig_table_offset - 1)].imagp);
+            return reinterpret_cast<U*>(m_tables[pass - (trig_table_offset - 1)].imagp);
         }
 
         uintptr_t m_max_fft_log2;
@@ -87,11 +87,11 @@ struct fft_impl
  #if defined(__APPLE__) || defined (__linux__) || defined(__EMSCRIPTEN__)
  
  template <class T>
- T *allocate_aligned(size_t size)
+ T* allocate_aligned(size_t size)
  {
- void *mem = nullptr;
+ void* mem = nullptr;
  if (!posix_memalign(&mem, alignment_size, size * sizeof(T)))
- return static_cast<T *>(mem);
+ return static_cast<T*>(mem);
  else
  return nullptr;
  }
@@ -102,7 +102,7 @@ struct fft_impl
     static constexpr int alignment_size = simd_limits<float>::max_size * sizeof(float);
     
     template <class T>
-    static bool is_aligned(const T *ptr) { return !(reinterpret_cast<uintptr_t>(ptr) % alignment_size); }
+    static bool is_aligned(const T* ptr) { return !(reinterpret_cast<uintptr_t>(ptr) % alignment_size); }
     
     // Data Type Definitions
         
@@ -114,7 +114,7 @@ struct fft_impl
     // Creation
 
     template <class T>
-    static void create_setup(fft_setup_type<T> *& setup, uintptr_t max_fft_log2)
+    static void create_setup(fft_setup_type<T>*& setup, uintptr_t max_fft_log2)
     {
         setup = new(fft_setup_type<T>);
         
@@ -133,8 +133,8 @@ struct fft_impl
             
             // Fill the Table
             
-            T *table_real = setup->m_tables[i - trig_table_offset].realp;
-            T *table_imag = setup->m_tables[i - trig_table_offset].imagp;
+            T* table_real = setup->m_tables[i - trig_table_offset].realp;
+            T* table_imag = setup->m_tables[i - trig_table_offset].imagp;
             
             for (uintptr_t j = 0; j < length; j++)
             {
@@ -150,7 +150,7 @@ struct fft_impl
     // Destruction
 
     template <class T>
-    static void destroy_setup(fft_setup_type<T> *setup)
+    static void destroy_setup(fft_setup_type<T>* setup)
     {
         if (setup)
         {
@@ -172,10 +172,10 @@ struct fft_impl
                              const vector_4x<T, vec_size> &,
                              const vector_4x<T, vec_size> &,
                              const vector_4x<T, vec_size> &,
-                             vector_4x<T, vec_size> *,
-                             vector_4x<T, vec_size> *,
-                             vector_4x<T, vec_size> *,
-                             vector_4x<T, vec_size> *)
+                             vector_4x<T, vec_size>*,
+                             vector_4x<T, vec_size>*,
+                             vector_4x<T, vec_size>*,
+                             vector_4x<T, vec_size>*)
         {
             static_assert(vec_size != vec_size, "Shuffle not implemented for this type");
         }
@@ -187,10 +187,10 @@ struct fft_impl
                              const vector_4x<T, 1> &B,
                              const vector_4x<T, 1> &C,
                              const vector_4x<T, 1> &D,
-                             vector_4x<T, 1> *ptr1,
-                             vector_4x<T, 1> *ptr2,
-                             vector_4x<T, 1> *ptr3,
-                             vector_4x<T, 1> *ptr4)
+                             vector_4x<T, 1>* ptr1,
+                             vector_4x<T, 1>* ptr2,
+                             vector_4x<T, 1>* ptr3,
+                             vector_4x<T, 1>* ptr4)
         {
             ptr1->m_data[0] = A.m_data[0];
             ptr1->m_data[1] = C.m_data[0];
@@ -218,10 +218,10 @@ struct fft_impl
                              const vector_4x<float, 4> &B,
                              const vector_4x<float, 4> &C,
                              const vector_4x<float, 4> &D,
-                             vector_4x<float, 4> *ptr1,
-                             vector_4x<float, 4> *ptr2,
-                             vector_4x<float, 4> *ptr3,
-                             vector_4x<float, 4> *ptr4)
+                             vector_4x<float, 4>* ptr1,
+                             vector_4x<float, 4>* ptr2,
+                             vector_4x<float, 4>* ptr3,
+                             vector_4x<float, 4>* ptr4)
         {
             const __m128 v1 = _mm_unpacklo_ps(A.m_data[0].m_val, B.m_data[0].m_val);
             const __m128 v2 = _mm_unpackhi_ps(A.m_data[0].m_val, B.m_data[0].m_val);
@@ -240,10 +240,10 @@ struct fft_impl
                              const vector_4x<double, 2> &B,
                              const vector_4x<double, 2> &C,
                              const vector_4x<double, 2> &D,
-                             vector_4x<double, 2> *ptr1,
-                             vector_4x<double, 2> *ptr2,
-                             vector_4x<double, 2> *ptr3,
-                             vector_4x<double, 2> *ptr4)
+                             vector_4x<double, 2>* ptr1,
+                             vector_4x<double, 2>* ptr2,
+                             vector_4x<double, 2>* ptr3,
+                             vector_4x<double, 2>* ptr4)
         {
             ptr1->m_data[0] = _mm_unpacklo_pd(A.m_data[0].m_val, C.m_data[0].m_val);
             ptr1->m_data[1] = _mm_unpacklo_pd(B.m_data[0].m_val, D.m_data[0].m_val);
@@ -265,10 +265,10 @@ struct fft_impl
                              const vector_4x<double, 4> &B,
                              const vector_4x<double, 4> &C,
                              const vector_4x<double, 4> &D,
-                             vector_4x<double, 4> *ptr1,
-                             vector_4x<double, 4> *ptr2,
-                             vector_4x<double, 4> *ptr3,
-                             vector_4x<double, 4> *ptr4)
+                             vector_4x<double, 4>* ptr1,
+                             vector_4x<double, 4>* ptr2,
+                             vector_4x<double, 4>* ptr3,
+                             vector_4x<double, 4>* ptr4)
         {
             const __m256d v1 = _mm256_unpacklo_pd(A.m_data[0].m_val, B.m_data[0].m_val);
             const __m256d v2 = _mm256_unpackhi_pd(A.m_data[0].m_val, B.m_data[0].m_val);
@@ -303,10 +303,10 @@ struct fft_impl
                              const vector_4x<double, 2> &B,
                              const vector_4x<double, 2> &C,
                              const vector_4x<double, 2> &D,
-                             vector_4x<double, 2> *ptr1,
-                             vector_4x<double, 2> *ptr2,
-                             vector_4x<double, 2> *ptr3,
-                             vector_4x<double, 2> *ptr4)
+                             vector_4x<double, 2>* ptr1,
+                             vector_4x<double, 2>* ptr2,
+                             vector_4x<double, 2>* ptr3,
+                             vector_4x<double, 2>* ptr4)
         {
             ptr1->m_data[0] = vuzp1q_f64(A.m_data[0].m_val, C.m_data[0].m_val);
             ptr1->m_data[1] = vuzp1q_f64(B.m_data[0].m_val, D.m_data[0].m_val);
@@ -326,10 +326,10 @@ struct fft_impl
                              const vector_4x<float, 4> &B,
                              const vector_4x<float, 4> &C,
                              const vector_4x<float, 4> &D,
-                             vector_4x<float, 4> *ptr1,
-                             vector_4x<float, 4> *ptr2,
-                             vector_4x<float, 4> *ptr3,
-                             vector_4x<float, 4> *ptr4)
+                             vector_4x<float, 4>* ptr1,
+                             vector_4x<float, 4>* ptr2,
+                             vector_4x<float, 4>* ptr3,
+                             vector_4x<float, 4>* ptr4)
         {
             const float32x4_t v1 = vcombine_f32( vget_low_f32(A.m_data[0].m_val),  vget_low_f32(C.m_data[0].m_val));
             const float32x4_t v2 = vcombine_f32(vget_high_f32(A.m_data[0].m_val), vget_high_f32(C.m_data[0].m_val));
@@ -353,18 +353,18 @@ struct fft_impl
     // Pass One and Two with Re-ordering
     
     template <class T, int vec_size>
-    static void pass_1_2_reorder(split_type<T> *input, uintptr_t length)
+    static void pass_1_2_reorder(split_type<T>* input, uintptr_t length)
     {
         using vector_type = vector_4x<T, vec_size> ;
         
-        vector_type *r1_ptr = reinterpret_cast<vector_type *>(input->realp);
-        vector_type *r2_ptr = r1_ptr + (length >> 4);
-        vector_type *r3_ptr = r2_ptr + (length >> 4);
-        vector_type *r4_ptr = r3_ptr + (length >> 4);
-        vector_type *i1_ptr = reinterpret_cast<vector_type *>(input->imagp);
-        vector_type *i2_ptr = i1_ptr + (length >> 4);
-        vector_type *i3_ptr = i2_ptr + (length >> 4);
-        vector_type *i4_ptr = i3_ptr + (length >> 4);
+        vector_type* r1_ptr = reinterpret_cast<vector_type*>(input->realp);
+        vector_type* r2_ptr = r1_ptr + (length >> 4);
+        vector_type* r3_ptr = r2_ptr + (length >> 4);
+        vector_type* r4_ptr = r3_ptr + (length >> 4);
+        vector_type* i1_ptr = reinterpret_cast<vector_type*>(input->imagp);
+        vector_type* i2_ptr = i1_ptr + (length >> 4);
+        vector_type* i3_ptr = i2_ptr + (length >> 4);
+        vector_type* i4_ptr = i3_ptr + (length >> 4);
         
         for (uintptr_t i = 0; i < length >> 4; i++)
         {
@@ -426,7 +426,7 @@ struct fft_impl
     // Pass Three With Re-ordering
     
     template <class T, int vec_size>
-    static void pass_3_reorder(split_type<T> *input, uintptr_t length)
+    static void pass_3_reorder(split_type<T>* input, uintptr_t length)
     {
         using vector_type = vector_4x<T, vec_size>;
         
@@ -438,10 +438,10 @@ struct fft_impl
         
         pass_3_twiddle(tr, ti);
         
-        vector_type *r1_ptr = reinterpret_cast<vector_type *>(input->realp);
-        vector_type *i1_ptr = reinterpret_cast<vector_type *>(input->imagp);
-        vector_type *r2_ptr = r1_ptr + offset;
-        vector_type *i2_ptr = i1_ptr + offset;
+        vector_type* r1_ptr = reinterpret_cast<vector_type*>(input->realp);
+        vector_type* i1_ptr = reinterpret_cast<vector_type*>(input->imagp);
+        vector_type* r2_ptr = r1_ptr + offset;
+        vector_type* i2_ptr = i1_ptr + offset;
         
         for (uintptr_t i = 0, j = 0; i < length >> 1; i += 8)
         {
@@ -489,7 +489,7 @@ struct fft_impl
     // Pass Three Without Re-ordering
     
     template <class T, int vec_size>
-    static void pass_3(split_type<T> *input, uintptr_t length)
+    static void pass_3(split_type<T>* input, uintptr_t length)
     {
         using vector_type = vector_4x<T, vec_size>;
 
@@ -498,8 +498,8 @@ struct fft_impl
         
         pass_3_twiddle(tr, ti);
         
-        vector_type *r_ptr = reinterpret_cast<vector_type *>(input->realp);
-        vector_type *i_ptr = reinterpret_cast<vector_type *>(input->imagp);
+        vector_type* r_ptr = reinterpret_cast<vector_type*>(input->realp);
+        vector_type* i_ptr = reinterpret_cast<vector_type*>(input->imagp);
         
         for (uintptr_t i = 0; i < length >> 3; i++)
         {
@@ -528,7 +528,7 @@ struct fft_impl
     // A Pass Requiring Tables With Re-ordering
     
     template <class T, int vec_size>
-    static void pass_trig_table_reorder(split_type<T> *input, fft_setup_type<T> *setup, uintptr_t length, uintptr_t pass)
+    static void pass_trig_table_reorder(split_type<T>* input, fft_setup_type<T>* setup, uintptr_t length, uintptr_t pass)
     {
         using vector_type = simd_type<T, vec_size>;
 
@@ -538,15 +538,15 @@ struct fft_impl
         uintptr_t offset = (length >> pass) / (vec_size << 1);
         uintptr_t outerLoop = ((length >> 1) / size) / (static_cast<uintptr_t>(1u) << pass);
         
-        vector_type *r1_ptr = reinterpret_cast<vector_type *>(input->realp);
-        vector_type *i1_ptr = reinterpret_cast<vector_type *>(input->imagp);
-        vector_type *r2_ptr = r1_ptr + offset;
-        vector_type *i2_ptr = i1_ptr + offset;
+        vector_type* r1_ptr = reinterpret_cast<vector_type*>(input->realp);
+        vector_type* i1_ptr = reinterpret_cast<vector_type*>(input->imagp);
+        vector_type* r2_ptr = r1_ptr + offset;
+        vector_type* i2_ptr = i1_ptr + offset;
         
         for (uintptr_t i = 0, j = 0; i < (length >> 1); loop += size)
         {
-            const vector_type *tr_ptr = setup->template get_realp<vector_type>(pass);
-            const vector_type *ti_ptr = setup->template get_imagp<vector_type>(pass);
+            const vector_type* tr_ptr = setup->template get_realp<vector_type>(pass);
+            const vector_type* ti_ptr = setup->template get_imagp<vector_type>(pass);
             
             for (; i < loop; i += (vec_size << 1))
             {
@@ -603,7 +603,7 @@ struct fft_impl
     // A Pass Requiring Tables Without Re-ordering
     
     template <class T, int vec_size>
-    static void pass_trig_table(split_type<T> *input, fft_setup_type<T> *setup, uintptr_t length, uintptr_t pass)
+    static void pass_trig_table(split_type<T>* input, fft_setup_type<T>* setup, uintptr_t length, uintptr_t pass)
     {
         using vector_type = simd_type<T, vec_size>;
 
@@ -611,15 +611,15 @@ struct fft_impl
         uintptr_t incr = size / (vec_size << 1);
         uintptr_t loop = size;
         
-        vector_type *r1_ptr = reinterpret_cast<vector_type *>(input->realp);
-        vector_type *i1_ptr = reinterpret_cast<vector_type *>(input->imagp);
-        vector_type *r2_ptr = r1_ptr + (size >> 1) / vec_size;
-        vector_type *i2_ptr = i1_ptr + (size >> 1) / vec_size;
+        vector_type* r1_ptr = reinterpret_cast<vector_type*>(input->realp);
+        vector_type* i1_ptr = reinterpret_cast<vector_type*>(input->imagp);
+        vector_type* r2_ptr = r1_ptr + (size >> 1) / vec_size;
+        vector_type* i2_ptr = i1_ptr + (size >> 1) / vec_size;
         
         for (uintptr_t i = 0; i < length; loop += size)
         {
-            const vector_type *tr_ptr = setup->template get_realp<vector_type>(pass);
-            const vector_type *ti_ptr = setup->template get_imagp<vector_type>(pass);
+            const vector_type* tr_ptr = setup->template get_realp<vector_type>(pass);
+            const vector_type* ti_ptr = setup->template get_imagp<vector_type>(pass);
             
             for (; i < loop; i += (vec_size << 1))
             {
@@ -656,17 +656,17 @@ struct fft_impl
     // A Real Pass Requiring Trig Tables (Never Reorders)
     
     template <bool ifft, class T>
-    static void pass_real_trig_table(split_type<T> *input, fft_setup_type<T> *setup, uintptr_t fft_log2)
+    static void pass_real_trig_table(split_type<T>* input, fft_setup_type<T>* setup, uintptr_t fft_log2)
     {
         uintptr_t length = static_cast<uintptr_t>(1u) << (fft_log2 - 1u);
         uintptr_t lengthM1 = length - 1;
         
-        T *r1_ptr = input->realp;
-        T *i1_ptr = input->imagp;
-        T *r2_ptr = r1_ptr + lengthM1;
-        T *i2_ptr = i1_ptr + lengthM1;
-        const T *tr_ptr = setup->template get_realp<T>(fft_log2 - 1);
-        const T *ti_ptr = setup->template get_imagp<T>(fft_log2 - 1);
+        T* r1_ptr = input->realp;
+        T* i1_ptr = input->imagp;
+        T* r2_ptr = r1_ptr + lengthM1;
+        T* i2_ptr = i1_ptr + lengthM1;
+        const T* tr_ptr = setup->template get_realp<T>(fft_log2 - 1);
+        const T* ti_ptr = setup->template get_imagp<T>(fft_log2 - 1);
         
         // Do DC and Nyquist (note that the complex values can be considered periodic)
         
@@ -716,10 +716,10 @@ struct fft_impl
     // Small Complex FFTs (2, 4 or 8 points)
     
     template <class T>
-    static void small_fft(split_type<T> *input, uintptr_t fft_log2)
+    static void small_fft(split_type<T>* input, uintptr_t fft_log2)
     {
-        T *r1_ptr = input->realp;
-        T *i1_ptr = input->imagp;
+        T* r1_ptr = input->realp;
+        T* i1_ptr = input->imagp;
         
         if (fft_log2 == 1)
         {
@@ -817,10 +817,10 @@ struct fft_impl
     // Small Real FFTs (2 or 4 points)
     
     template <bool ifft, class T>
-    static void small_real_fft(split_type<T> *input, uintptr_t fft_log2)
+    static void small_real_fft(split_type<T>* input, uintptr_t fft_log2)
     {
-        T *r1_ptr = input->realp;
-        T *i1_ptr = input->imagp;
+        T* r1_ptr = input->realp;
+        T* i1_ptr = input->imagp;
         
         if (fft_log2 == 1)
         {
@@ -878,24 +878,24 @@ struct fft_impl
     // Unzip
     
     template <class T, int vec_size>
-    static void unzip_impl(const T *input, T *real, T *imag, uintptr_t half_length, uintptr_t offset)
+    static void unzip_impl(const T* input, T* real, T* imag, uintptr_t half_length, uintptr_t offset)
     {
         using vector_type = simd_type<T, vec_size>;
 
-        const vector_type *in_ptr = reinterpret_cast<const vector_type*>(input + (2 * offset));
+        const vector_type* in_ptr = reinterpret_cast<const vector_type*>(input + (2 * offset));
         
-        vector_type *realp = reinterpret_cast<vector_type*>(real + offset);
-        vector_type *imagp = reinterpret_cast<vector_type*>(imag + offset);
+        vector_type* realp = reinterpret_cast<vector_type*>(real + offset);
+        vector_type* imagp = reinterpret_cast<vector_type*>(imag + offset);
         
         for (uintptr_t i = 0; i < (half_length / vec_size); i++, in_ptr += 2)
             unzip(*realp++, *imagp++, *in_ptr, *(in_ptr + 1));
     }
     
     template <class T, class U>
-    static void unzip_complex(const U *input, split_type<T> *output, uintptr_t half_length)
+    static void unzip_complex(const U* input, split_type<T>* output, uintptr_t half_length)
     {
-        T *realp = output->realp;
-        T *imagp = output->imagp;
+        T* realp = output->realp;
+        T* imagp = output->imagp;
         
         for (uintptr_t i = 0; i < half_length; i++)
         {
@@ -905,7 +905,7 @@ struct fft_impl
     }
     
     template <class T>
-    static void unzip_complex(const T *input, split_type<T> *output, uintptr_t half_length)
+    static void unzip_complex(const T* input, split_type<T>* output, uintptr_t half_length)
     {
         constexpr int v_size = simd_limits<T>::max_size;
         
@@ -922,21 +922,21 @@ struct fft_impl
     // Zip
     
     template <class T, int vec_size>
-    static void zip_impl(const T *real, const T *imag, T *output, uintptr_t half_length, uintptr_t offset)
+    static void zip_impl(const T* real, const T* imag, T* output, uintptr_t half_length, uintptr_t offset)
     {
         using vector_type = simd_type<T, vec_size>;
 
-        const vector_type *realp = reinterpret_cast<const vector_type*>(real + offset);
-        const vector_type *imagp = reinterpret_cast<const vector_type*>(imag + offset);
+        const vector_type* realp = reinterpret_cast<const vector_type*>(real + offset);
+        const vector_type* imagp = reinterpret_cast<const vector_type*>(imag + offset);
         
-        vector_type *out_ptr = reinterpret_cast<vector_type*>(output + (2 * offset));
+        vector_type* out_ptr = reinterpret_cast<vector_type*>(output + (2 * offset));
         
         for (uintptr_t i = 0; i < (half_length / vec_size); i++, out_ptr += 2)
             zip(*out_ptr, *(out_ptr + 1), *realp++, *imagp++);
     }
     
     template <class T>
-    static void zip_complex(const split_type<T> *input, T *output, uintptr_t half_length)
+    static void zip_complex(const split_type<T>* input, T* output, uintptr_t half_length)
     {
         constexpr int v_size = simd_limits<T>::max_size;
         
@@ -953,11 +953,11 @@ struct fft_impl
     // Unzip With Zero Padding
     
     template <class T, class U>
-    static void unzip_zero(const U *input, split_type<T> *output, uintptr_t in_length, uintptr_t log2n)
+    static void unzip_zero(const U* input, split_type<T>* output, uintptr_t in_length, uintptr_t log2n)
     {
         T odd_sample = static_cast<T>(input[in_length - 1]);
-        T *realp = output->realp;
-        T *imagp = output->imagp;
+        T* realp = output->realp;
+        T* imagp = output->imagp;
         
         // Check input length is not longer than the FFT size and unzip an even number of samples
         
@@ -992,7 +992,7 @@ struct fft_impl
     // FFT Passes Template
     
     template <class T, int max_vec_size>
-    static void fft_passes(split_type<T> *input, fft_setup_type<T> *setup, uintptr_t fft_log2)
+    static void fft_passes(split_type<T>* input, fft_setup_type<T>* setup, uintptr_t fft_log2)
     {
         constexpr int A = min(max_vec_size,  4);
         constexpr int B = min(max_vec_size,  8);
@@ -1024,7 +1024,7 @@ struct fft_impl
     // A Complex FFT
     
     template <class T>
-    static void hisstools_fft(split_type<T> *input, fft_setup_type<T> *setup, uintptr_t fft_log2)
+    static void hisstools_fft(split_type<T>* input, fft_setup_type<T>* setup, uintptr_t fft_log2)
     {
         if (fft_log2 >= 4)
         {
@@ -1040,7 +1040,7 @@ struct fft_impl
     // A Complex iFFT
     
     template <class T>
-    static void hisstools_ifft(split_type<T> *input, fft_setup_type<T> *setup, uintptr_t fft_log2)
+    static void hisstools_ifft(split_type<T>* input, fft_setup_type<T>* setup, uintptr_t fft_log2)
     {
         split_type<T> swap(input->imagp, input->realp);
         hisstools_fft(&swap, setup, fft_log2);
@@ -1049,7 +1049,7 @@ struct fft_impl
     // A Real FFT
     
     template <class T>
-    static void hisstools_rfft(split_type<T> *input, fft_setup_type<T> *setup, uintptr_t fft_log2)
+    static void hisstools_rfft(split_type<T>* input, fft_setup_type<T>* setup, uintptr_t fft_log2)
     {
         if (fft_log2 >= 3)
         {
@@ -1063,7 +1063,7 @@ struct fft_impl
     // A Real iFFT
     
     template <class T>
-    static void hisstools_rifft(split_type<T> *input, fft_setup_type<T> *setup, uintptr_t fft_log2)
+    static void hisstools_rifft(split_type<T>* input, fft_setup_type<T>* setup, uintptr_t fft_log2)
     {
         if (fft_log2 >= 3)
         {
@@ -1104,66 +1104,66 @@ struct fft_impl
     
     // FFT and iFFT Routines
     
-    static void hisstools_fft(split_type<double> *input, setup_type<double> setup, uintptr_t log2n)
+    static void hisstools_fft(split_type<double>* input, setup_type<double> setup, uintptr_t log2n)
     {
         vDSP_fft_zipD(setup, input, 1, log2n, FFT_FORWARD);
     }
     
-    static void hisstools_fft(split_type<float> *input, setup_type<float> setup, uintptr_t log2n)
+    static void hisstools_fft(split_type<float>* input, setup_type<float> setup, uintptr_t log2n)
     {
         vDSP_fft_zip(setup, input, 1, log2n, FFT_FORWARD);
     }
     
-    static void hisstools_rfft(split_type<double> *input, setup_type<double> setup, uintptr_t log2n)
+    static void hisstools_rfft(split_type<double>* input, setup_type<double> setup, uintptr_t log2n)
     {
         vDSP_fft_zripD(setup, input, 1, log2n, FFT_FORWARD);
     }
     
-    static void hisstools_rfft(split_type<float> *input, setup_type<float> setup, uintptr_t log2n)
+    static void hisstools_rfft(split_type<float>* input, setup_type<float> setup, uintptr_t log2n)
     {
         vDSP_fft_zrip(setup, input, 1, log2n, FFT_FORWARD);
     }
     
-    static void hisstools_ifft(split_type<double> *input, setup_type<double> setup, uintptr_t log2n)
+    static void hisstools_ifft(split_type<double>* input, setup_type<double> setup, uintptr_t log2n)
     {
         vDSP_fft_zipD(setup, input, 1, log2n, FFT_INVERSE);
     }
     
-    static void hisstools_ifft(split_type<float> *input, setup_type<float> setup, uintptr_t log2n)
+    static void hisstools_ifft(split_type<float>* input, setup_type<float> setup, uintptr_t log2n)
     {
         vDSP_fft_zip(setup, input, 1, log2n, FFT_INVERSE);
     }
     
-    static void hisstools_rifft(split_type<double> *input, setup_type<double> setup, uintptr_t log2n)
+    static void hisstools_rifft(split_type<double>* input, setup_type<double> setup, uintptr_t log2n)
     {
         vDSP_fft_zripD(setup, input, 1, log2n, FFT_INVERSE);
     }
     
-    static void hisstools_rifft(split_type<float> *input, setup_type<float> setup, uintptr_t log2n)
+    static void hisstools_rifft(split_type<float>* input, setup_type<float> setup, uintptr_t log2n)
     {
         vDSP_fft_zrip(setup, input, 1, log2n, FFT_INVERSE);
     }
     
     // Zip and Unzip
     
-    static void zip_complex(const split_type<double> *input, double *output, uintptr_t half_length)
+    static void zip_complex(const split_type<double>* input, double* output, uintptr_t half_length)
     {
-        vDSP_ztocD(input, 1, reinterpret_cast<DOUBLE_COMPLEX *>(output), 2, half_length);
+        vDSP_ztocD(input, 1, reinterpret_cast<DOUBLE_COMPLEX*>(output), 2, half_length);
     }
     
-    static void zip_complex(const split_type<float> *input, float *output, uintptr_t half_length)
+    static void zip_complex(const split_type<float>* input, float* output, uintptr_t half_length)
     {
-        vDSP_ztoc(input, 1, reinterpret_cast<COMPLEX *>(output), 2, half_length);
+        vDSP_ztoc(input, 1, reinterpret_cast<COMPLEX*>(output), 2, half_length);
     }
     
-    static void unzip_complex(const double *input, split_type<double> *output, uintptr_t half_length)
+    static void unzip_complex(const double* input, split_type<double>* output, uintptr_t half_length)
     {
-        vDSP_ctozD(reinterpret_cast<const DOUBLE_COMPLEX *>(input), 2, output, 1, half_length);
+        vDSP_ctozD(reinterpret_cast<const DOUBLE_COMPLEX*>(input), 2, output, 1, half_length);
     }
     
-    static void unzip_complex(const float *input, split_type<float> *output, uintptr_t half_length)
+    static void unzip_complex(const float* input, split_type<float>* output, uintptr_t half_length)
     {
-        vDSP_ctoz(reinterpret_cast<const COMPLEX *>(input), 2, output, 1, half_length);
+        vDSP_ctoz(reinterpret_cast<const COMPLEX*>(input), 2, output, 1, half_length);
     }
     
 #endif
@@ -1175,11 +1175,11 @@ struct fft_impl
 // Setup definition when using the HISSTools codepath
 
 template <class T>
-struct setup_type : impl::setup_base<T, fft_impl::fft_setup_type<T> *>
+struct setup_type : impl::setup_base<T, fft_impl::fft_setup_type<T>*>
 {
     setup_type() {}
-    setup_type(fft_impl::fft_setup_type<T> *setup)
-    : impl::setup_base<T, fft_impl::fft_setup_type<T> *>(setup)
+    setup_type(fft_impl::fft_setup_type<T>* setup)
+    : impl::setup_base<T, fft_impl::fft_setup_type<T>*>(setup)
     {}
 };
 

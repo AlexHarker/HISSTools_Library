@@ -140,7 +140,7 @@ public:
     }
     
     template <class U>
-    convolve_error set(const U *input, uintptr_t length)
+    convolve_error set(const U* input, uintptr_t length)
     {
         conformed_input<T, U> typed_input(input, length);
 
@@ -169,7 +169,7 @@ public:
         uintptr_t num_partitions = 0;
         uintptr_t buffer_position = m_offset;
 
-        T *buffer_temp_1 = m_partition_temp.realp;
+        T* buffer_temp_1 = m_partition_temp.realp;
         split_type buffer_temp_2 = m_impulse_buffer;
 
         for (; length > 0; buffer_position += fft_size_halved, num_partitions++)
@@ -201,7 +201,7 @@ public:
         m_reset_flag = true;
     }
     
-    void process(const IO *in, IO *out, uintptr_t num_samples, bool accumulate = false)
+    void process(const IO* in, IO* out, uintptr_t num_samples, bool accumulate = false)
     {
         split_type<T> ir_temp;
         split_type<T> in_temp;
@@ -321,7 +321,7 @@ public:
                 // Do the fft into the input buffer and add first partition (needed now)
                 // Then do ifft, scale and store (overlap-save)
                 
-                T *fft_input = m_fft_buffers[(rw_counter == fft_size) ? 1 : 0];
+                T* fft_input = m_fft_buffers[(rw_counter == fft_size) ? 1 : 0];
                 
                 offset_split_pointer(in_temp, m_input_buffer, (m_input_position * fft_size_halved));
                 hisstools_rfft(m_fft_setup, fft_input, &in_temp, fft_size, m_fft_size_log2);
@@ -366,7 +366,7 @@ private:
         using cvt = const vector_type;
         using recurse = loop_unroll<N - 1>;
         
-        inline void multiply(vt *& out_r, vt *& out_i, cvt *in_r1, cvt *in_i1, cvt *in_r2, cvt *in_i2, uintptr_t i)
+        inline void multiply(vt*& out_r, vt*& out_i, cvt* in_r1, cvt* in_i1, cvt* in_r2, cvt* in_i2, uintptr_t i)
         {
             *out_r++ += (in_r1[i] * in_r2[i]) - (in_i1[i] * in_i2[i]);
             *out_i++ += (in_r1[i] * in_i2[i]) + (in_i1[i] * in_r2[i]);
@@ -388,12 +388,12 @@ private:
     {
         uintptr_t num_vecs = num_bins / vector_type::size;
         
-        const vector_type *in_r1 = reinterpret_cast<const vector_type *>(in_1.realp);
-        const vector_type *in_i1 = reinterpret_cast<const vector_type *>(in_1.imagp);
-        const vector_type *in_r2 = reinterpret_cast<const vector_type *>(in_2.realp);
-        const vector_type *in_i2 = reinterpret_cast<const vector_type *>(in_2.imagp);
-        vector_type *out_r = reinterpret_cast<vector_type *>(out.realp);
-        vector_type *out_i = reinterpret_cast<vector_type *>(out.imagp);
+        const vector_type* in_r1 = reinterpret_cast<const vector_type*>(in_1.realp);
+        const vector_type* in_i1 = reinterpret_cast<const vector_type*>(in_1.imagp);
+        const vector_type* in_r2 = reinterpret_cast<const vector_type*>(in_2.realp);
+        const vector_type* in_i2 = reinterpret_cast<const vector_type*>(in_2.imagp);
+        vector_type* out_r = reinterpret_cast<vector_type*>(out.realp);
+        vector_type* out_i = reinterpret_cast<vector_type*>(out.imagp);
         
         T nyquist_1 = in_1.imagp[0];
         T nyquist_2 = in_2.imagp[0];
@@ -443,10 +443,10 @@ private:
     }
     
     template <class U>
-    static void scale_store(T *out, T *temp, uintptr_t fft_size, bool offset)
+    static void scale_store(T* out, T* temp, uintptr_t fft_size, bool offset)
     {
-        U *out_ptr = reinterpret_cast<U *>(out + (offset ? fft_size >> 1: 0));
-        U *temp_ptr = reinterpret_cast<U *>(temp);
+        U* out_ptr = reinterpret_cast<U*>(out + (offset ? fft_size >> 1: 0));
+        U* temp_ptr = reinterpret_cast<U*>(temp);
         U scale(T(1) / static_cast<T>(fft_size << 2));
         
         for (uintptr_t i = 0; i < (fft_size / (U::size * 2)); i++)
@@ -483,7 +483,7 @@ private:
     
     // Internal buffers
     
-    T *m_fft_buffers[4];
+    T* m_fft_buffers[4];
     
     split_type<T> m_impulse_buffer;
     split_type<T> m_input_buffer;

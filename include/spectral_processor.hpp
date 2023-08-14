@@ -128,7 +128,7 @@ public:
             hisstools_rfft(m_fft_setup, &io, fft_size_log2);
     }
     
-    void rfft(split_type<T>& output, const T *input, uintptr_t size, uintptr_t fft_size_log2)
+    void rfft(split_type<T>& output, const T* input, uintptr_t size, uintptr_t fft_size_log2)
     {
         if (!fft_size_log2)
         {
@@ -151,7 +151,7 @@ public:
             hisstools_rifft(m_fft_setup, &io, fft_size_log2);
     }
     
-    void rifft(T *output, split_type<T>& input, uintptr_t fft_size_log2)
+    void rifft(T* output, split_type<T>& input, uintptr_t fft_size_log2)
     {
         if (!fft_size_log2)
             output[0] = input.realp[0];
@@ -161,31 +161,31 @@ public:
     
     // Convolution
     
-    void convolve(T *r_out, T *i_out, in_ptr r_in1, in_ptr i_in1, in_ptr r_in2, in_ptr i_in2, edge_mode mode)
+    void convolve(T* r_out, T* i_out, in_ptr r_in1, in_ptr i_in1, in_ptr r_in2, in_ptr i_in2, edge_mode mode)
     {
         binary_op<ir_convolve_complex, arrange_convolve<split_type>>(r_out, i_out, r_in1, i_in1, r_in2, i_in2, mode);
     }
     
-    void convolve(T *output, in_ptr in1, in_ptr in2, edge_mode mode)
+    void convolve(T* output, in_ptr in1, in_ptr in2, edge_mode mode)
     {
         binary_op<ir_convolve_real, arrange_convolve<T*>>(output, in1, in2, mode);
     }
     
     // Correlation
     
-    void correlate(T *r_out, T *i_out, in_ptr r_in1, in_ptr i_in1, in_ptr r_in2, in_ptr i_in2, edge_mode mode)
+    void correlate(T* r_out, T* i_out, in_ptr r_in1, in_ptr i_in1, in_ptr r_in2, in_ptr i_in2, edge_mode mode)
     {
         binary_op<ir_correlate_complex, arrange_correlate<split_type>>(r_out, i_out, r_in1, i_in1, r_in2, i_in2, mode);
     }
     
-    void correlate(T *output, in_ptr in1, in_ptr in2, edge_mode mode)
+    void correlate(T* output, in_ptr in1, in_ptr in2, edge_mode mode)
     {
         binary_op<ir_correlate_real, arrange_correlate<T*>>(output, in1, in2, mode);
     }
     
     // Phase
     
-    void change_phase(T *output, const T *input, uintptr_t size, double phase, double time_multiplier = 1.0)
+    void change_phase(T* output, const T* input, uintptr_t size, double phase, double time_multiplier = 1.0)
     {
         uintptr_t fft_size_log2 = calc_fft_size_log2((uintptr_t) std::round(size * time_multiplier));
         uintptr_t fft_size = uintptr_t(1) << fft_size_log2;
@@ -242,7 +242,7 @@ public:
     
     // Scale Vector
     
-    void scale_vector(T *io, uintptr_t size, T scale)
+    void scale_vector(T* io, uintptr_t size, T scale)
     {
         if (scale == 1.0)
             return;
@@ -303,13 +303,13 @@ protected:
                 (*this)++;
         }
         
-        const T *operator ++()
+        const T* operator ++()
         {
             std::swap(++p1, p2);
             return p1;
         }
         
-        const T *operator ++(int)
+        const T* operator ++(int)
         {
             std::swap(p1, p2);
             return p2++;
@@ -317,7 +317,8 @@ protected:
         
     private:
         
-        const T *p1, *p2;
+        const T* p1;
+        const T* p2;
     };
     
     struct op_sizes
@@ -418,7 +419,7 @@ protected:
 
     // Memory manipulation (real)
     
-    static void copy(T *output, const split_type<T>& spectrum, uintptr_t o_offset, uintptr_t offset, uintptr_t size)
+    static void copy(T* output, const split_type<T>& spectrum, uintptr_t o_offset, uintptr_t offset, uintptr_t size)
     {
         zipped_pointer p(spectrum, offset);
 
@@ -426,7 +427,7 @@ protected:
             output[o_offset + i] = *p++;
     }
     
-    static void wrap(T *output, const split_type<T>& spectrum, uintptr_t o_offset, uintptr_t last, uintptr_t size)
+    static void wrap(T* output, const split_type<T>& spectrum, uintptr_t o_offset, uintptr_t last, uintptr_t size)
     {
         zipped_pointer p(spectrum, last - size);
         
@@ -434,7 +435,7 @@ protected:
             output[o_offset + i] += *p++;
     }
     
-    static void zero(T *output, uintptr_t start, uintptr_t end)
+    static void zero(T* output, uintptr_t start, uintptr_t end)
     {
         for (uintptr_t i = start; i < end; i++)
             output[i] = T(0);
@@ -539,9 +540,9 @@ protected:
    
     // Binary Operations
     
-    typedef void (*SpectralOp)(split_type<T> *, split_type<T> *, split_type<T> *, uintptr_t, T);
+    typedef void (*SpectralOp)(split_type<T>*, split_type<T>*, split_type<T>*, uintptr_t, T);
     typedef void (*ComplexArrange)(split_type<T>, split_type<T>, op_sizes&);
-    typedef void (*RealArrange)(T *, split_type<T>, op_sizes&);
+    typedef void (*RealArrange)(T*, split_type<T>, op_sizes&);
 
     uintptr_t calc_conv_corr_size(uintptr_t size1, uintptr_t size2, edge_mode mode) const
     {
@@ -576,7 +577,7 @@ protected:
     }
     
     template <SpectralOp Op, ComplexArrange arrange>
-    void binary_op(T *r_out, T *i_out, in_ptr r_in1, in_ptr i_in1, in_ptr r_in2, in_ptr i_in2, edge_mode mode)
+    void binary_op(T* r_out, T* i_out, in_ptr r_in1, in_ptr i_in1, in_ptr r_in2, in_ptr i_in2, edge_mode mode)
     {
         auto get_first = [](in_ptr ptr)
         {
@@ -646,7 +647,7 @@ protected:
     }
     
     template <SpectralOp Op, RealArrange arrange>
-    void binary_op(T *output, in_ptr in1, in_ptr in2, edge_mode mode)
+    void binary_op(T* output, in_ptr in1, in_ptr in2, edge_mode mode)
     {
         if (!calc_conv_corr_size(in1.m_size, in2.m_size, mode))
             return;

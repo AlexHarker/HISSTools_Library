@@ -47,7 +47,7 @@ T get_bytes(const unsigned char* bytes, audio_file_format::endianness endianness
 template <class T, int N>
 T get_bytes(const char* bytes, audio_file_format::endianness endianness)
 {
-    return get_bytes<T, N>(reinterpret_cast<const unsigned char *>(bytes), endianness);
+    return get_bytes<T, N>(reinterpret_cast<const unsigned char*>(bytes), endianness);
 }
 
 // Byte Setter

@@ -11,8 +11,8 @@ HISSTOOLS_NAMESPACE_START()
 
 namespace impl
 {
-    typedef void *(*allocate_function)(size_t);
-    typedef void (*free_function)(void *);
+    typedef void* (*allocate_function)(size_t);
+    typedef void (*free_function)(void*);
 };
 
 // A template for wrapping functions as an allocator
@@ -24,7 +24,7 @@ struct function_allocator
     T* allocate(size_t size) { return reinterpret_cast<T*>(alloc(size * sizeof(T))); }
     
     template <typename T>
-    void deallocate(T *ptr) { dealloc(ptr); }
+    void deallocate(T* ptr) { dealloc(ptr); }
 };
 
 using malloc_allocator = function_allocator<malloc, free>;
@@ -37,7 +37,7 @@ struct aligned_allocator
     T* allocate(size_t size) { return allocate_aligned<T>(size); }
     
     template <typename T>
-    void deallocate(T *ptr) { deallocate_aligned(ptr); }
+    void deallocate(T* ptr) { deallocate_aligned(ptr); }
 };
 
 HISSTOOLS_NAMESPACE_END()

@@ -119,7 +119,7 @@ public:
     }
     
     template <class U>
-    convolve_error set(const U *input, uintptr_t length, bool request_resize)
+    convolve_error set(const U* input, uintptr_t length, bool request_resize)
     {
         conformed_input<T, U> typed_input(input, length);
 
@@ -153,7 +153,7 @@ public:
     
     // Process
     
-    void process(const IO *in, IO *out, uintptr_t num_samples, bool accumulate = false)
+    void process(const IO* in, IO* out, uintptr_t num_samples, bool accumulate = false)
     {
         partition_pointer part_4 = m_part_4.attempt();
         
@@ -270,7 +270,7 @@ private:
         if (part_4.get()) (part_4.get()->*part_method)(args...);
     }
     
-    static void large_free(partition_type *large_partition)
+    static void large_free(partition_type* large_partition)
     {
         delete large_partition;
     }

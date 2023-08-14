@@ -93,8 +93,8 @@ public:
         
         for (uint32_t i = 0; i < num_outs; i++)
         {
-            const IO *parallel_in[1] = { ins[i] };
-            const IO * const *use_ins = m_parallel ? parallel_in : ins;
+            const IO* parallel_in[1] = { ins[i] };
+            const IO * const* use_ins = m_parallel ? parallel_in : ins;
             
             m_convolvers[i].process(use_ins, outs[i], num_samples, m_parallel ? 1 : num_ins);
         }

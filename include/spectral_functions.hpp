@@ -15,16 +15,16 @@ HISSTOOLS_NAMESPACE_START()
 namespace impl
 {
     template <class T, int N, typename Op>
-    void simd_operation(split_type<T> *out, split_type<T> *in1, split_type<T> *in2, uintptr_t fft_size, T scale, Op op)
+    void simd_operation(split_type<T>* out, split_type<T>* in1, split_type<T>* in2, uintptr_t fft_size, T scale, Op op)
     {
         using vector_type = simd_type<T, N>;
         
-        const vector_type *r_in1 = reinterpret_cast<const vector_type *>(in1->realp);
-        const vector_type *i_in1 = reinterpret_cast<const vector_type *>(in1->imagp);
-        const vector_type *r_in2 = reinterpret_cast<const vector_type *>(in2->realp);
-        const vector_type *i_in2 = reinterpret_cast<const vector_type *>(in2->imagp);
-        vector_type *r_out = reinterpret_cast<vector_type *>(out->realp);
-        vector_type *i_out = reinterpret_cast<vector_type *>(out->imagp);
+        const vector_type* r_in1 = reinterpret_cast<const vector_type*>(in1->realp);
+        const vector_type* i_in1 = reinterpret_cast<const vector_type*>(in1->imagp);
+        const vector_type* r_in2 = reinterpret_cast<const vector_type*>(in2->realp);
+        const vector_type* i_in2 = reinterpret_cast<const vector_type*>(in2->imagp);
+        vector_type* r_out = reinterpret_cast<vector_type*>(out->realp);
+        vector_type* i_out = reinterpret_cast<vector_type*>(out->imagp);
         
         vector_type v_scale(scale);
         
@@ -33,7 +33,7 @@ namespace impl
     }
     
     template <class T, typename Op>
-    void complex_operation(split_type<T> *out, split_type<T> *in1, split_type<T> *in2, uintptr_t fft_size, T scale, Op op)
+    void complex_operation(split_type<T>* out, split_type<T>* in1, split_type<T>* in2, uintptr_t fft_size, T scale, Op op)
     {
         constexpr int N = simd_limits<T>::max_size;
         constexpr int M = N / 2 ? N / 2 : 1;
@@ -47,7 +47,7 @@ namespace impl
     }
     
     template <class T, typename Op>
-    void real_operation(split_type<T> *out, split_type<T> *in1, split_type<T> *in2, uintptr_t fft_size, T scale, Op op)
+    void real_operation(split_type<T>* out, split_type<T>* in1, split_type<T>* in2, uintptr_t fft_size, T scale, Op op)
     {
         T temp1(0);
         T temp2(0);
@@ -68,12 +68,12 @@ namespace impl
     }
     
     template <class T, typename Op>
-    void real_operation(split_type<T> *out, const split_type<T> *in, uintptr_t fft_size, Op op)
+    void real_operation(split_type<T>* out, const split_type<T>* in, uintptr_t fft_size, Op op)
     {
-        const T *r_in = in->realp;
-        const T *i_in = in->imagp;
-        T *r_out = out->realp;
-        T *i_out = out->imagp;
+        const T* r_in = in->realp;
+        const T* i_in = in->imagp;
+        T* r_out = out->realp;
+        T* i_out = out->imagp;
         
         T temp1(0);
         T temp2(0);
@@ -90,10 +90,10 @@ namespace impl
     }
     
     template <class T, typename Op>
-    void real_operation(split_type<T> *out, uintptr_t fft_size, Op op)
+    void real_operation(split_type<T>* out, uintptr_t fft_size, Op op)
     {
-        T *r_out = out->realp;
-        T *i_out = out->imagp;
+        T* r_out = out->realp;
+        T* i_out = out->imagp;
         
         T temp(0);
         
@@ -261,10 +261,10 @@ namespace impl
     };
     
     template <class T>
-    void minimum_phase_components(setup_type<T> setup, split_type<T> *out, split_type<T> *in, uintptr_t fft_size)
+    void minimum_phase_components(setup_type<T> setup, split_type<T>* out, split_type<T>* in, uintptr_t fft_size)
     {
-        T *r_out = out->realp;
-        T *i_out = out->imagp;
+        T* r_out = out->realp;
+        T* i_out = out->imagp;
         
         // From the full FFT size calculate the size log2
         
@@ -317,19 +317,19 @@ namespace impl
 // Function calls
 
 template <class T>
-void ir_copy(split_type<T> *out, const split_type<T> *in, uintptr_t fft_size)
+void ir_copy(split_type<T>* out, const split_type<T>* in, uintptr_t fft_size)
 {
     impl::real_operation(out, in, fft_size, impl::copy());
 }
 
 template <class T>
-void ir_spike(split_type<T> *out, uintptr_t fft_size, double spike_position)
+void ir_spike(split_type<T>* out, uintptr_t fft_size, double spike_position)
 {
     impl::real_operation(out, fft_size, impl::spike(spike_position, fft_size));
 }
 
 template <class T>
-void ir_delay(split_type<T> *out, const split_type<T> *in, uintptr_t fft_size, double delay)
+void ir_delay(split_type<T>* out, const split_type<T>* in, uintptr_t fft_size, double delay)
 {
     if (delay != 0.0)
         impl::real_operation(out, in, fft_size, impl::delay_calc(delay, fft_size));
@@ -338,13 +338,13 @@ void ir_delay(split_type<T> *out, const split_type<T> *in, uintptr_t fft_size, d
 }
 
 template <class T>
-void ir_time_reverse(split_type<T> *out, const split_type<T> *in, uintptr_t fft_size)
+void ir_time_reverse(split_type<T>* out, const split_type<T>* in, uintptr_t fft_size)
 {
     impl::real_operation(out, in, fft_size, impl::conjugate());
 }
 
 template <class T>
-void ir_phase(setup_type<T> setup, split_type<T> *out, split_type<T> *in, uintptr_t fft_size, double phase, bool zero_center = false)
+void ir_phase(setup_type<T> setup, split_type<T>* out, split_type<T>* in, uintptr_t fft_size, double phase, bool zero_center = false)
 {
     if (phase == 0.5)
     {
@@ -367,25 +367,25 @@ void ir_phase(setup_type<T> setup, split_type<T> *out, split_type<T> *in, uintpt
 }
 
 template <class T>
-void ir_convolve_complex(split_type<T> *out, split_type<T> *in1, split_type<T> *in2, uintptr_t fft_size, T scale)
+void ir_convolve_complex(split_type<T>* out, split_type<T>* in1, split_type<T>* in2, uintptr_t fft_size, T scale)
 {
     impl::complex_operation(out, in1, in2, fft_size, scale, impl::convolve());
 }
 
 template <class T>
-void ir_convolve_real(split_type<T> *out, split_type<T> *in1, split_type<T> *in2, uintptr_t fft_size, T scale)
+void ir_convolve_real(split_type<T>* out, split_type<T>* in1, split_type<T>* in2, uintptr_t fft_size, T scale)
 {
     impl::real_operation(out, in1, in2, fft_size, scale, impl::convolve());
 }
 
 template <class T>
-void ir_correlate_complex(split_type<T> *out, split_type<T> *in1, split_type<T> *in2, uintptr_t fft_size, T scale)
+void ir_correlate_complex(split_type<T>* out, split_type<T>* in1, split_type<T>* in2, uintptr_t fft_size, T scale)
 {
     impl::complex_operation(out, in1, in2, fft_size, scale, impl::correlate());
 }
 
 template <class T>
-void ir_correlate_real(split_type<T> *out, split_type<T> *in1, split_type<T> *in2, uintptr_t fft_size, T scale)
+void ir_correlate_real(split_type<T>* out, split_type<T>* in1, split_type<T>* in2, uintptr_t fft_size, T scale)
 {
     impl::real_operation(out, in1, in2, fft_size, scale, impl::correlate());
 }

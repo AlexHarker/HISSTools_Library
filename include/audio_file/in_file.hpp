@@ -98,7 +98,7 @@ public:
     
     void read_raw(void* output, uintptr_t num_frames)
     {
-        read_internal(static_cast<char *>(output), frame_byte_count() * num_frames);
+        read_internal(static_cast<char*>(output), frame_byte_count() * num_frames);
     }
     
     void read_interleaved(double* output, uintptr_t num_frames)
@@ -143,7 +143,7 @@ public:
         return tags;
     }
     
-    uintptr_t chunk_size(const char *tag)
+    uintptr_t chunk_size(const char* tag)
     {
         postion_restore restore(*this);
         
@@ -155,7 +155,7 @@ public:
         return chunk_size;
     }
     
-    void read_chunk(void *output, const char *tag)
+    void read_chunk(void* output, const char* tag)
     {
         postion_restore restore(*this);
         
@@ -164,7 +164,7 @@ public:
         if (strlen(tag) <= 4)
         {
             find_chunk(tag, chunk_size);
-            read_internal(static_cast<char *>(output), chunk_size);
+            read_internal(static_cast<char*>(output), chunk_size);
         }
     }
     
@@ -279,8 +279,8 @@ private:
     {
         char chunk[12] = {};
         
-        const char *file_type = chunk;
-        const char *file_subtype = chunk + 8;
+        const char* file_type = chunk;
+        const char* file_subtype = chunk + 8;
         
         // `Read file header
         

@@ -100,7 +100,7 @@ double convertIEEEExtended(double x)
 {
     char bytes[10];
     
-    htl::extended_double_convertor()(reinterpret_cast<unsigned char *>(bytes), x);
+    htl::extended_double_convertor()(reinterpret_cast<unsigned char*>(bytes), x);
     auto y = htl::extended_double_convertor()(bytes);
     
     if (x != y && !(compareNans(x, y)))

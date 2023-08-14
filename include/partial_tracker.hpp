@@ -224,7 +224,7 @@ public:
         m_changes.reset();
     }
     
-    void process(peak<T> *peaks, size_t n_peaks, T start_threshold)
+    void process(peak<T>* peaks, size_t n_peaks, T start_threshold)
     {
         // Setup
         
@@ -361,7 +361,7 @@ private:
     }
     
     template <cost_type Cost, get_method Freq, get_method Amp>
-    size_t find_costs(cpeak<T> *peaks, size_t n_peaks)
+    size_t find_costs(cpeak<T>* peaks, size_t n_peaks)
     {
         size_t n_costs = 0;
         
@@ -389,7 +389,7 @@ private:
         return n_costs;
     }
     
-    size_t find_costs(peak<T> *peaks, size_t n_peaks)
+    size_t find_costs(peak<T>* peaks, size_t n_peaks)
     {
         // Conveniences for code length
         
@@ -436,10 +436,10 @@ private:
     
     // Tracking data
     
-    track<T> *m_tracks;
-    cost *m_costs;
-    bool *m_peak_assigned;
-    bool *m_track_assigned;
+    track<T>* m_tracks;
+    cost* m_costs;
+    bool* m_peak_assigned;
+    bool* m_track_assigned;
     
     change_tracker<T, Changes> m_changes;
 };

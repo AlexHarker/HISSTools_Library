@@ -113,13 +113,13 @@ struct simd_limits<float>
 #ifdef __APPLE__
 
 template <class T>
-T *allocate_aligned(size_t size)
+T* allocate_aligned(size_t size)
 {
-    return static_cast<T *>(malloc(size * sizeof(T)));
+    return static_cast<T*>(malloc(size * sizeof(T)));
 }
 
 template <class T>
-void deallocate_aligned(T *ptr)
+void deallocate_aligned(T* ptr)
 {
     free(ptr);
 }
@@ -127,18 +127,18 @@ void deallocate_aligned(T *ptr)
 #elif defined(__linux__)
 
 template <class T>
-T *allocate_aligned(size_t size)
+T* allocate_aligned(size_t size)
 {
-    void *mem = nullptr;
+    void* mem = nullptr;
     
     if (posix_memalign(&mem, simd_limits<T>::byte_width, size * sizeof(T)))
     	return nullptr;
 
-    return static_cast<T *>(mem);
+    return static_cast<T*>(mem);
 }
 
 template <class T>
-void deallocate_aligned(T *ptr)
+void deallocate_aligned(T* ptr)
 {
     free(ptr);
 }
@@ -146,13 +146,13 @@ void deallocate_aligned(T *ptr)
 #else
 
 template <class T>
-T *allocate_aligned(size_t size)
+T* allocate_aligned(size_t size)
 {
-    return static_cast<T *>(_aligned_malloc(size * sizeof(T), simd_limits<T>::byte_width));
+    return static_cast<T*>(_aligned_malloc(size * sizeof(T), simd_limits<T>::byte_width));
 }
 
 template <class T>
-void deallocate_aligned(T *ptr)
+void deallocate_aligned(T* ptr)
 {
     _aligned_free(ptr);
 }
@@ -309,8 +309,8 @@ struct sized_vector
     
     sized_vector() {}
     sized_vector(const T& a) { static_iterate<>().set(*this, a); }
-    sized_vector(const sized_vector *ptr) { *this = *ptr; }
-    sized_vector(const T *array) { static_iterate<>().load(*this, array); }
+    sized_vector(const sized_vector* ptr) { *this = *ptr; }
+    sized_vector(const T* array) { static_iterate<>().load(*this, array); }
     
     // For scalar conversions use a constructor
     
@@ -327,7 +327,7 @@ struct sized_vector
     : sized_vector(v.m_data[0])
     {}
     
-    void store(T *a) const { static_iterate<>().store(a, *this); }
+    void store(T* a) const { static_iterate<>().store(a, *this); }
 
     friend sized_vector operator + (const sized_vector& a, const sized_vector& b) { return op(a, b, std::plus<vector_type>()); }
     friend sized_vector operator - (const sized_vector& a, const sized_vector& b) { return op(a, b, std::minus<vector_type>()); }
@@ -369,13 +369,13 @@ private:
             iterate()(result, a, b, fn);
         }
         
-        inline void load(sized_vector &v, const T *array)
+        inline void load(sized_vector &v, const T* array)
         {
             v.m_data[First] = vector_type(array + First * vec_size);
             iterate().load(v, array);
         }
         
-        inline void store(T *array, const sized_vector& v)
+        inline void store(T* array, const sized_vector& v)
         {
             v.m_data[First].store(array + First * vec_size);
             iterate().store(array, v);
@@ -434,7 +434,7 @@ struct simd_type<double, 1>
     simd_type(double a) : m_val(a) {}
     simd_type(const double* a) { m_val = *a; }
     
-    void store(double *a) const { *a = m_val; }
+    void store(double* a) const { *a = m_val; }
     
     friend simd_type operator + (const simd_type& a, const simd_type& b) { return a.m_val + b.m_val; }
     friend simd_type operator - (const simd_type& a, const simd_type& b) { return a.m_val - b.m_val; }
@@ -489,7 +489,7 @@ struct simd_type<float, 1>
     
     simd_type(const simd_type<double, 1>& a) : m_val(static_cast<float>(a.m_val)) {}
     
-    void store(float *a) const { *a = m_val; }
+    void store(float* a) const { *a = m_val; }
     
     friend simd_type operator + (const simd_type& a, const simd_type& b) { return a.m_val + b.m_val; }
     friend simd_type operator - (const simd_type& a, const simd_type& b) { return a.m_val - b.m_val; }
@@ -560,7 +560,7 @@ struct simd_type<float, 2>
         m_vals[1] = a[1];
     }
     
-    void store(float *a) const
+    void store(float* a) const
     {
         a[0] = m_vals[0];
         a[1] = m_vals[1];
@@ -619,7 +619,7 @@ public:
         m_val = vld1q_f64(vals);
     }
     
-    void store(double *a) const { vst1q_f64(a, m_val); }
+    void store(double* a) const { vst1q_f64(a, m_val); }
     
     friend simd_type operator + (const simd_type& a, const simd_type& b) { return vaddq_f64(a.m_val, b.m_val); }
     friend simd_type operator - (const simd_type& a, const simd_type& b) { return vsubq_f64(a.m_val, b.m_val); }
@@ -755,7 +755,7 @@ public:
     simd_type(const float* a) { m_val = vld1q_f32(a); }
     simd_type(float32x4_t a) : simd_vector(a) {}
     
-    void store(float *a) const { vst1q_f32(a, m_val); }
+    void store(float* a) const { vst1q_f32(a, m_val); }
     
     friend simd_type operator + (const simd_type& a, const simd_type& b) { return vaddq_f32(a.m_val, b.m_val); }
     friend simd_type operator - (const simd_type& a, const simd_type& b) { return vsubq_f32(a.m_val, b.m_val); }
@@ -837,7 +837,7 @@ struct simd_type<int32_t, 4> : public simd_vector<int32_t, int32x4_t, 4>
     simd_type(const int32_t* a) { m_val = vld1q_s32(a); }
     simd_type(int32x4_t a) : simd_vector(a) {}
     
-    void store(int32_t *a) const { vst1q_s32(a, m_val); }
+    void store(int32_t* a) const { vst1q_s32(a, m_val); }
     
     friend simd_type operator + (const simd_type& a, const simd_type& b) { return vaddq_s32(a.m_val, b.m_val); }
     friend simd_type operator - (const simd_type& a, const simd_type& b) { return vsubq_s32(a.m_val, b.m_val); }
@@ -883,7 +883,7 @@ struct simd_type<double, 2> : public simd_vector<double, __m128d, 2>
         m_val = _mm_loadu_pd(vals);
     }
     
-    void store(double *a) const { _mm_storeu_pd(a, m_val); }
+    void store(double* a) const { _mm_storeu_pd(a, m_val); }
     
     friend simd_type operator + (const simd_type& a, const simd_type& b) { return _mm_add_pd(a.m_val, b.m_val); }
     friend simd_type operator - (const simd_type& a, const simd_type& b) { return _mm_sub_pd(a.m_val, b.m_val); }
@@ -947,7 +947,7 @@ struct simd_type<float, 4> : public simd_vector<float, __m128, 4>
     simd_type(const float* a) { m_val = _mm_loadu_ps(a); }
     simd_type(__m128 a) : simd_vector(a) {}
     
-    void store(float *a) const { _mm_storeu_ps(a, m_val); }
+    void store(float* a) const { _mm_storeu_ps(a, m_val); }
     
     friend simd_type operator + (const simd_type& a, const simd_type& b) { return _mm_add_ps(a.m_val, b.m_val); }
     friend simd_type operator - (const simd_type& a, const simd_type& b) { return _mm_sub_ps(a.m_val, b.m_val); }
@@ -1009,10 +1009,10 @@ struct simd_type<int32_t, 4> : public simd_vector<int32_t, __m128i, 4>
 {
     simd_type() {}
     simd_type(const int32_t& a) { m_val = _mm_set1_epi32(a); }
-    simd_type(const int32_t* a) { m_val = _mm_loadu_si128(reinterpret_cast<const __m128i *>(a)); }
+    simd_type(const int32_t* a) { m_val = _mm_loadu_si128(reinterpret_cast<const __m128i*>(a)); }
     simd_type(__m128i a) : simd_vector(a) {}
     
-    void store(int32_t *a) const { _mm_storeu_si128(reinterpret_cast<__m128i *>(a), m_val); }
+    void store(int32_t* a) const { _mm_storeu_si128(reinterpret_cast<__m128i*>(a), m_val); }
     
     friend simd_type operator + (const simd_type& a, const simd_type& b) { return _mm_add_epi32(a.m_val, b.m_val); }
     friend simd_type operator - (const simd_type& a, const simd_type& b) { return _mm_sub_epi32(a.m_val, b.m_val); }
@@ -1057,7 +1057,7 @@ struct simd_type<double, 4> : public simd_vector<double, __m256d, 4>
     simd_type(const simd_type<float, 4> &a) { m_val = _mm256_cvtps_pd(a.m_val); }
     simd_type(const simd_type<int32_t, 4> &a) { m_val = _mm256_cvtepi32_pd(a.m_val); }
     
-    void store(double *a) const { _mm256_storeu_pd(a, m_val); }
+    void store(double* a) const { _mm256_storeu_pd(a, m_val); }
     
     friend simd_type operator + (const simd_type& a, const simd_type& b) { return _mm256_add_pd(a.m_val, b.m_val); }
     friend simd_type operator - (const simd_type& a, const simd_type& b) { return _mm256_sub_pd(a.m_val, b.m_val); }
@@ -1121,7 +1121,7 @@ struct simd_type<float, 8> : public simd_vector<float, __m256, 8>
     simd_type(const float* a) { m_val = _mm256_loadu_ps(a); }
     simd_type(__m256 a) : simd_vector(a) {}
     
-    void store(float *a) const { _mm256_storeu_ps(a, m_val); }
+    void store(float* a) const { _mm256_storeu_ps(a, m_val); }
     
     friend simd_type operator + (const simd_type& a, const simd_type& b) { return _mm256_add_ps(a.m_val, b.m_val); }
     friend simd_type operator - (const simd_type& a, const simd_type& b) { return _mm256_sub_ps(a.m_val, b.m_val); }
@@ -1200,7 +1200,7 @@ struct simd_type<double, 8> : public simd_vector<double, __m512d, 8>
     
     simd_type(const simd_type<float, 8> &a) { m_val = _mm512_cvtps_pd(a.m_val); }
     
-    void store(double *a) const { _mm512_storeu_pd(a, m_val); }
+    void store(double* a) const { _mm512_storeu_pd(a, m_val); }
     
     friend simd_type operator + (const simd_type& a, const simd_type& b) { return _mm512_add_pd(a.m_val, b.m_val); }
     friend simd_type operator - (const simd_type& a, const simd_type& b) { return _mm512_sub_pd(a.m_val, b.m_val); }
@@ -1241,7 +1241,7 @@ struct simd_type<float, 16> : public simd_vector<float, __m512, 16>
     simd_type(const float* a) { m_val = _mm512_loadu_ps(a); }
     simd_type(__m512 a) : simd_vector(a) {}
     
-    void store(float *a) const { _mm512_storeu_ps(a, m_val); }
+    void store(float* a) const { _mm512_storeu_ps(a, m_val); }
     
     friend simd_type operator + (const simd_type& a, const simd_type& b) { return _mm512_add_ps(a.m_val, b.m_val); }
     friend simd_type operator - (const simd_type& a, const simd_type& b) { return _mm512_sub_ps(a.m_val, b.m_val); }
@@ -1329,23 +1329,23 @@ static inline simd_type<double, 1> abs(const simd_type<double, 1> a)
 {
     constexpr uint64_t bit_mask_64 = 0x7FFFFFFFFFFFFFFFU;
     
-    uint64_t temp = *(reinterpret_cast<const uint64_t *>(&a)) & bit_mask_64;
-    return *(reinterpret_cast<double *>(&temp));
+    uint64_t temp = *(reinterpret_cast<const uint64_t*>(&a)) & bit_mask_64;
+    return *(reinterpret_cast<double*>(&temp));
 }
 
 static inline simd_type<float, 1> abs(const simd_type<float, 1> a)
 {
     constexpr uint32_t bit_mask_32 = 0x7FFFFFFFU;
     
-    uint32_t temp = *(reinterpret_cast<const uint32_t *>(&a)) & bit_mask_32;
-    return *(reinterpret_cast<float *>(&temp));
+    uint32_t temp = *(reinterpret_cast<const uint32_t*>(&a)) & bit_mask_32;
+    return *(reinterpret_cast<float*>(&temp));
 }
 
 template <int N>
 simd_type<double, N> abs(const simd_type<double, N> a)
 {
     constexpr uint64_t bit_mask_64 = 0x7FFFFFFFFFFFFFFFU;
-    const double bit_mask_64d = *(reinterpret_cast<const double *>(&bit_mask_64));
+    const double bit_mask_64d = *(reinterpret_cast<const double*>(&bit_mask_64));
     
     return a & simd_type<double, N>(bit_mask_64d);
 }
@@ -1354,7 +1354,7 @@ template <int N>
 simd_type<float, N> abs(const simd_type<float, N> a)
 {
     constexpr uint32_t bit_mask_32 = 0x7FFFFFFFU;
-    const float bit_mask_32f = *(reinterpret_cast<const float *>(&bit_mask_32));
+    const float bit_mask_32f = *(reinterpret_cast<const float*>(&bit_mask_32));
     
     return a & simd_type<float, N>(bit_mask_32f);
 }

@@ -59,7 +59,7 @@ public:
     
     // Seeding (specific / OS-specific random values)
     
-    void seed(uint32_t *init)
+    void seed(uint32_t* init)
     {
         m_increment = (cmwc_lag_size - 1);
         m_carry = 123;
@@ -126,11 +126,11 @@ public:
     };
     
     random_generator()                  { m_generator.rand_seed(); }
-    random_generator(uint32_t *init)    { m_generator.seed(init); }
+    random_generator(uint32_t* init)    { m_generator.seed(init); }
 
     // Seeding (specific / random values)
     
-    void seed(uint32_t *init)   { m_generator.seed(init); }
+    void seed(uint32_t* init)   { m_generator.seed(init); }
     void rand_seed()            { m_generator.rand_seed(); }
     
     // Generate a Single Pseudo-random Unsigned Integer (full range /  in the range [0, n] / in the range [lo, hi])

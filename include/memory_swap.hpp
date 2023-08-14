@@ -29,8 +29,8 @@ public:
     
     // Alloc and free routine prototypes
     
-    using alloc_func = std::function<T *(uintptr_t size)> ;
-    using free_func  = std::function<void (T *)>;
+    using alloc_func = std::function<T* (uintptr_t size)> ;
+    using free_func  = std::function<void (T*)>;
     
     class pointer_type
     {
@@ -56,7 +56,7 @@ public:
             m_size = 0;
         }
         
-        void swap(T *ptr, uintptr_t size)
+        void swap(T* ptr, uintptr_t size)
         {
             update(&memory_swap::set, ptr, size, nullptr);
         }
@@ -81,7 +81,7 @@ public:
             update_allocate_if(alloc_function, free_function, size, std::not_equal_to<uintptr_t>());
         }
         
-        T *get() { return m_pointer; }
+        T* get() { return m_pointer; }
         uintptr_t size() { return m_size; }
         
     private:
@@ -90,7 +90,7 @@ public:
         : m_owner(nullptr), m_pointer(nullptr), m_size(0)
         {}
         
-        pointer_type(memory_swap *owner)
+        pointer_type(memory_swap* owner)
         : m_owner(owner)
         , m_pointer(m_owner ? m_owner->m_pointer : nullptr)
         , m_size(m_owner ? m_owner->m_size : 0)
@@ -116,8 +116,8 @@ public:
             }
         }
         
-        memory_swap *m_owner;
-        T *m_pointer;
+        memory_swap* m_owner;
+        T* m_pointer;
         uintptr_t m_size;
     };
     
@@ -191,7 +191,7 @@ public:
         return try_lock() ? pointer_type(this) : pointer_type();
     }
     
-    pointer_type swap(T *ptr, uintptr_t size)
+    pointer_type swap(T* ptr, uintptr_t size)
     {
         lock();
         set(ptr, size, nullptr);
@@ -235,7 +235,7 @@ private:
             set(alloc_function(size), size, free_function);
     }
     
-    void set(T *ptr, uintptr_t size, free_func free_function)
+    void set(T* ptr, uintptr_t size, free_func free_function)
     {
         if (m_free_function)
             m_free_function(m_pointer);
@@ -263,10 +263,10 @@ private:
 #ifdef _WIN32
     static T* allocate(size_t size)
     {
-        return static_cast<T *>(_aligned_malloc(size * sizeof(T), 16));
+        return static_cast<T*>(_aligned_malloc(size * sizeof(T), 16));
     }
     
-    static void deallocate(T *ptr)
+    static void deallocate(T* ptr)
     {
         _aligned_free(ptr);
     }
@@ -274,16 +274,16 @@ private:
 #ifdef __APPLE__
     static T* allocate(size_t size)
     {
-        return reinterpret_cast<T *>(malloc(size * sizeof(T)));
+        return reinterpret_cast<T*>(malloc(size * sizeof(T)));
     }
 #else
     static T* allocate(size_t size)
     {
-        return reinterpret_cast<T *>(aligned_alloc(16, size * sizeof(T)));
+        return reinterpret_cast<T*>(aligned_alloc(16, size * sizeof(T)));
     }
 #endif
 
-    static void deallocate(T *ptr)
+    static void deallocate(T* ptr)
     {
         free(ptr);
     }
@@ -291,7 +291,7 @@ private:
     
     thread_lock m_lock;
     
-    T *m_pointer;
+    T* m_pointer;
     uintptr_t m_size;
     free_func m_free_function;
 };
