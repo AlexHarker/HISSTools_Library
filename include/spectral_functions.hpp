@@ -17,16 +17,16 @@ namespace impl
     template <class T, int N, typename Op>
     void simd_operation(split_type<T> *out, split_type<T> *in1, split_type<T> *in2, uintptr_t fft_size, T scale, Op op)
     {
-        using VecType = SIMDType<T, N>;
+        using vector_type = SIMDType<T, N>;
         
-        const VecType *r_in1 = reinterpret_cast<const VecType *>(in1->realp);
-        const VecType *i_in1 = reinterpret_cast<const VecType *>(in1->imagp);
-        const VecType *r_in2 = reinterpret_cast<const VecType *>(in2->realp);
-        const VecType *i_in2 = reinterpret_cast<const VecType *>(in2->imagp);
-        VecType *r_out = reinterpret_cast<VecType *>(out->realp);
-        VecType *i_out = reinterpret_cast<VecType *>(out->imagp);
+        const vector_type *r_in1 = reinterpret_cast<const vector_type *>(in1->realp);
+        const vector_type *i_in1 = reinterpret_cast<const vector_type *>(in1->imagp);
+        const vector_type *r_in2 = reinterpret_cast<const vector_type *>(in2->realp);
+        const vector_type *i_in2 = reinterpret_cast<const vector_type *>(in2->imagp);
+        vector_type *r_out = reinterpret_cast<vector_type *>(out->realp);
+        vector_type *i_out = reinterpret_cast<vector_type *>(out->imagp);
         
-        VecType v_scale(scale);
+        vector_type v_scale(scale);
         
         for (uintptr_t i = 0; i < (fft_size / N); i++)
             op(r_out[i], i_out[i], r_in1[i], i_in1[i], r_in2[i], i_in2[i], v_scale, i);
