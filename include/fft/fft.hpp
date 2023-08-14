@@ -29,7 +29,7 @@ HISSTOOLS_NAMESPACE_START()
  */
 
 template <class T>
-struct split_type : impl::TypeBase<T>
+struct split_type : impl::type_base<T>
 {
     split_type() {}
     split_type(T *real, T *imag) : realp(real), imagp(imag) {}

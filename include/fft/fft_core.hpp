@@ -24,14 +24,14 @@ HISSTOOLS_NAMESPACE_START()
 // Splits
 
 template<>
-struct split_type<double> : DSPDoubleSplitComplex, impl::TypeBase<double>
+struct split_type<double> : DSPDoubleSplitComplex, impl::type_base<double>
 {
     split_type() {}
     split_type(double *real, double *imag) : DSPDoubleSplitComplex{ real, imag } {}
 };
 
 template<>
-struct split_type<float> : DSPSplitComplex, impl::TypeBase<float>
+struct split_type<float> : DSPSplitComplex, impl::type_base<float>
 {
     split_type() {}
     split_type(float *real, float *imag) : DSPSplitComplex{ real, imag } {}
@@ -40,17 +40,17 @@ struct split_type<float> : DSPSplitComplex, impl::TypeBase<float>
 // setup_types
 
 template<>
-struct setup_type<double> : impl::SetupBase<double, FFTSetupD>
+struct setup_type<double> : impl::setup_base<double, FFTSetupD>
 {
     setup_type() {}
-    setup_type(FFTSetupD setup) : SetupBase(setup) {}
+    setup_type(FFTSetupD setup) : setup_base(setup) {}
 };
 
 template<>
-struct setup_type<float> : impl::SetupBase<float, FFTSetup>
+struct setup_type<float> : impl::setup_base<float, FFTSetup>
 {
     setup_type() {}
-    setup_type(FFTSetup setup) : SetupBase(setup) {}
+    setup_type(FFTSetup setup) : setup_base(setup) {}
 };
 
 #endif
@@ -1175,11 +1175,11 @@ struct hisstools_fft_impl
 // Setup definition when using the HISSTools codepath
 
 template <class T>
-struct setup_type : impl::SetupBase<T, hisstools_fft_impl::SetupType<T> *>
+struct setup_type : impl::setup_base<T, hisstools_fft_impl::SetupType<T> *>
 {
     setup_type() {}
     setup_type(hisstools_fft_impl::SetupType<T> *setup)
-    : impl::SetupBase<T, hisstools_fft_impl::SetupType<T> *>(setup)
+    : impl::setup_base<T, hisstools_fft_impl::SetupType<T> *>(setup)
     {}
 };
 
