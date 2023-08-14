@@ -19,10 +19,10 @@ class convolve_partitioned
     // N.B. fixed_min_fft_size_log2 must take into account of the loop unrolling of vectors
     // N.B. fixed_max_fft_size_log2 is perhaps conservative right now
     
-    using VecType = SIMDType<T, SIMDLimits<T>::max_size>;
+    using vector_type = SIMDType<T, SIMDLimits<T>::max_size>;
     
     static constexpr int loop_unroll_size = 4;
-    static constexpr int fixed_min_fft_size_log2 = impl::ilog2(VecType::size * loop_unroll_size);
+    static constexpr int fixed_min_fft_size_log2 = impl::ilog2(vector_type::size * loop_unroll_size);
     static constexpr int fixed_max_fft_size_log2 = 20;
     
 public:
@@ -327,7 +327,7 @@ public:
                 hisstools_rfft(m_fft_setup, fft_input, &in_temp, fft_size, m_fft_size_log2);
                 process_partition(in_temp, m_impulse_buffer, m_accum_buffer, fft_size_halved);
                 hisstools_rifft(m_fft_setup, &m_accum_buffer, m_fft_buffers[2], m_fft_size_log2);
-                scale_store<VecType>(m_fft_buffers[3], m_fft_buffers[2], fft_size, (rw_counter != fft_size));
+                scale_store<vector_type>(m_fft_buffers[3], m_fft_buffers[2], fft_size, (rw_counter != fft_size));
                 
                 // Clear accumulation buffer
                 
@@ -362,11 +362,11 @@ private:
     template <int N>
     struct loop_unroll
     {
-        using VT = VecType;
-        using CVT = const VecType;
+        using vt = vector_type;
+        using cvt = const vector_type;
         using recurse = loop_unroll<N - 1>;
         
-        inline void multiply(VT *& out_r, VT *& out_i, CVT *in_r1, CVT *in_i1, CVT *in_r2, CVT *in_i2, uintptr_t i)
+        inline void multiply(vt *& out_r, vt *& out_i, cvt *in_r1, cvt *in_i1, cvt *in_r2, cvt *in_i2, uintptr_t i)
         {
             *out_r++ += (in_r1[i] * in_r2[i]) - (in_i1[i] * in_i2[i]);
             *out_i++ += (in_r1[i] * in_i2[i]) + (in_i1[i] * in_r2[i]);
@@ -386,14 +386,14 @@ private:
     
     static void process_partition(Split<T> in_1, Split<T> in_2, Split<T> out, uintptr_t num_bins)
     {
-        uintptr_t num_vecs = num_bins / VecType::size;
+        uintptr_t num_vecs = num_bins / vector_type::size;
         
-        const VecType *in_r1 = reinterpret_cast<const VecType *>(in_1.realp);
-        const VecType *in_i1 = reinterpret_cast<const VecType *>(in_1.imagp);
-        const VecType *in_r2 = reinterpret_cast<const VecType *>(in_2.realp);
-        const VecType *in_i2 = reinterpret_cast<const VecType *>(in_2.imagp);
-        VecType *out_r = reinterpret_cast<VecType *>(out.realp);
-        VecType *out_i = reinterpret_cast<VecType *>(out.imagp);
+        const vector_type *in_r1 = reinterpret_cast<const vector_type *>(in_1.realp);
+        const vector_type *in_i1 = reinterpret_cast<const vector_type *>(in_1.imagp);
+        const vector_type *in_r2 = reinterpret_cast<const vector_type *>(in_2.realp);
+        const vector_type *in_i2 = reinterpret_cast<const vector_type *>(in_2.imagp);
+        vector_type *out_r = reinterpret_cast<vector_type *>(out.realp);
+        vector_type *out_i = reinterpret_cast<vector_type *>(out.imagp);
         
         T nyquist_1 = in_1.imagp[0];
         T nyquist_2 = in_2.imagp[0];
