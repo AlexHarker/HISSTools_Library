@@ -205,7 +205,7 @@ int main(int argc, const char * argv[])
     
     if (argc > 1)
     {
-        htl::OAudioFile file(argv[1], htl::base_audio_file::file_type::WAVE, htl::base_audio_file::pcm_format::FLOAT32, 1, 44100.0);
+        htl::out_audio_file file(argv[1], htl::base_audio_file::file_type::WAVE, htl::base_audio_file::pcm_format::FLOAT32, 1, 44100.0);
         
         if (file.is_open())
             file.write_channel(window, size, 0);

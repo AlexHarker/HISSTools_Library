@@ -1,3 +1,4 @@
+
 #ifndef HISSTOOLS_AUDIO_FILE_OUT_FILE_HPP
 #define HISSTOOLS_AUDIO_FILE_OUT_FILE_HPP
 
@@ -12,25 +13,25 @@
 
 HISSTOOLS_NAMESPACE_START()
 
-class OAudioFile : public base_audio_file
+class out_audio_file : public base_audio_file
 {
 public:
     
     // Constructor and Destructor
     
-    OAudioFile() {}
+    out_audio_file() {}
     
-    OAudioFile(const std::string& file, file_type type, pcm_format format, uint16_t channels, double sr)
+    out_audio_file(const std::string& file, file_type type, pcm_format format, uint16_t channels, double sr)
     {
         open(file, type, format, channels, sr);
     }
     
-    OAudioFile(const std::string& file, file_type type, pcm_format format, uint16_t channels, double sr, endianness endianity)
+    out_audio_file(const std::string& file, file_type type, pcm_format format, uint16_t channels, double sr, endianness endianity)
     {
         open(file, type, format, channels, sr, endianity);
     }
     
-    ~OAudioFile()
+    ~out_audio_file()
     {
         close();
     }
@@ -88,7 +89,7 @@ public:
     
     // File Writing
     
-    void write_raw(const char *input, uintptr_t num_frames)
+    void write_raw(const char* input, uintptr_t num_frames)
     {
         write_pcm_data(input, num_frames);
     }
