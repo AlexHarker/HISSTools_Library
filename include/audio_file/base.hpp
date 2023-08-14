@@ -21,10 +21,10 @@ protected:
     
 public:
     
-    using FileType = AudioFileFormat::FileType;
-    using PCMFormat = AudioFileFormat::PCMFormat;
-    using NumericType = AudioFileFormat::NumericType;
-    using Endianness = AudioFileFormat::Endianness;
+    using FileType = audio_file_format::file_type;
+    using PCMFormat = audio_file_format::pcm_format;
+    using NumericType = audio_file_format::numeric_type;
+    using Endianness = audio_file_format::endianness;
     
     enum class Error
     {
@@ -61,7 +61,7 @@ public:
     {
         m_file.close();
         
-        m_format = AudioFileFormat();
+        m_format = audio_file_format();
         
         m_sampling_rate = 0;
         m_num_channels = 0;
@@ -140,7 +140,7 @@ protected:
         return length + (length & 0x1);
     }
     
-    AudioFileFormat m_format;
+    audio_file_format m_format;
     
     double m_sampling_rate;
     uint16_t m_num_channels;

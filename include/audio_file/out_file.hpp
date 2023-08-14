@@ -39,7 +39,7 @@ public:
     
     void open(const std::string& file, FileType type, PCMFormat format, uint16_t channels, double sr)
     {
-        open(file, type, format, channels, sr, type == FileType::WAVE ? Endianness::Little : Endianness::Big);
+        open(file, type, format, channels, sr, type == FileType::WAVE ? Endianness::LITTLE : Endianness::BIG);
     }
     
     void open(const std::string& file, FileType type, PCMFormat format, uint16_t channels, double sr, Endianness endianness)
@@ -53,7 +53,7 @@ public:
         {
             type = type == FileType::AIFF ? FileType::AIFC : type;
             
-            m_format = AudioFileFormat(type, format, endianness);
+            m_format = audio_file_format(type, format, endianness);
             m_sampling_rate = sr;
             m_num_channels  = channels;
             m_num_frames = 0;
@@ -226,7 +226,7 @@ private:
         
         // File Header
         
-        if (header_endianness() == Endianness::Little)
+        if (header_endianness() == Endianness::LITTLE)
             success &= put_chunk("RIFF", 36);
         else
             success &= put_chunk("RIFX", 36);
@@ -236,7 +236,7 @@ private:
         // Format Chunk
         
         success &= put_chunk("fmt ", 16);
-        success &= put_u16(get_numeric_type() == NumericType::Integer ? 0x1 : 0x3, header_endianness());
+        success &= put_u16(get_numeric_type() == NumericType::INTEGER ? 0x1 : 0x3, header_endianness());
         success &= put_u16(channels(), header_endianness());
         success &= put_u32(sampling_rate(), header_endianness());
         
@@ -486,22 +486,22 @@ private:
             
             switch (get_pcm_format())
             {
-                case PCMFormat::Int8:
+                case PCMFormat::INT8:
                     if (get_file_type() == FileType::WAVE)
                         write_loop<uint8_t, uint8_t, 1>(input, j, loop_samples, byte_step);
                     else
                         write_loop<uint32_t, uint32_t, 1>(input, j, loop_samples, byte_step);
                     break;
                     
-                case PCMFormat::Int16:
+                case PCMFormat::INT16:
                     write_loop<uint32_t, uint32_t, 2>(input, j, loop_samples, byte_step);
                     break;
                     
-                case PCMFormat::Int24:
+                case PCMFormat::INT24:
                     write_loop<uint32_t, uint32_t, 3>(input, j, loop_samples, byte_step);
                     break;
                     
-                case PCMFormat::Int32:
+                case PCMFormat::INT32:
                     write_loop<uint32_t, uint32_t, 4>(input, j, loop_samples, byte_step);
                     break;
                     
@@ -509,7 +509,7 @@ private:
                     write_loop<uint32_t, float, 4>(input, j, loop_samples, byte_step);
                     break;
                     
-                case PCMFormat::Float64:
+                case PCMFormat::FLOAT64:
                     write_loop<uint64_t, double, 8>(input, j, loop_samples, byte_step);
                     break;
             }

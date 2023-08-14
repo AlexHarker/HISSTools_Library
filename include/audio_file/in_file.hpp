@@ -312,7 +312,7 @@ private:
         uint32_t format_check = 0;
         uint32_t chunk_size;
         
-        m_format = AudioFileFormat(FileType::AIFF);
+        m_format = audio_file_format(FileType::AIFF);
         
         // Iterate over chunks
         
@@ -352,11 +352,11 @@ private:
                         
                         m_format = AIFCCompression::to_format(chunk + 18, bit_depth);
                         
-                        if (get_file_type() == FileType::None)
+                        if (get_file_type() == FileType::NONE)
                             return Error::UnsupportedAIFCFormat;
                     }
                     else
-                        m_format = AudioFileFormat(FileType::AIFF, NumericType::Integer, bit_depth, Endianness::Big);
+                        m_format = audio_file_format(FileType::AIFF, NumericType::INTEGER, bit_depth, Endianness::BIG);
                     
                     if (!m_format.is_valid())
                         return Error::UnsupportedPCMFormat;
@@ -418,11 +418,11 @@ private:
         
         uint32_t chunk_size;
         
-        m_format = AudioFileFormat(FileType::WAVE);
+        m_format = audio_file_format(FileType::WAVE);
         
         // Check endianness
         
-        Endianness endianness = match_tag(file_type, "RIFX") ? Endianness::Big : Endianness::Little;
+        Endianness endianness = match_tag(file_type, "RIFX") ? Endianness::BIG : Endianness::LITTLE;
         
         // Search for the format chunk and read the format chunk as needed, checking for a valid size
         
@@ -454,7 +454,7 @@ private:
         if (format_byte != 0x0001 && format_byte != 0x0003)
             return Error::UnsupportedWaveFormat;
         
-        NumericType type = format_byte == 0x0003 ? NumericType::Float : NumericType::Integer;
+        NumericType type = format_byte == 0x0003 ? NumericType::FLOAT : NumericType::INTEGER;
         
         m_num_channels = get_u16(chunk + 2, header_endianness());
         m_sampling_rate = get_u32(chunk + 4, header_endianness());
@@ -466,7 +466,7 @@ private:
         
         // Set Format
         
-        m_format = AudioFileFormat(FileType::WAVE, type, bit_depth, endianness);
+        m_format = audio_file_format(FileType::WAVE, type, bit_depth, endianness);
         
         if (!m_format.is_valid())
             return Error::UnsupportedPCMFormat;
@@ -532,22 +532,22 @@ private:
             
             switch (get_pcm_format())
             {
-                case PCMFormat::Int8:
+                case PCMFormat::INT8:
                     if (get_file_type() == FileType::WAVE)
                         read_loop<uint8_t, uint8_t, 1, 0>(output, j, loop_samples, byte_step);
                     else
                         read_loop<uint32_t, uint32_t, 1, 24>(output, j, loop_samples, byte_step);
                     break;
                     
-                case PCMFormat::Int16:
+                case PCMFormat::INT16:
                     read_loop<uint32_t, uint32_t, 2, 16>(output, j, loop_samples, byte_step);
                     break;
                     
-                case PCMFormat::Int24:
+                case PCMFormat::INT24:
                     read_loop<uint32_t, uint32_t, 3,  8>(output, j, loop_samples, byte_step);
                     break;
                     
-                case PCMFormat::Int32:
+                case PCMFormat::INT32:
                     read_loop<uint32_t, uint32_t, 4,  0>(output, j, loop_samples, byte_step);
                     break;
                     
@@ -555,7 +555,7 @@ private:
                     read_loop<float, uint32_t, 4,  0>(output, j, loop_samples, byte_step);
                     break;
                     
-                case PCMFormat::Float64:
+                case PCMFormat::FLOAT64:
                     read_loop<double, uint64_t, 8,  0>(output, j, loop_samples, byte_step);
                     break;
                     

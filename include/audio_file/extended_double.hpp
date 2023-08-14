@@ -32,10 +32,10 @@ struct extended_double_convertor
     {
         // Get double from big-endian IEEE 80-bit extended floating point format
         
-        bool     sign        = get_u16(bytes + 0, Endianness::Big) & 0x8000;
-        int32_t  exponent    = get_u16(bytes + 0, Endianness::Big) & 0x7FFF;
-        uint32_t hi_mantissa = get_u32(bytes + 2, Endianness::Big);
-        uint32_t lo_mantissa = get_u32(bytes + 6, Endianness::Big);
+        bool     sign        = get_u16(bytes + 0, Endianness::BIG) & 0x8000;
+        int32_t  exponent    = get_u16(bytes + 0, Endianness::BIG) & 0x7FFF;
+        uint32_t hi_mantissa = get_u32(bytes + 2, Endianness::BIG);
+        uint32_t lo_mantissa = get_u32(bytes + 6, Endianness::BIG);
         
         // Special handlers for zeros
         
@@ -108,9 +108,9 @@ struct extended_double_convertor
             }
         }
         
-        set_bytes<2>(exponent, Endianness::Big, bytes + 0);
-        set_bytes<4>(hi_mantissa, Endianness::Big, bytes + 2);
-        set_bytes<4>(lo_mantissa, Endianness::Big, bytes + 6);
+        set_bytes<2>(exponent, Endianness::BIG, bytes + 0);
+        set_bytes<4>(hi_mantissa, Endianness::BIG, bytes + 2);
+        set_bytes<4>(lo_mantissa, Endianness::BIG, bytes + 6);
     }
 };
 

@@ -11,43 +11,43 @@ struct AIFCCompression
 {
     enum class Type  { Unknown, None, Sowt, Float32, Float64 };
     
-    using FileType = AudioFileFormat::FileType;
-    using PCMFormat = AudioFileFormat::PCMFormat;
-    using NumericType = AudioFileFormat::NumericType;
-    using Endianness = AudioFileFormat::Endianness;
+    using FileType = audio_file_format::file_type;
+    using PCMFormat = audio_file_format::pcm_format;
+    using NumericType = audio_file_format::numeric_type;
+    using Endianness = audio_file_format::endianness;
     
     static bool match_tag(const char* a, const char* b)
     {
         return (strncmp(a, b, 4) == 0);
     }
     
-    static AudioFileFormat to_format(const char* tag, uint16_t bit_depth)
+    static audio_file_format to_format(const char* tag, uint16_t bit_depth)
     {
         if (match_tag(tag, "NONE"))
-            return AudioFileFormat(FileType::AIFC, NumericType::Integer, bit_depth, Endianness::Big);
+            return audio_file_format(FileType::AIFC, NumericType::INTEGER, bit_depth, Endianness::BIG);
         
         if (match_tag(tag, "twos"))
-            return AudioFileFormat(FileType::AIFC, PCMFormat::Int16, Endianness::Big);
+            return audio_file_format(FileType::AIFC, PCMFormat::INT16, Endianness::BIG);
         
         if (match_tag(tag, "sowt") || match_tag(tag, "SOWT"))
-            return AudioFileFormat(FileType::AIFC, PCMFormat::Int16, Endianness::Little);
+            return audio_file_format(FileType::AIFC, PCMFormat::INT16, Endianness::LITTLE);
         
         if (match_tag(tag, "in24") || match_tag(tag, "IN24"))
-            return AudioFileFormat(FileType::AIFC, PCMFormat::Int24, Endianness::Big);
+            return audio_file_format(FileType::AIFC, PCMFormat::INT24, Endianness::BIG);
         
         if (match_tag(tag, "in32") || match_tag(tag, "IN32"))
-            return AudioFileFormat(FileType::AIFC, PCMFormat::Int32, Endianness::Big);
+            return audio_file_format(FileType::AIFC, PCMFormat::INT32, Endianness::BIG);
         
         if (match_tag(tag, "fl32") || match_tag(tag, "FL32"))
-            return AudioFileFormat(FileType::AIFC, PCMFormat::Float32, Endianness::Big);
+            return audio_file_format(FileType::AIFC, PCMFormat::FLOAT32, Endianness::BIG);
         
         if (match_tag(tag, "fl64") || match_tag(tag, "FL64"))
-            return AudioFileFormat(FileType::AIFC, PCMFormat::Float64, Endianness::Big);
+            return audio_file_format(FileType::AIFC, PCMFormat::FLOAT64, Endianness::BIG);
         
-        return AudioFileFormat();
+        return audio_file_format();
     }
     
-    static const char* to_tag(const AudioFileFormat& format)
+    static const char* to_tag(const audio_file_format& format)
     {
         switch (to_type(format))
         {
@@ -64,7 +64,7 @@ struct AIFCCompression
         }
     }
     
-    static const char* to_string(const AudioFileFormat& format)
+    static const char* to_string(const audio_file_format& format)
     {
         switch (to_type(format))
         {
@@ -80,21 +80,21 @@ struct AIFCCompression
         }
     }
     
-    static Type to_type(const AudioFileFormat& format)
+    static Type to_type(const audio_file_format& format)
     {
         if (!format.is_valid() || format.get_file_type() == FileType::WAVE)
             return Type::Unknown;
         
         switch (format.get_pcm_format())
         {
-            case PCMFormat::Int16:
-                if (format.audio_endianness() == Endianness::Little)
+            case PCMFormat::INT16:
+                if (format.audio_endianness() == Endianness::LITTLE)
                     return Type::Sowt;
                 else
                     return Type::None;
-            case PCMFormat::Float32:
+            case PCMFormat::FLOAT32:
                 return Type::Float32;
-            case PCMFormat::Float64:
+            case PCMFormat::FLOAT64:
                 return Type::Float64;
             default:
                 return Type::None;
