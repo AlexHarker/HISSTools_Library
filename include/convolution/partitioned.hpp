@@ -97,17 +97,17 @@ public:
     convolve_partitioned(convolve_partitioned&& obj) = delete;
     convolve_partitioned& operator = (convolve_partitioned&& obj) = delete;
     
-    ConvolveError set_fft_size(uintptr_t fft_size)
+    convolve_error set_fft_size(uintptr_t fft_size)
     {
         uintptr_t fft_size_log2 = impl::ilog2(fft_size);
         
-        ConvolveError error = ConvolveError::None;
+        convolve_error error = convolve_error::NONE;
         
         if (fft_size_log2 < fixed_min_fft_size_log2 || fft_size_log2 > m_max_fft_size_log2)
-            return ConvolveError::FFTSizeOutOfRange;
+            return convolve_error::FFT_SIZE_OUTSIDE_RANGE;
         
         if (fft_size != (uintptr_t(1) << fft_size_log2))
-            error = ConvolveError::FFTSizeNonPowerOfTwo;
+            error = convolve_error::FFT_SIZE_NOT_POW2;
         
         // Set fft variables iff the fft size has actually actually changed
         
@@ -122,11 +122,11 @@ public:
         return error;
     }
     
-    ConvolveError set_length(uintptr_t length)
+    convolve_error set_length(uintptr_t length)
     {
         m_length = std::min(length, m_max_impulse_length);
         
-        return (length > m_max_impulse_length) ? ConvolveError::PartitionLengthTooLarge : ConvolveError::None;
+        return (length > m_max_impulse_length) ? convolve_error::PARTITION_LEN_TOO_LARGE : convolve_error::NONE;
     }
     
     void set_offset(uintptr_t offset)
@@ -140,11 +140,11 @@ public:
     }
     
     template <class U>
-    ConvolveError set(const U *input, uintptr_t length)
+    convolve_error set(const U *input, uintptr_t length)
     {
         conformed_input<T, U> typed_input(input, length);
 
-        ConvolveError error = ConvolveError::None;
+        convolve_error error = convolve_error::NONE;
         
         // FFT variables
         
@@ -161,7 +161,7 @@ public:
         if (length > m_max_impulse_length)
         {
             length = m_max_impulse_length;
-            error = ConvolveError::MemAllocTooSmall;
+            error = convolve_error::MEMORY_ALLOC_TOO_SMALL;
         }
         
         // Partition / load the impulse
@@ -416,26 +416,26 @@ private:
         in_2.imagp[0] = nyquist_2;
     }
 
-    ConvolveError set_max_fft_size(uintptr_t max_fft_size)
+    convolve_error set_max_fft_size(uintptr_t max_fft_size)
     {
         uintptr_t max_fft_size_log2 = impl::ilog2(max_fft_size);
         
-        ConvolveError error = ConvolveError::None;
+        convolve_error error = convolve_error::NONE;
         
         if (max_fft_size_log2 > fixed_max_fft_size_log2)
         {
-            error = ConvolveError::FFTSizeOutOfRange;
+            error = convolve_error::FFT_SIZE_OUTSIDE_RANGE;
             max_fft_size_log2 = fixed_max_fft_size_log2;
         }
         
         if (max_fft_size_log2 && max_fft_size_log2 < fixed_min_fft_size_log2)
         {
-            error = ConvolveError::FFTSizeOutOfRange;
+            error = convolve_error::FFT_SIZE_OUTSIDE_RANGE;
             max_fft_size_log2 = fixed_min_fft_size_log2;
         }
         
         if (max_fft_size != (uintptr_t(1) << max_fft_size_log2))
-            error = ConvolveError::FFTSizeNonPowerOfTwo;
+            error = convolve_error::FFT_SIZE_NOT_POW2;
         
         m_max_fft_size_log2 = max_fft_size_log2;
         

@@ -48,18 +48,18 @@ namespace impl
     }
 }
 
-enum class ConvolveError
+enum class convolve_error
 {
-    None = 0,
-    InChanOutOfRange,
-    OutChanOutOfRange,
-    MemUnavailable,
-    MemAllocTooSmall,
-    TimeImpulseTooLong,
-    TimeLengthOutOfRange,
-    PartitionLengthTooLarge,
-    FFTSizeOutOfRange,
-    FFTSizeNonPowerOfTwo,
+    NONE = 0,
+    IN_CHANNEL_OUTSIDE_RANGE,
+    OUT_CHANNEL_OUTSIDE_RANGE,
+    MEMORY_UNAVAILABLE,
+    MEMORY_ALLOC_TOO_SMALL,
+    TIME_IMPULSE_TOO_LONG,
+    TIME_LENGTH_OUTSIDE_RANGE,
+    PARTITION_LEN_TOO_LARGE,
+    FFT_SIZE_OUTSIDE_RANGE,
+    FFT_SIZE_NOT_POW2,
 };
 
 template <class T, class U>

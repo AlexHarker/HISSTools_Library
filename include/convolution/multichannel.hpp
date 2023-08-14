@@ -57,25 +57,25 @@ public:
     
     void reset()
     {
-        for_all(static_cast<ConvolveError (CM::*)(uint32_t, uint32_t)>(&CM::reset));
+        for_all(static_cast<convolve_error (CM::*)(uint32_t, uint32_t)>(&CM::reset));
     }
     
-    ConvolveError reset(uint32_t in_chan, uint32_t out_chan)
+    convolve_error reset(uint32_t in_chan, uint32_t out_chan)
     {
-        auto method = static_cast<ConvolveError (CN::*)(uint32_t)>(&CN::reset);
+        auto method = static_cast<convolve_error (CN::*)(uint32_t)>(&CN::reset);
         
         return do_channel(method, out_chan, offset_input(in_chan, out_chan));
     }
     
     // Resize and set IR
     
-    ConvolveError resize(uint32_t in_chan, uint32_t out_chan, uintptr_t length)
+    convolve_error resize(uint32_t in_chan, uint32_t out_chan, uintptr_t length)
     {
         return do_channel(&CN::resize, out_chan, offset_input(in_chan, out_chan), length);
     }
     
     template <class U>
-    ConvolveError set(uint32_t in_chan, uint32_t out_chan, const U* input, uintptr_t length, bool resize)
+    convolve_error set(uint32_t in_chan, uint32_t out_chan, const U* input, uintptr_t length, bool resize)
     {
         conformed_input<T, U> typed_input(input, length);
         
@@ -112,12 +112,12 @@ private:
     // Utility to do one output channel
     
     template <typename Method, typename... Args>
-    ConvolveError do_channel(Method method, uint32_t out_chan, Args...args)
+    convolve_error do_channel(Method method, uint32_t out_chan, Args...args)
     {
         if (out_chan < get_num_outs())
             return (m_convolvers[out_chan].*method)(args...);
         else
-            return ConvolveError::OutChanOutOfRange;
+            return convolve_error::OUT_CHANNEL_OUTSIDE_RANGE;
     }
     
     // Utility to apply an operation to all convolvers

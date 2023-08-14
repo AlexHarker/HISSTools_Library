@@ -107,7 +107,7 @@ public:
         set_reset_offset(part_4, offset);
     }
     
-    ConvolveError resize(uintptr_t length)
+    convolve_error resize(uintptr_t length)
     {
         m_length = 0;
         PartPtr part_4 = m_part_4.equal(m_allocator, large_free, length);
@@ -115,11 +115,11 @@ public:
         if (part_4.get())
             part_4.get()->set_reset_offset(m_reset_offset);
         
-        return part_4.size() == length ? ConvolveError::None : ConvolveError::MemUnavailable;
+        return part_4.size() == length ? convolve_error::NONE : convolve_error::MEMORY_UNAVAILABLE;
     }
     
     template <class U>
-    ConvolveError set(const U *input, uintptr_t length, bool request_resize)
+    convolve_error set(const U *input, uintptr_t length, bool request_resize)
     {
         conformed_input<T, U> typed_input(input, length);
 
@@ -137,18 +137,18 @@ public:
         }
         
         if (length && !part4.get())
-            return ConvolveError::MemUnavailable;
+            return convolve_error::MEMORY_UNAVAILABLE;
         
         if (length > part4.size())
-            return ConvolveError::MemAllocTooSmall;
+            return convolve_error::MEMORY_ALLOC_TOO_SMALL;
         
-        return ConvolveError::None;
+        return convolve_error::NONE;
     }
     
-    ConvolveError reset()
+    convolve_error reset()
     {
         m_reset = true;
-        return ConvolveError::None;
+        return convolve_error::NONE;
     }
     
     // Process

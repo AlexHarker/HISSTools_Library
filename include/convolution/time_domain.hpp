@@ -64,11 +64,11 @@ public:
     convolve_time_domain(convolve_time_domain&& obj) = delete;
     convolve_time_domain& operator = (convolve_time_domain&& obj) = delete;
     
-    ConvolveError set_length(uintptr_t length)
+    convolve_error set_length(uintptr_t length)
     {
         m_length = std::min(length, uintptr_t(max_impulse_length));
         
-        return length > max_impulse_length ? ConvolveError::TimeLengthOutOfRange : ConvolveError::None;
+        return length > max_impulse_length ? convolve_error::TIME_LENGTH_OUTSIDE_RANGE : convolve_error::NONE;
     }
     
     void set_offset(uintptr_t offset)
@@ -77,7 +77,7 @@ public:
     }
     
     template <class U>
-    ConvolveError set(const U *input, uintptr_t length)
+    convolve_error set(const U *input, uintptr_t length)
     {
         conformed_input<T, U> typed_input(input, length);
 
@@ -100,7 +100,7 @@ public:
         reset();
         m_impulse_length = new_length;
         
-        return (!m_length && (length - m_offset) > max_impulse_length) ? ConvolveError::TimeImpulseTooLong : ConvolveError::None;
+        return (!m_length && (length - m_offset) > max_impulse_length) ? convolve_error::TIME_IMPULSE_TOO_LONG : convolve_error::NONE;
     }
     
     void reset()
