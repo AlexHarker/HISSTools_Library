@@ -198,20 +198,20 @@ private:
         constexpr int vec_size_o = (SIMDLimits<T>::max_size > 4) ? 4 : SIMDLimits<T>::max_size;
         constexpr int vec_size_i = (SIMDLimits<IO>::max_size >= 4) ? 4 : 1;
         
-        using VecTypeO = SizedVector<T , vec_size_o, 4>;
-        using VecTypeI = SizedVector<IO, vec_size_i, 4>;
+        using out_vector_type = SizedVector<T , vec_size_o, 4>;
+        using in_vector_type = SizedVector<IO, vec_size_i, 4>;
         
-        VecTypeO sum(0.0);
+        out_vector_type sum(0.0);
         T results[4];
         uintptr_t i;
         
         for (i = 0; i + 7 < N; i += 8)
         {
-            sum += VecTypeO(a + i + 0) * VecTypeO(VecTypeI(b + i + 0));
-            sum += VecTypeO(a + i + 4) * VecTypeO(VecTypeI(b + i + 4));
+            sum += out_vector_type(a + i + 0) * out_vector_type(in_vector_type(b + i + 0));
+            sum += out_vector_type(a + i + 4) * out_vector_type(in_vector_type(b + i + 4));
         }
         for (; i + 3 < N; i += 4)
-            sum += VecTypeO(a + i + 0) * VecTypeO(VecTypeI(b + i + 0));
+            sum += out_vector_type(a + i + 0) * out_vector_type(in_vector_type(b + i + 0));
         
         sum.store(results);
         
