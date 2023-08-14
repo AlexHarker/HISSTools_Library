@@ -19,11 +19,11 @@ HISSTOOLS_NAMESPACE_START()
 template <class T, class IO = T>
 class convolve_time_domain
 {
-    using VecType = SIMDType<T, SIMDLimits<T>::max_size>;
+    using vector_type = SIMDType<T, SIMDLimits<T>::max_size>;
 
     static constexpr int loop_unroll_size = 4;
-    static constexpr int vec_size_shift = impl::ilog2(VecType::size);
-    static constexpr int padding_resolution = loop_unroll_size * VecType::size;
+    static constexpr int vec_size_shift = impl::ilog2(vector_type::size);
+    static constexpr int padding_resolution = loop_unroll_size * vector_type::size;
     static constexpr int padding_shift = impl::ilog2(padding_resolution);
     static constexpr int max_impulse_length = 2048;
     static constexpr int max_buffer_length = 4096;
@@ -198,20 +198,20 @@ private:
     {
         using recurse = loop_unroll<N - 1, M>;
         
-        inline void multiply(VecType *accum, const T* input, const VecType& impulse)
+        inline void multiply(vector_type *accum, const T* input, const vector_type& impulse)
         {
-            *accum += VecType(input) * impulse;
+            *accum += vector_type(input) * impulse;
             recurse().multiply(++accum, ++input, impulse);
         }
         
-        inline void unroll(VecType *accum, const T*& input, const VecType *impulse, uintptr_t idx)
+        inline void unroll(vector_type *accum, const T*& input, const vector_type *impulse, uintptr_t idx)
         {
             loop_unroll<M, M>().multiply(accum, input, impulse[idx]);
-            recurse().unroll(accum, input += VecType::size, impulse, ++idx);
+            recurse().unroll(accum, input += vector_type::size, impulse, ++idx);
         }
         
         template <void Func(IO&, IO)>
-        inline void store(IO *& output, VecType *accum)
+        inline void store(IO *& output, vector_type *accum)
         {
             Func(*output, static_cast<IO>(sum(*accum)));
             recurse().template store<Func>(++output, ++accum);
@@ -235,7 +235,7 @@ private:
     
     template <void Func(IO&, IO), int UR>
     static void convolve_unrolled(const T *in,
-                                       const VecType *impulse,
+                                       const vector_type *impulse,
                                        IO *output,
                                        uintptr_t& idx,
                                        uintptr_t N,
@@ -243,7 +243,7 @@ private:
     {
         for (; (idx + (UR - 1)) < N; idx += UR)
         {
-            std::array<VecType, UR> accum;
+            std::array<vector_type, UR> accum;
             accum.fill(T(0));
             
             const T *input = in - L + 1 + idx;
@@ -260,7 +260,7 @@ private:
     template <void Func(IO&, IO), class U, class V>
     static void convolve(const U *in, const U *impulse, V *output, uintptr_t N, uintptr_t L)
     {
-        const VecType *v_impulse = reinterpret_cast<const VecType *>(impulse);
+        const vector_type *v_impulse = reinterpret_cast<const vector_type *>(impulse);
 
         uintptr_t idx = 0;
                        
