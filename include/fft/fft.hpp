@@ -64,7 +64,7 @@ struct setup_type;
 template <class T>
 void hisstools_create_setup(setup_type<T> *setup, uintptr_t max_fft_log_2)
 {
-    hisstools_fft_impl::create_setup(setup->m_setup, max_fft_log_2);
+    fft_impl::create_setup(setup->m_setup, max_fft_log_2);
 }
 
 /**
@@ -78,7 +78,7 @@ void hisstools_create_setup(setup_type<T> *setup, uintptr_t max_fft_log_2)
 template <class T>
 void hisstools_destroy_setup(setup_type<T> setup)
 {
-    hisstools_fft_impl::destroy_setup(setup.m_setup);
+    fft_impl::destroy_setup(setup.m_setup);
 }
 
 /**
@@ -94,7 +94,7 @@ void hisstools_destroy_setup(setup_type<T> setup)
 template <class T>
 void hisstools_unzip(const T *input, split_type<T> *output, uintptr_t log2n)
 {
-    hisstools_fft_impl::unzip_complex(input, output, 1U << (log2n - 1U));
+    fft_impl::unzip_complex(input, output, 1U << (log2n - 1U));
 }
 
 /**
@@ -110,7 +110,7 @@ void hisstools_unzip(const T *input, split_type<T> *output, uintptr_t log2n)
 template <class T>
 void hisstools_zip(const split_type<T> *input, T *output, uintptr_t log2n)
 {
-    hisstools_fft_impl::zip_complex(input, output, 1U << (log2n - 1U));
+    fft_impl::zip_complex(input, output, 1U << (log2n - 1U));
 }
 
 /**
@@ -129,7 +129,7 @@ void hisstools_zip(const split_type<T> *input, T *output, uintptr_t log2n)
 template <class T, class U>
 void hisstools_unzip_zero(const U *input, split_type<T> *output, uintptr_t in_length, uintptr_t log2n)
 {
-    hisstools_fft_impl::unzip_zero(input, output, in_length, log2n);
+    fft_impl::unzip_zero(input, output, in_length, log2n);
 }
 
 /**
@@ -145,7 +145,7 @@ void hisstools_unzip_zero(const U *input, split_type<T> *output, uintptr_t in_le
 template <class T>
 void hisstools_fft(setup_type<T> setup, split_type<T> *input, uintptr_t log2n)
 {
-    hisstools_fft_impl::hisstools_fft(input, setup.m_setup, log2n);
+    fft_impl::hisstools_fft(input, setup.m_setup, log2n);
 }
 
 /**
@@ -161,7 +161,7 @@ void hisstools_fft(setup_type<T> setup, split_type<T> *input, uintptr_t log2n)
 template <class T>
 void hisstools_rfft(setup_type<T> setup, split_type<T> *input, uintptr_t log2n)
 {
-    hisstools_fft_impl::hisstools_rfft(input, setup.m_setup, log2n);
+    fft_impl::hisstools_rfft(input, setup.m_setup, log2n);
 }
 
 /**
@@ -196,7 +196,7 @@ void hisstools_rfft(setup_type<T> setup, const U *input, split_type<T> *output, 
 template <class T>
 void hisstools_ifft(setup_type<T> setup, split_type<T> *input, uintptr_t log2n)
 {
-    hisstools_fft_impl::hisstools_ifft(input, setup.m_setup, log2n);
+    fft_impl::hisstools_ifft(input, setup.m_setup, log2n);
 }
 
 /**
@@ -212,7 +212,7 @@ void hisstools_ifft(setup_type<T> setup, split_type<T> *input, uintptr_t log2n)
 template <class T>
 void hisstools_rifft(setup_type<T> setup, split_type<T> *input, uintptr_t log2n)
 {
-    hisstools_fft_impl::hisstools_rifft(input, setup.m_setup, log2n);
+    fft_impl::hisstools_rifft(input, setup.m_setup, log2n);
 }
 
 /**

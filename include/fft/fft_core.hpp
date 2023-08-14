@@ -55,7 +55,7 @@ struct setup_type<float> : impl::setup_base<float, FFTSetup>
 
 #endif
 
-struct hisstools_fft_impl
+struct fft_impl
 {
     // Offset for Table
     
@@ -64,7 +64,7 @@ struct hisstools_fft_impl
     // Setup Structures
 
     template <class T>
-    struct SetupType
+    struct fft_setup_type
     {
         template <typename U>
         const U *get_realp(uintptr_t pass)
@@ -107,16 +107,16 @@ struct hisstools_fft_impl
     // Data Type Definitions
         
     template <class T, int vec_size>
-    using Vector4x = SizedVector<T, vec_size, 4>;
+    using vector_4x = SizedVector<T, vec_size, 4>;
 
     // ******************** Setup Creation and Destruction ******************** //
 
     // Creation
 
     template <class T>
-    static void create_setup(SetupType<T> *& setup, uintptr_t max_fft_log2)
+    static void create_setup(fft_setup_type<T> *& setup, uintptr_t max_fft_log2)
     {
-        setup = new(SetupType<T>);
+        setup = new(fft_setup_type<T>);
         
         // Set Max FFT Size
         
@@ -150,7 +150,7 @@ struct hisstools_fft_impl
     // Destruction
 
     template <class T>
-    static void destroy_setup(SetupType<T> *setup)
+    static void destroy_setup(fft_setup_type<T> *setup)
     {
         if (setup)
         {
@@ -168,14 +168,14 @@ struct hisstools_fft_impl
         // Template for an SIMD Vectors With 4 Elements
         
         template <class T, int vec_size>
-        static void shuffle4(const Vector4x<T, vec_size> &,
-                             const Vector4x<T, vec_size> &,
-                             const Vector4x<T, vec_size> &,
-                             const Vector4x<T, vec_size> &,
-                             Vector4x<T, vec_size> *,
-                             Vector4x<T, vec_size> *,
-                             Vector4x<T, vec_size> *,
-                             Vector4x<T, vec_size> *)
+        static void shuffle4(const vector_4x<T, vec_size> &,
+                             const vector_4x<T, vec_size> &,
+                             const vector_4x<T, vec_size> &,
+                             const vector_4x<T, vec_size> &,
+                             vector_4x<T, vec_size> *,
+                             vector_4x<T, vec_size> *,
+                             vector_4x<T, vec_size> *,
+                             vector_4x<T, vec_size> *)
         {
             static_assert(vec_size != vec_size, "Shuffle not implemented for this type");
         }
@@ -183,14 +183,14 @@ struct hisstools_fft_impl
         // Template for Scalars
         
         template <class T>
-        static void shuffle4(const Vector4x<T, 1> &A,
-                             const Vector4x<T, 1> &B,
-                             const Vector4x<T, 1> &C,
-                             const Vector4x<T, 1> &D,
-                             Vector4x<T, 1> *ptr1,
-                             Vector4x<T, 1> *ptr2,
-                             Vector4x<T, 1> *ptr3,
-                             Vector4x<T, 1> *ptr4)
+        static void shuffle4(const vector_4x<T, 1> &A,
+                             const vector_4x<T, 1> &B,
+                             const vector_4x<T, 1> &C,
+                             const vector_4x<T, 1> &D,
+                             vector_4x<T, 1> *ptr1,
+                             vector_4x<T, 1> *ptr2,
+                             vector_4x<T, 1> *ptr3,
+                             vector_4x<T, 1> *ptr4)
         {
             ptr1->mData[0] = A.mData[0];
             ptr1->mData[1] = C.mData[0];
@@ -214,14 +214,14 @@ struct hisstools_fft_impl
         
         // Shuffle for an SSE Float Packed (1 SIMD Element)
         
-        static void shuffle4(const Vector4x<float, 4> &A,
-                             const Vector4x<float, 4> &B,
-                             const Vector4x<float, 4> &C,
-                             const Vector4x<float, 4> &D,
-                             Vector4x<float, 4> *ptr1,
-                             Vector4x<float, 4> *ptr2,
-                             Vector4x<float, 4> *ptr3,
-                             Vector4x<float, 4> *ptr4)
+        static void shuffle4(const vector_4x<float, 4> &A,
+                             const vector_4x<float, 4> &B,
+                             const vector_4x<float, 4> &C,
+                             const vector_4x<float, 4> &D,
+                             vector_4x<float, 4> *ptr1,
+                             vector_4x<float, 4> *ptr2,
+                             vector_4x<float, 4> *ptr3,
+                             vector_4x<float, 4> *ptr4)
         {
             const __m128 v1 = _mm_unpacklo_ps(A.mData[0].mVal, B.mData[0].mVal);
             const __m128 v2 = _mm_unpackhi_ps(A.mData[0].mVal, B.mData[0].mVal);
@@ -236,14 +236,14 @@ struct hisstools_fft_impl
         
         // Shuffle for an SSE Double Packed (2 SIMD Elements)
         
-        static void shuffle4(const Vector4x<double, 2> &A,
-                             const Vector4x<double, 2> &B,
-                             const Vector4x<double, 2> &C,
-                             const Vector4x<double, 2> &D,
-                             Vector4x<double, 2> *ptr1,
-                             Vector4x<double, 2> *ptr2,
-                             Vector4x<double, 2> *ptr3,
-                             Vector4x<double, 2> *ptr4)
+        static void shuffle4(const vector_4x<double, 2> &A,
+                             const vector_4x<double, 2> &B,
+                             const vector_4x<double, 2> &C,
+                             const vector_4x<double, 2> &D,
+                             vector_4x<double, 2> *ptr1,
+                             vector_4x<double, 2> *ptr2,
+                             vector_4x<double, 2> *ptr3,
+                             vector_4x<double, 2> *ptr4)
         {
             ptr1->mData[0] = _mm_unpacklo_pd(A.mData[0].mVal, C.mData[0].mVal);
             ptr1->mData[1] = _mm_unpacklo_pd(B.mData[0].mVal, D.mData[0].mVal);
@@ -261,14 +261,14 @@ struct hisstools_fft_impl
         
         // Shuffle for an AVX256 Double Packed (1 SIMD Element)
         
-        static void shuffle4(const Vector4x<double, 4> &A,
-                             const Vector4x<double, 4> &B,
-                             const Vector4x<double, 4> &C,
-                             const Vector4x<double, 4> &D,
-                             Vector4x<double, 4> *ptr1,
-                             Vector4x<double, 4> *ptr2,
-                             Vector4x<double, 4> *ptr3,
-                             Vector4x<double, 4> *ptr4)
+        static void shuffle4(const vector_4x<double, 4> &A,
+                             const vector_4x<double, 4> &B,
+                             const vector_4x<double, 4> &C,
+                             const vector_4x<double, 4> &D,
+                             vector_4x<double, 4> *ptr1,
+                             vector_4x<double, 4> *ptr2,
+                             vector_4x<double, 4> *ptr3,
+                             vector_4x<double, 4> *ptr4)
         {
             const __m256d v1 = _mm256_unpacklo_pd(A.mData[0].mVal, B.mData[0].mVal);
             const __m256d v2 = _mm256_unpackhi_pd(A.mData[0].mVal, B.mData[0].mVal);
@@ -299,14 +299,14 @@ struct hisstools_fft_impl
         
         // Shuffle an ARM Double Packed (2 SIMD Elements)
         
-        static void shuffle4(const Vector4x<double, 2> &A,
-                             const Vector4x<double, 2> &B,
-                             const Vector4x<double, 2> &C,
-                             const Vector4x<double, 2> &D,
-                             Vector4x<double, 2> *ptr1,
-                             Vector4x<double, 2> *ptr2,
-                             Vector4x<double, 2> *ptr3,
-                             Vector4x<double, 2> *ptr4)
+        static void shuffle4(const vector_4x<double, 2> &A,
+                             const vector_4x<double, 2> &B,
+                             const vector_4x<double, 2> &C,
+                             const vector_4x<double, 2> &D,
+                             vector_4x<double, 2> *ptr1,
+                             vector_4x<double, 2> *ptr2,
+                             vector_4x<double, 2> *ptr3,
+                             vector_4x<double, 2> *ptr4)
         {
             ptr1->mData[0] = vuzp1q_f64(A.mData[0].mVal, C.mData[0].mVal);
             ptr1->mData[1] = vuzp1q_f64(B.mData[0].mVal, D.mData[0].mVal);
@@ -322,14 +322,14 @@ struct hisstools_fft_impl
 
         // Shuffle for an ARM Float Packed (1 SIMD Element)
         
-        static void shuffle4(const Vector4x<float, 4> &A,
-                             const Vector4x<float, 4> &B,
-                             const Vector4x<float, 4> &C,
-                             const Vector4x<float, 4> &D,
-                             Vector4x<float, 4> *ptr1,
-                             Vector4x<float, 4> *ptr2,
-                             Vector4x<float, 4> *ptr3,
-                             Vector4x<float, 4> *ptr4)
+        static void shuffle4(const vector_4x<float, 4> &A,
+                             const vector_4x<float, 4> &B,
+                             const vector_4x<float, 4> &C,
+                             const vector_4x<float, 4> &D,
+                             vector_4x<float, 4> *ptr1,
+                             vector_4x<float, 4> *ptr2,
+                             vector_4x<float, 4> *ptr3,
+                             vector_4x<float, 4> *ptr4)
         {
             const float32x4_t v1 = vcombine_f32( vget_low_f32(A.mData[0].mVal),  vget_low_f32(C.mData[0].mVal));
             const float32x4_t v2 = vcombine_f32(vget_high_f32(A.mData[0].mVal), vget_high_f32(C.mData[0].mVal));
@@ -355,48 +355,48 @@ struct hisstools_fft_impl
     template <class T, int vec_size>
     static void pass_1_2_reorder(split_type<T> *input, uintptr_t length)
     {
-        using VecType = Vector4x<T, vec_size> ;
+        using vector_type = vector_4x<T, vec_size> ;
         
-        VecType *r1_ptr = reinterpret_cast<VecType *>(input->realp);
-        VecType *r2_ptr = r1_ptr + (length >> 4);
-        VecType *r3_ptr = r2_ptr + (length >> 4);
-        VecType *r4_ptr = r3_ptr + (length >> 4);
-        VecType *i1_ptr = reinterpret_cast<VecType *>(input->imagp);
-        VecType *i2_ptr = i1_ptr + (length >> 4);
-        VecType *i3_ptr = i2_ptr + (length >> 4);
-        VecType *i4_ptr = i3_ptr + (length >> 4);
+        vector_type *r1_ptr = reinterpret_cast<vector_type *>(input->realp);
+        vector_type *r2_ptr = r1_ptr + (length >> 4);
+        vector_type *r3_ptr = r2_ptr + (length >> 4);
+        vector_type *r4_ptr = r3_ptr + (length >> 4);
+        vector_type *i1_ptr = reinterpret_cast<vector_type *>(input->imagp);
+        vector_type *i2_ptr = i1_ptr + (length >> 4);
+        vector_type *i3_ptr = i2_ptr + (length >> 4);
+        vector_type *i4_ptr = i3_ptr + (length >> 4);
         
         for (uintptr_t i = 0; i < length >> 4; i++)
         {
-            const VecType r1 = *r1_ptr;
-            const VecType i1 = *i1_ptr;
-            const VecType r2 = *r2_ptr;
-            const VecType i2 = *i2_ptr;
+            const vector_type r1 = *r1_ptr;
+            const vector_type i1 = *i1_ptr;
+            const vector_type r2 = *r2_ptr;
+            const vector_type i2 = *i2_ptr;
             
-            const VecType r3 = *r3_ptr;
-            const VecType i3 = *i3_ptr;
-            const VecType r4 = *r4_ptr;
-            const VecType i4 = *i4_ptr;
+            const vector_type r3 = *r3_ptr;
+            const vector_type i3 = *i3_ptr;
+            const vector_type r4 = *r4_ptr;
+            const vector_type i4 = *i4_ptr;
             
-            const VecType r5 = r1 + r3;
-            const VecType r6 = r2 + r4;
-            const VecType r7 = r1 - r3;
-            const VecType r8 = r2 - r4;
+            const vector_type r5 = r1 + r3;
+            const vector_type r6 = r2 + r4;
+            const vector_type r7 = r1 - r3;
+            const vector_type r8 = r2 - r4;
             
-            const VecType i5 = i1 + i3;
-            const VecType i6 = i2 + i4;
-            const VecType i7 = i1 - i3;
-            const VecType i8 = i2 - i4;
+            const vector_type i5 = i1 + i3;
+            const vector_type i6 = i2 + i4;
+            const vector_type i7 = i1 - i3;
+            const vector_type i8 = i2 - i4;
             
-            const VecType rA = r5 + r6;
-            const VecType rB = r5 - r6;
-            const VecType rC = r7 + i8;
-            const VecType rD = r7 - i8;
+            const vector_type rA = r5 + r6;
+            const vector_type rB = r5 - r6;
+            const vector_type rC = r7 + i8;
+            const vector_type rD = r7 - i8;
             
-            const VecType iA = i5 + i6;
-            const VecType iB = i5 - i6;
-            const VecType iC = i7 - r8;
-            const VecType iD = i7 + r8;
+            const vector_type iA = i5 + i6;
+            const vector_type iB = i5 - i6;
+            const vector_type iC = i7 - r8;
+            const vector_type iD = i7 + r8;
             
             shuffler::shuffle4(rA, rB, rC, rD, r1_ptr++, r2_ptr++, r3_ptr++, r4_ptr++);
             shuffler::shuffle4(iA, iB, iC, iD, i1_ptr++, i2_ptr++, i3_ptr++, i4_ptr++);
@@ -406,21 +406,21 @@ struct hisstools_fft_impl
     // Pass Three Twiddle Factors
     
     template <class T, int vec_size>
-    static void pass_3_twiddle(Vector4x<T, vec_size> &tr, Vector4x<T, vec_size> &ti)
+    static void pass_3_twiddle(vector_4x<T, vec_size> &tr, vector_4x<T, vec_size> &ti)
     {
-        static const double SQRT_2_2 = 0.70710678118654752440084436210484904;
+        static const double HALF_SQRT2 = 0.70710678118654752440084436210484904;
         
-        const T _______zero = static_cast<T>(0);
-        const T ________one = static_cast<T>(1);
-        const T neg_____one = static_cast<T>(-1);
-        const T ____sqrt2_2 = static_cast<T>(SQRT_2_2);
-        const T neg_sqrt2_2 = static_cast<T>(-SQRT_2_2);
+        const T zero = static_cast<T>(0);
+        const T one = static_cast<T>(1);
+        const T minus_one = static_cast<T>(-1);
+        const T half_sqrt2 = static_cast<T>(HALF_SQRT2);
+        const T minus_half_sqrt2 = static_cast<T>(-HALF_SQRT2);
         
-        const T str[4] = {________one, ____sqrt2_2, _______zero, neg_sqrt2_2};
-        const T sti[4] = {_______zero, neg_sqrt2_2, neg_____one, neg_sqrt2_2};
+        const T str[4] = {one, half_sqrt2, zero, minus_half_sqrt2};
+        const T sti[4] = {zero, minus_half_sqrt2, minus_one, minus_half_sqrt2};
         
-        tr = Vector4x<T, vec_size>(str);
-        ti = Vector4x<T, vec_size>(sti);
+        tr = vector_4x<T, vec_size>(str);
+        ti = vector_4x<T, vec_size>(sti);
     }
     
     // Pass Three With Re-ordering
@@ -428,41 +428,41 @@ struct hisstools_fft_impl
     template <class T, int vec_size>
     static void pass_3_reorder(split_type<T> *input, uintptr_t length)
     {
-        using VecType = Vector4x<T, vec_size>;
+        using vector_type = vector_4x<T, vec_size>;
         
         uintptr_t offset = length >> 5;
         uintptr_t outerLoop = length >> 6;
         
-        VecType tr;
-        VecType ti;
+        vector_type tr;
+        vector_type ti;
         
         pass_3_twiddle(tr, ti);
         
-        VecType *r1_ptr = reinterpret_cast<VecType *>(input->realp);
-        VecType *i1_ptr = reinterpret_cast<VecType *>(input->imagp);
-        VecType *r2_ptr = r1_ptr + offset;
-        VecType *i2_ptr = i1_ptr + offset;
+        vector_type *r1_ptr = reinterpret_cast<vector_type *>(input->realp);
+        vector_type *i1_ptr = reinterpret_cast<vector_type *>(input->imagp);
+        vector_type *r2_ptr = r1_ptr + offset;
+        vector_type *i2_ptr = i1_ptr + offset;
         
         for (uintptr_t i = 0, j = 0; i < length >> 1; i += 8)
         {
             // Get input
             
-            const VecType r1(r1_ptr);
-            const VecType r2(r1_ptr + 1);
-            const VecType i1(i1_ptr);
-            const VecType i2(i1_ptr + 1);
+            const vector_type r1(r1_ptr);
+            const vector_type r2(r1_ptr + 1);
+            const vector_type i1(i1_ptr);
+            const vector_type i2(i1_ptr + 1);
             
-            const VecType r3(r2_ptr);
-            const VecType r4(r2_ptr + 1);
-            const VecType i3(i2_ptr);
-            const VecType i4(i2_ptr + 1);
+            const vector_type r3(r2_ptr);
+            const vector_type r4(r2_ptr + 1);
+            const vector_type i3(i2_ptr);
+            const vector_type i4(i2_ptr + 1);
             
             // Multiply by twiddle
             
-            const VecType r5 = (r3 * tr) - (i3 * ti);
-            const VecType i5 = (r3 * ti) + (i3 * tr);
-            const VecType r6 = (r4 * tr) - (i4 * ti);
-            const VecType i6 = (r4 * ti) + (i4 * tr);
+            const vector_type r5 = (r3 * tr) - (i3 * ti);
+            const vector_type i5 = (r3 * ti) + (i3 * tr);
+            const vector_type r6 = (r4 * tr) - (i4 * ti);
+            const vector_type i6 = (r4 * ti) + (i4 * tr);
             
             // Store output (swapping as necessary)
             
@@ -491,29 +491,29 @@ struct hisstools_fft_impl
     template <class T, int vec_size>
     static void pass_3(split_type<T> *input, uintptr_t length)
     {
-        using VecType = Vector4x<T, vec_size>;
+        using vector_type = vector_4x<T, vec_size>;
 
-        VecType tr;
-        VecType ti;
+        vector_type tr;
+        vector_type ti;
         
         pass_3_twiddle(tr, ti);
         
-        VecType *r_ptr = reinterpret_cast<VecType *>(input->realp);
-        VecType *i_ptr = reinterpret_cast<VecType *>(input->imagp);
+        vector_type *r_ptr = reinterpret_cast<vector_type *>(input->realp);
+        vector_type *i_ptr = reinterpret_cast<vector_type *>(input->imagp);
         
         for (uintptr_t i = 0; i < length >> 3; i++)
         {
             // Get input
             
-            const VecType r1(r_ptr);
-            const VecType r2(r_ptr + 1);
-            const VecType i1(i_ptr);
-            const VecType i2(i_ptr + 1);
+            const vector_type r1(r_ptr);
+            const vector_type r2(r_ptr + 1);
+            const vector_type i1(i_ptr);
+            const vector_type i2(i_ptr + 1);
             
             // Multiply by twiddle
             
-            const VecType r3 = (r2 * tr) - (i2 * ti);
-            const VecType i3 = (r2 * ti) + (i2 * tr);
+            const vector_type r3 = (r2 * tr) - (i2 * ti);
+            const vector_type i3 = (r2 * ti) + (i2 * tr);
             
             // Store output
             
@@ -528,9 +528,9 @@ struct hisstools_fft_impl
     // A Pass Requiring Tables With Re-ordering
     
     template <class T, int vec_size>
-    static void pass_trig_table_reorder(split_type<T> *input, SetupType<T> *setup, uintptr_t length, uintptr_t pass)
+    static void pass_trig_table_reorder(split_type<T> *input, fft_setup_type<T> *setup, uintptr_t length, uintptr_t pass)
     {
-        using VecType = SIMDType<T, vec_size>;
+        using vector_type = SIMDType<T, vec_size>;
 
         uintptr_t size = static_cast<uintptr_t>(2u) << pass;
         uintptr_t incr = size / (vec_size << 1);
@@ -538,39 +538,39 @@ struct hisstools_fft_impl
         uintptr_t offset = (length >> pass) / (vec_size << 1);
         uintptr_t outerLoop = ((length >> 1) / size) / (static_cast<uintptr_t>(1u) << pass);
         
-        VecType *r1_ptr = reinterpret_cast<VecType *>(input->realp);
-        VecType *i1_ptr = reinterpret_cast<VecType *>(input->imagp);
-        VecType *r2_ptr = r1_ptr + offset;
-        VecType *i2_ptr = i1_ptr + offset;
+        vector_type *r1_ptr = reinterpret_cast<vector_type *>(input->realp);
+        vector_type *i1_ptr = reinterpret_cast<vector_type *>(input->imagp);
+        vector_type *r2_ptr = r1_ptr + offset;
+        vector_type *i2_ptr = i1_ptr + offset;
         
         for (uintptr_t i = 0, j = 0; i < (length >> 1); loop += size)
         {
-            const VecType *tr_ptr = setup->template get_realp<VecType>(pass);
-            const VecType *ti_ptr = setup->template get_imagp<VecType>(pass);
+            const vector_type *tr_ptr = setup->template get_realp<vector_type>(pass);
+            const vector_type *ti_ptr = setup->template get_imagp<vector_type>(pass);
             
             for (; i < loop; i += (vec_size << 1))
             {
                 // Get input and twiddle
                 
-                const VecType tr = *tr_ptr++;
-                const VecType ti = *ti_ptr++;
+                const vector_type tr = *tr_ptr++;
+                const vector_type ti = *ti_ptr++;
                 
-                const VecType r1 = *r1_ptr;
-                const VecType i1 = *i1_ptr;
-                const VecType r2 = *r2_ptr;
-                const VecType i2 = *i2_ptr;
+                const vector_type r1 = *r1_ptr;
+                const vector_type i1 = *i1_ptr;
+                const vector_type r2 = *r2_ptr;
+                const vector_type i2 = *i2_ptr;
                 
-                const VecType r3 = *(r1_ptr + incr);
-                const VecType i3 = *(i1_ptr + incr);
-                const VecType r4 = *(r2_ptr + incr);
-                const VecType i4 = *(i2_ptr + incr);
+                const vector_type r3 = *(r1_ptr + incr);
+                const vector_type i3 = *(i1_ptr + incr);
+                const vector_type r4 = *(r2_ptr + incr);
+                const vector_type i4 = *(i2_ptr + incr);
                 
                 // Multiply by twiddle
                 
-                const VecType r5 = (r2 * tr) - (i2 * ti);
-                const VecType i5 = (r2 * ti) + (i2 * tr);
-                const VecType r6 = (r4 * tr) - (i4 * ti);
-                const VecType i6 = (r4 * ti) + (i4 * tr);
+                const vector_type r5 = (r2 * tr) - (i2 * ti);
+                const vector_type i5 = (r2 * ti) + (i2 * tr);
+                const vector_type r6 = (r4 * tr) - (i4 * ti);
+                const vector_type i6 = (r4 * ti) + (i4 * tr);
                 
                 // Store output (swapping as necessary)
                 
@@ -603,40 +603,40 @@ struct hisstools_fft_impl
     // A Pass Requiring Tables Without Re-ordering
     
     template <class T, int vec_size>
-    static void pass_trig_table(split_type<T> *input, SetupType<T> *setup, uintptr_t length, uintptr_t pass)
+    static void pass_trig_table(split_type<T> *input, fft_setup_type<T> *setup, uintptr_t length, uintptr_t pass)
     {
-        using VecType = SIMDType<T, vec_size>;
+        using vector_type = SIMDType<T, vec_size>;
 
         uintptr_t size = static_cast<uintptr_t>(2u) << pass;
         uintptr_t incr = size / (vec_size << 1);
         uintptr_t loop = size;
         
-        VecType *r1_ptr = reinterpret_cast<VecType *>(input->realp);
-        VecType *i1_ptr = reinterpret_cast<VecType *>(input->imagp);
-        VecType *r2_ptr = r1_ptr + (size >> 1) / vec_size;
-        VecType *i2_ptr = i1_ptr + (size >> 1) / vec_size;
+        vector_type *r1_ptr = reinterpret_cast<vector_type *>(input->realp);
+        vector_type *i1_ptr = reinterpret_cast<vector_type *>(input->imagp);
+        vector_type *r2_ptr = r1_ptr + (size >> 1) / vec_size;
+        vector_type *i2_ptr = i1_ptr + (size >> 1) / vec_size;
         
         for (uintptr_t i = 0; i < length; loop += size)
         {
-            const VecType *tr_ptr = setup->template get_realp<VecType>(pass);
-            const VecType *ti_ptr = setup->template get_imagp<VecType>(pass);
+            const vector_type *tr_ptr = setup->template get_realp<vector_type>(pass);
+            const vector_type *ti_ptr = setup->template get_imagp<vector_type>(pass);
             
             for (; i < loop; i += (vec_size << 1))
             {
                 // Get input and twiddle factors
                 
-                const VecType tr = *tr_ptr++;
-                const VecType ti = *ti_ptr++;
+                const vector_type tr = *tr_ptr++;
+                const vector_type ti = *ti_ptr++;
                 
-                const VecType r1 = *r1_ptr;
-                const VecType i1 = *i1_ptr;
-                const VecType r2 = *r2_ptr;
-                const VecType i2 = *i2_ptr;
+                const vector_type r1 = *r1_ptr;
+                const vector_type i1 = *i1_ptr;
+                const vector_type r2 = *r2_ptr;
+                const vector_type i2 = *i2_ptr;
                 
                 // Multiply by twiddle
                 
-                const VecType r3 = (r2 * tr) - (i2 * ti);
-                const VecType i3 = (r2 * ti) + (i2 * tr);
+                const vector_type r3 = (r2 * tr) - (i2 * ti);
+                const vector_type i3 = (r2 * ti) + (i2 * tr);
                 
                 // Store output
                 
@@ -656,7 +656,7 @@ struct hisstools_fft_impl
     // A Real Pass Requiring Trig Tables (Never Reorders)
     
     template <bool ifft, class T>
-    static void pass_real_trig_table(split_type<T> *input, SetupType<T> *setup, uintptr_t fft_log2)
+    static void pass_real_trig_table(split_type<T> *input, fft_setup_type<T> *setup, uintptr_t fft_log2)
     {
         uintptr_t length = static_cast<uintptr_t>(1u) << (fft_log2 - 1u);
         uintptr_t lengthM1 = length - 1;
@@ -880,12 +880,12 @@ struct hisstools_fft_impl
     template <class T, int vec_size>
     static void unzip_impl(const T *input, T *real, T *imag, uintptr_t half_length, uintptr_t offset)
     {
-        using VecType = SIMDType<T, vec_size>;
+        using vector_type = SIMDType<T, vec_size>;
 
-        const VecType *in_ptr = reinterpret_cast<const VecType*>(input + (2 * offset));
+        const vector_type *in_ptr = reinterpret_cast<const vector_type*>(input + (2 * offset));
         
-        VecType *realp = reinterpret_cast<VecType*>(real + offset);
-        VecType *imagp = reinterpret_cast<VecType*>(imag + offset);
+        vector_type *realp = reinterpret_cast<vector_type*>(real + offset);
+        vector_type *imagp = reinterpret_cast<vector_type*>(imag + offset);
         
         for (uintptr_t i = 0; i < (half_length / vec_size); i++, in_ptr += 2)
             unzip(*realp++, *imagp++, *in_ptr, *(in_ptr + 1));
@@ -924,12 +924,12 @@ struct hisstools_fft_impl
     template <class T, int vec_size>
     static void zip_impl(const T *real, const T *imag, T *output, uintptr_t half_length, uintptr_t offset)
     {
-        using VecType = SIMDType<T, vec_size>;
+        using vector_type = SIMDType<T, vec_size>;
 
-        const VecType *realp = reinterpret_cast<const VecType*>(real + offset);
-        const VecType *imagp = reinterpret_cast<const VecType*>(imag + offset);
+        const vector_type *realp = reinterpret_cast<const vector_type*>(real + offset);
+        const vector_type *imagp = reinterpret_cast<const vector_type*>(imag + offset);
         
-        VecType *out_ptr = reinterpret_cast<VecType*>(output + (2 * offset));
+        vector_type *out_ptr = reinterpret_cast<vector_type*>(output + (2 * offset));
         
         for (uintptr_t i = 0; i < (half_length / vec_size); i++, out_ptr += 2)
             zip(*out_ptr, *(out_ptr + 1), *realp++, *imagp++);
@@ -992,7 +992,7 @@ struct hisstools_fft_impl
     // FFT Passes Template
     
     template <class T, int max_vec_size>
-    static void fft_passes(split_type<T> *input, SetupType<T> *setup, uintptr_t fft_log2)
+    static void fft_passes(split_type<T> *input, fft_setup_type<T> *setup, uintptr_t fft_log2)
     {
         constexpr int A = min(max_vec_size,  4);
         constexpr int B = min(max_vec_size,  8);
@@ -1024,7 +1024,7 @@ struct hisstools_fft_impl
     // A Complex FFT
     
     template <class T>
-    static void hisstools_fft(split_type<T> *input, SetupType<T> *setup, uintptr_t fft_log2)
+    static void hisstools_fft(split_type<T> *input, fft_setup_type<T> *setup, uintptr_t fft_log2)
     {
         if (fft_log2 >= 4)
         {
@@ -1040,7 +1040,7 @@ struct hisstools_fft_impl
     // A Complex iFFT
     
     template <class T>
-    static void hisstools_ifft(split_type<T> *input, SetupType<T> *setup, uintptr_t fft_log2)
+    static void hisstools_ifft(split_type<T> *input, fft_setup_type<T> *setup, uintptr_t fft_log2)
     {
         split_type<T> swap(input->imagp, input->realp);
         hisstools_fft(&swap, setup, fft_log2);
@@ -1049,7 +1049,7 @@ struct hisstools_fft_impl
     // A Real FFT
     
     template <class T>
-    static void hisstools_rfft(split_type<T> *input, SetupType<T> *setup, uintptr_t fft_log2)
+    static void hisstools_rfft(split_type<T> *input, fft_setup_type<T> *setup, uintptr_t fft_log2)
     {
         if (fft_log2 >= 3)
         {
@@ -1063,7 +1063,7 @@ struct hisstools_fft_impl
     // A Real iFFT
     
     template <class T>
-    static void hisstools_rifft(split_type<T> *input, SetupType<T> *setup, uintptr_t fft_log2)
+    static void hisstools_rifft(split_type<T> *input, fft_setup_type<T> *setup, uintptr_t fft_log2)
     {
         if (fft_log2 >= 3)
         {
@@ -1175,11 +1175,11 @@ struct hisstools_fft_impl
 // Setup definition when using the HISSTools codepath
 
 template <class T>
-struct setup_type : impl::setup_base<T, hisstools_fft_impl::SetupType<T> *>
+struct setup_type : impl::setup_base<T, fft_impl::fft_setup_type<T> *>
 {
     setup_type() {}
-    setup_type(hisstools_fft_impl::SetupType<T> *setup)
-    : impl::setup_base<T, hisstools_fft_impl::SetupType<T> *>(setup)
+    setup_type(fft_impl::fft_setup_type<T> *setup)
+    : impl::setup_base<T, fft_impl::fft_setup_type<T> *>(setup)
     {}
 };
 
