@@ -22,16 +22,10 @@ struct byte_getter
 {
     T operator()(const unsigned char* bytes)
     {
-        return (T(bytes[M]) << byte_shift<N, M, E>()) | byte_getter<T, N, M + 1, E>()(bytes);
-    }
-};
-
-template <class T, int N, audio_file_format::endianness E>
-struct byte_getter<T, N, N - 1, E>
-{
-    T operator()(const unsigned char* bytes)
-    {
-        return T(bytes[N - 1]) << byte_shift<N, N - 1, E>();
+        if constexpr (M == N - 1)
+            return T(bytes[N - 1]) << byte_shift<N, N - 1, E>();
+        else
+            return (T(bytes[M]) << byte_shift<N, M, E>()) | byte_getter<T, N, M + 1, E>()(bytes);
     }
 };
 
