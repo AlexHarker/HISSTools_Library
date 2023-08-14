@@ -30,7 +30,7 @@ class convolve_mono
 {
     using time_domain_type = convolve_time_domain<T, IO>;
     using partition_type = convolve_partitioned<T, IO>;
-    using partition_pointer = typename memory_swap<partition_type>::Ptr;
+    using partition_pointer = typename memory_swap<partition_type>::pointer_type;
     using partition_unique_pointer = std::unique_ptr<partition_type>;
     
 public:
@@ -275,7 +275,7 @@ private:
         delete large_partition;
     }
     
-    typename memory_swap<partition_type>::AllocFunc m_allocator;
+    typename memory_swap<partition_type>::alloc_func m_allocator;
     
     std::vector<uint32_t> m_sizes;
     

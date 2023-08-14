@@ -29,16 +29,16 @@ public:
     
     // Alloc and free routine prototypes
     
-    typedef std::function<T *(uintptr_t size)> AllocFunc;
-    typedef std::function<void (T *) > FreeFunc;
+    using alloc_func = std::function<T *(uintptr_t size)> ;
+    using free_func  = std::function<void (T *)>;
     
-    class Ptr
+    class pointer_type
     {
         friend memory_swap;
         
     public:
         
-        Ptr(Ptr&& p)
+        pointer_type(pointer_type&& p)
         : m_owner(p.m_owner), m_pointer(p.m_pointer), m_size(p.m_size)
         {
             p.m_owner = nullptr;
@@ -46,7 +46,7 @@ public:
             p.m_size = 0;
         }
         
-        ~Ptr() { clear(); }
+        ~pointer_type() { clear(); }
         
         void clear()
         {
@@ -71,12 +71,12 @@ public:
             equal(&allocate, &deallocate, size);
         }
         
-        void grow(AllocFunc alloc_function, FreeFunc free_function, uintptr_t size)
+        void grow(alloc_func alloc_function, free_func free_function, uintptr_t size)
         {
             update_allocate_if(alloc_function, free_function, size, std::greater<uintptr_t>());
         }
         
-        void equal(AllocFunc alloc_function, FreeFunc free_function, uintptr_t size)
+        void equal(alloc_func alloc_function, free_func free_function, uintptr_t size)
         {
             update_allocate_if(alloc_function, free_function, size, std::not_equal_to<uintptr_t>());
         }
@@ -86,21 +86,21 @@ public:
         
     private:
         
-        Ptr()
+        pointer_type()
         : m_owner(nullptr), m_pointer(nullptr), m_size(0)
         {}
         
-        Ptr(memory_swap *owner)
+        pointer_type(memory_swap *owner)
         : m_owner(owner)
         , m_pointer(m_owner ? m_owner->m_pointer : nullptr)
         , m_size(m_owner ? m_owner->m_size : 0)
         {}
         
-        Ptr(const Ptr& p) = delete;
-        Ptr operator = (const Ptr& p) = delete;
+        pointer_type(const pointer_type& p) = delete;
+        pointer_type operator = (const pointer_type& p) = delete;
         
         template <typename Op>
-        void update_allocate_if(AllocFunc alloc_function, FreeFunc free_function, uintptr_t size, Op op)
+        void update_allocate_if(alloc_func alloc_function, free_func free_function, uintptr_t size, Op op)
         {
             update(&memory_swap::allocate_locked_if<Op>, alloc_function, free_function, size, op);
         }
@@ -132,7 +132,7 @@ public:
     
     // Constructor (custom allocation)
     
-    memory_swap(AllocFunc alloc_function, FreeFunc free_function, uintptr_t size)
+    memory_swap(alloc_func alloc_function, free_func free_function, uintptr_t size)
     : m_pointer(nullptr), m_size(0), m_free_function(nullptr)
     {
         if (size)
@@ -178,42 +178,42 @@ public:
     
     // lock to get access to the memory struct and safely return the pointer
     
-    Ptr access()
+    pointer_type access()
     {
         lock();
-        return Ptr(this);
+        return pointer_type(this);
     }
     
     // This non-blocking routine attempts to lock the pointer but fails if it is in another thread
     
-    Ptr attempt()
+    pointer_type attempt()
     {
-        return try_lock() ? Ptr(this) : Ptr();
+        return try_lock() ? pointer_type(this) : pointer_type();
     }
     
-    Ptr swap(T *ptr, uintptr_t size)
+    pointer_type swap(T *ptr, uintptr_t size)
     {
         lock();
         set(ptr, size, nullptr);
-        return Ptr(this);
+        return pointer_type(this);
     }
     
-    Ptr grow(uintptr_t size)
+    pointer_type grow(uintptr_t size)
     {
         return grow(&allocate, &deallocate, size);
     }
     
-    Ptr equal(uintptr_t size)
+    pointer_type equal(uintptr_t size)
     {
         return equal(&allocate, &deallocate, size);
     }
     
-    Ptr grow(AllocFunc alloc_function, FreeFunc free_function, uintptr_t size)
+    pointer_type grow(alloc_func alloc_function, free_func free_function, uintptr_t size)
     {
         return allocate_if(alloc_function, free_function, size, std::greater<uintptr_t>());
     }
     
-    Ptr equal(AllocFunc alloc_function, FreeFunc free_function, uintptr_t size)
+    pointer_type equal(alloc_func alloc_function, free_func free_function, uintptr_t size)
     {
         return allocate_if(alloc_function, free_function, size, std::not_equal_to<uintptr_t>());
     }
@@ -221,21 +221,21 @@ public:
 private:
     
     template <typename Op>
-    Ptr allocate_if(AllocFunc alloc_function, FreeFunc free_function, uintptr_t size, Op op)
+    pointer_type allocate_if(alloc_func alloc_function, free_func free_function, uintptr_t size, Op op)
     {
         lock();
         allocate_locked_if(alloc_function, free_function, size, op);
-        return Ptr(this);
+        return pointer_type(this);
     }
     
     template <typename Op>
-    void allocate_locked_if(AllocFunc alloc_function, FreeFunc free_function, uintptr_t size, Op op)
+    void allocate_locked_if(alloc_func alloc_function, free_func free_function, uintptr_t size, Op op)
     {
         if (op(size, m_size))
             set(alloc_function(size), size, free_function);
     }
     
-    void set(T *ptr, uintptr_t size, FreeFunc free_function)
+    void set(T *ptr, uintptr_t size, free_func free_function)
     {
         if (m_free_function)
             m_free_function(m_pointer);
@@ -293,7 +293,7 @@ private:
     
     T *m_pointer;
     uintptr_t m_size;
-    FreeFunc m_free_function;
+    free_func m_free_function;
 };
 
 HISSTOOLS_NAMESPACE_END()
