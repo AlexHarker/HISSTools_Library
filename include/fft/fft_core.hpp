@@ -986,9 +986,10 @@ struct fft_impl
     // ******************** FFT Pass Control ******************** //
     
     // Utility Helper
-    
+
+    #if !defined(min)
     static constexpr int min(int a, int b) { return a < b ? a : b; }
-    
+    #endif
     // FFT Passes Template
     
     template <class T, int max_vec_size>
