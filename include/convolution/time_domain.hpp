@@ -19,7 +19,7 @@ HISSTOOLS_NAMESPACE_START()
 template <class T, class IO = T>
 class convolve_time_domain
 {
-    using vector_type = SIMDType<T, SIMDLimits<T>::max_size>;
+    using vector_type = simd_type<T, simd_limits<T>::max_size>;
 
     static constexpr int loop_unroll_size = 4;
     static constexpr int vec_size_shift = impl::ilog2(vector_type::size);

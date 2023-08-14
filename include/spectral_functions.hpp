@@ -17,7 +17,7 @@ namespace impl
     template <class T, int N, typename Op>
     void simd_operation(split_type<T> *out, split_type<T> *in1, split_type<T> *in2, uintptr_t fft_size, T scale, Op op)
     {
-        using vector_type = SIMDType<T, N>;
+        using vector_type = simd_type<T, N>;
         
         const vector_type *r_in1 = reinterpret_cast<const vector_type *>(in1->realp);
         const vector_type *i_in1 = reinterpret_cast<const vector_type *>(in1->imagp);
@@ -35,7 +35,7 @@ namespace impl
     template <class T, typename Op>
     void complex_operation(split_type<T> *out, split_type<T> *in1, split_type<T> *in2, uintptr_t fft_size, T scale, Op op)
     {
-        constexpr int N = SIMDLimits<T>::max_size;
+        constexpr int N = simd_limits<T>::max_size;
         constexpr int M = N / 2 ? N / 2 : 1;
         
         if (fft_size == 1 || fft_size < M)

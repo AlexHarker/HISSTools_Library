@@ -86,7 +86,7 @@ public:
     
     void process(const IO * const* ins, IO** outs, uint32_t num_ins, uint32_t num_outs, uintptr_t num_samples)
     {
-        SIMDDenormals denormal_handler;
+        simd_denormals denormal_handler;
         
         num_ins = std::min(num_ins, get_num_ins());
         num_outs = std::min(num_outs, get_num_outs());

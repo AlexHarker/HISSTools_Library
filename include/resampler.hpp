@@ -195,11 +195,11 @@ private:
     template <bool B = Approx, typename std::enable_if<B, int>::type = 0>
     static inline double apply_filter(const T *a, IO *b, uintptr_t N)
     {
-        constexpr int vec_size_o = (SIMDLimits<T>::max_size > 4) ? 4 : SIMDLimits<T>::max_size;
-        constexpr int vec_size_i = (SIMDLimits<IO>::max_size >= 4) ? 4 : 1;
+        constexpr int vec_size_o = (simd_limits<T>::max_size > 4) ? 4 : simd_limits<T>::max_size;
+        constexpr int vec_size_i = (simd_limits<IO>::max_size >= 4) ? 4 : 1;
         
-        using out_vector_type = SizedVector<T , vec_size_o, 4>;
-        using in_vector_type = SizedVector<IO, vec_size_i, 4>;
+        using out_vector_type = sized_vector<T , vec_size_o, 4>;
+        using in_vector_type = sized_vector<IO, vec_size_i, 4>;
         
         out_vector_type sum(0.0);
         T results[4];

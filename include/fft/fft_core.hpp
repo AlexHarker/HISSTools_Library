@@ -99,7 +99,7 @@ struct fft_impl
 
     // ******************** Basic Definitions ******************** //
 
-    static constexpr int alignment_size = SIMDLimits<float>::max_size * sizeof(float);
+    static constexpr int alignment_size = simd_limits<float>::max_size * sizeof(float);
     
     template <class T>
     static bool is_aligned(const T *ptr) { return !(reinterpret_cast<uintptr_t>(ptr) % alignment_size); }
@@ -107,7 +107,7 @@ struct fft_impl
     // Data Type Definitions
         
     template <class T, int vec_size>
-    using vector_4x = SizedVector<T, vec_size, 4>;
+    using vector_4x = sized_vector<T, vec_size, 4>;
 
     // ******************** Setup Creation and Destruction ******************** //
 
@@ -192,22 +192,22 @@ struct fft_impl
                              vector_4x<T, 1> *ptr3,
                              vector_4x<T, 1> *ptr4)
         {
-            ptr1->mData[0] = A.mData[0];
-            ptr1->mData[1] = C.mData[0];
-            ptr1->mData[2] = B.mData[0];
-            ptr1->mData[3] = D.mData[0];
-            ptr2->mData[0] = A.mData[2];
-            ptr2->mData[1] = C.mData[2];
-            ptr2->mData[2] = B.mData[2];
-            ptr2->mData[3] = D.mData[2];
-            ptr3->mData[0] = A.mData[1];
-            ptr3->mData[1] = C.mData[1];
-            ptr3->mData[2] = B.mData[1];
-            ptr3->mData[3] = D.mData[1];
-            ptr4->mData[0] = A.mData[3];
-            ptr4->mData[1] = C.mData[3];
-            ptr4->mData[2] = B.mData[3];
-            ptr4->mData[3] = D.mData[3];
+            ptr1->m_data[0] = A.m_data[0];
+            ptr1->m_data[1] = C.m_data[0];
+            ptr1->m_data[2] = B.m_data[0];
+            ptr1->m_data[3] = D.m_data[0];
+            ptr2->m_data[0] = A.m_data[2];
+            ptr2->m_data[1] = C.m_data[2];
+            ptr2->m_data[2] = B.m_data[2];
+            ptr2->m_data[3] = D.m_data[2];
+            ptr3->m_data[0] = A.m_data[1];
+            ptr3->m_data[1] = C.m_data[1];
+            ptr3->m_data[2] = B.m_data[1];
+            ptr3->m_data[3] = D.m_data[1];
+            ptr4->m_data[0] = A.m_data[3];
+            ptr4->m_data[1] = C.m_data[3];
+            ptr4->m_data[2] = B.m_data[3];
+            ptr4->m_data[3] = D.m_data[3];
         }
         
     #if defined(__SSE__) || defined(__AVX__) || defined(__AVX512F__)
@@ -223,15 +223,15 @@ struct fft_impl
                              vector_4x<float, 4> *ptr3,
                              vector_4x<float, 4> *ptr4)
         {
-            const __m128 v1 = _mm_unpacklo_ps(A.mData[0].mVal, B.mData[0].mVal);
-            const __m128 v2 = _mm_unpackhi_ps(A.mData[0].mVal, B.mData[0].mVal);
-            const __m128 v3 = _mm_unpacklo_ps(C.mData[0].mVal, D.mData[0].mVal);
-            const __m128 v4 = _mm_unpackhi_ps(C.mData[0].mVal, D.mData[0].mVal);
+            const __m128 v1 = _mm_unpacklo_ps(A.m_data[0].m_val, B.m_data[0].m_val);
+            const __m128 v2 = _mm_unpackhi_ps(A.m_data[0].m_val, B.m_data[0].m_val);
+            const __m128 v3 = _mm_unpacklo_ps(C.m_data[0].m_val, D.m_data[0].m_val);
+            const __m128 v4 = _mm_unpackhi_ps(C.m_data[0].m_val, D.m_data[0].m_val);
 
-            ptr1->mData[0] = _mm_unpacklo_ps(v1, v3);
-            ptr2->mData[0] = _mm_unpacklo_ps(v2, v4);
-            ptr3->mData[0] = _mm_unpackhi_ps(v1, v3);
-            ptr4->mData[0] = _mm_unpackhi_ps(v2, v4);
+            ptr1->m_data[0] = _mm_unpacklo_ps(v1, v3);
+            ptr2->m_data[0] = _mm_unpacklo_ps(v2, v4);
+            ptr3->m_data[0] = _mm_unpackhi_ps(v1, v3);
+            ptr4->m_data[0] = _mm_unpackhi_ps(v2, v4);
         }
         
         // Shuffle for an SSE Double Packed (2 SIMD Elements)
@@ -245,14 +245,14 @@ struct fft_impl
                              vector_4x<double, 2> *ptr3,
                              vector_4x<double, 2> *ptr4)
         {
-            ptr1->mData[0] = _mm_unpacklo_pd(A.mData[0].mVal, C.mData[0].mVal);
-            ptr1->mData[1] = _mm_unpacklo_pd(B.mData[0].mVal, D.mData[0].mVal);
-            ptr2->mData[0] = _mm_unpacklo_pd(A.mData[1].mVal, C.mData[1].mVal);
-            ptr2->mData[1] = _mm_unpacklo_pd(B.mData[1].mVal, D.mData[1].mVal);
-            ptr3->mData[0] = _mm_unpackhi_pd(A.mData[0].mVal, C.mData[0].mVal);
-            ptr3->mData[1] = _mm_unpackhi_pd(B.mData[0].mVal, D.mData[0].mVal);
-            ptr4->mData[0] = _mm_unpackhi_pd(A.mData[1].mVal, C.mData[1].mVal);
-            ptr4->mData[1] = _mm_unpackhi_pd(B.mData[1].mVal, D.mData[1].mVal);
+            ptr1->m_data[0] = _mm_unpacklo_pd(A.m_data[0].m_val, C.m_data[0].m_val);
+            ptr1->m_data[1] = _mm_unpacklo_pd(B.m_data[0].m_val, D.m_data[0].m_val);
+            ptr2->m_data[0] = _mm_unpacklo_pd(A.m_data[1].m_val, C.m_data[1].m_val);
+            ptr2->m_data[1] = _mm_unpacklo_pd(B.m_data[1].m_val, D.m_data[1].m_val);
+            ptr3->m_data[0] = _mm_unpackhi_pd(A.m_data[0].m_val, C.m_data[0].m_val);
+            ptr3->m_data[1] = _mm_unpackhi_pd(B.m_data[0].m_val, D.m_data[0].m_val);
+            ptr4->m_data[0] = _mm_unpackhi_pd(A.m_data[1].m_val, C.m_data[1].m_val);
+            ptr4->m_data[1] = _mm_unpackhi_pd(B.m_data[1].m_val, D.m_data[1].m_val);
         }
         
     #endif
@@ -270,10 +270,10 @@ struct fft_impl
                              vector_4x<double, 4> *ptr3,
                              vector_4x<double, 4> *ptr4)
         {
-            const __m256d v1 = _mm256_unpacklo_pd(A.mData[0].mVal, B.mData[0].mVal);
-            const __m256d v2 = _mm256_unpackhi_pd(A.mData[0].mVal, B.mData[0].mVal);
-            const __m256d v3 = _mm256_unpacklo_pd(C.mData[0].mVal, D.mData[0].mVal);
-            const __m256d v4 = _mm256_unpackhi_pd(C.mData[0].mVal, D.mData[0].mVal);
+            const __m256d v1 = _mm256_unpacklo_pd(A.m_data[0].m_val, B.m_data[0].m_val);
+            const __m256d v2 = _mm256_unpackhi_pd(A.m_data[0].m_val, B.m_data[0].m_val);
+            const __m256d v3 = _mm256_unpacklo_pd(C.m_data[0].m_val, D.m_data[0].m_val);
+            const __m256d v4 = _mm256_unpackhi_pd(C.m_data[0].m_val, D.m_data[0].m_val);
             
             const __m256d v5 = _mm256_permute2f128_pd(v1, v2, 0x20);
             const __m256d v6 = _mm256_permute2f128_pd(v1, v2, 0x31);
@@ -285,10 +285,10 @@ struct fft_impl
             const __m256d vB = _mm256_unpacklo_pd(v6, v8);
             const __m256d vC = _mm256_unpackhi_pd(v6, v8);
             
-            ptr1->mData[0] = _mm256_permute2f128_pd(v9, vA, 0x20);
-            ptr2->mData[0] = _mm256_permute2f128_pd(vB, vC, 0x20);
-            ptr3->mData[0] = _mm256_permute2f128_pd(v9, vA, 0x31);
-            ptr4->mData[0] = _mm256_permute2f128_pd(vB, vC, 0x31) ;
+            ptr1->m_data[0] = _mm256_permute2f128_pd(v9, vA, 0x20);
+            ptr2->m_data[0] = _mm256_permute2f128_pd(vB, vC, 0x20);
+            ptr3->m_data[0] = _mm256_permute2f128_pd(v9, vA, 0x31);
+            ptr4->m_data[0] = _mm256_permute2f128_pd(vB, vC, 0x31) ;
         }
         
     #endif
@@ -308,14 +308,14 @@ struct fft_impl
                              vector_4x<double, 2> *ptr3,
                              vector_4x<double, 2> *ptr4)
         {
-            ptr1->mData[0] = vuzp1q_f64(A.mData[0].mVal, C.mData[0].mVal);
-            ptr1->mData[1] = vuzp1q_f64(B.mData[0].mVal, D.mData[0].mVal);
-            ptr2->mData[0] = vuzp1q_f64(A.mData[1].mVal, C.mData[1].mVal);
-            ptr2->mData[1] = vuzp1q_f64(B.mData[1].mVal, D.mData[1].mVal);
-            ptr3->mData[0] = vuzp2q_f64(A.mData[0].mVal, C.mData[0].mVal);
-            ptr3->mData[1] = vuzp2q_f64(B.mData[0].mVal, D.mData[0].mVal);
-            ptr4->mData[0] = vuzp2q_f64(A.mData[1].mVal, C.mData[1].mVal);
-            ptr4->mData[1] = vuzp2q_f64(B.mData[1].mVal, D.mData[1].mVal);
+            ptr1->m_data[0] = vuzp1q_f64(A.m_data[0].m_val, C.m_data[0].m_val);
+            ptr1->m_data[1] = vuzp1q_f64(B.m_data[0].m_val, D.m_data[0].m_val);
+            ptr2->m_data[0] = vuzp1q_f64(A.m_data[1].m_val, C.m_data[1].m_val);
+            ptr2->m_data[1] = vuzp1q_f64(B.m_data[1].m_val, D.m_data[1].m_val);
+            ptr3->m_data[0] = vuzp2q_f64(A.m_data[0].m_val, C.m_data[0].m_val);
+            ptr3->m_data[1] = vuzp2q_f64(B.m_data[0].m_val, D.m_data[0].m_val);
+            ptr4->m_data[0] = vuzp2q_f64(A.m_data[1].m_val, C.m_data[1].m_val);
+            ptr4->m_data[1] = vuzp2q_f64(B.m_data[1].m_val, D.m_data[1].m_val);
         }
         
     #endif
@@ -331,18 +331,18 @@ struct fft_impl
                              vector_4x<float, 4> *ptr3,
                              vector_4x<float, 4> *ptr4)
         {
-            const float32x4_t v1 = vcombine_f32( vget_low_f32(A.mData[0].mVal),  vget_low_f32(C.mData[0].mVal));
-            const float32x4_t v2 = vcombine_f32(vget_high_f32(A.mData[0].mVal), vget_high_f32(C.mData[0].mVal));
-            const float32x4_t v3 = vcombine_f32( vget_low_f32(B.mData[0].mVal),  vget_low_f32(D.mData[0].mVal));
-            const float32x4_t v4 = vcombine_f32(vget_high_f32(B.mData[0].mVal), vget_high_f32(D.mData[0].mVal));
+            const float32x4_t v1 = vcombine_f32( vget_low_f32(A.m_data[0].m_val),  vget_low_f32(C.m_data[0].m_val));
+            const float32x4_t v2 = vcombine_f32(vget_high_f32(A.m_data[0].m_val), vget_high_f32(C.m_data[0].m_val));
+            const float32x4_t v3 = vcombine_f32( vget_low_f32(B.m_data[0].m_val),  vget_low_f32(D.m_data[0].m_val));
+            const float32x4_t v4 = vcombine_f32(vget_high_f32(B.m_data[0].m_val), vget_high_f32(D.m_data[0].m_val));
             
             const float32x4x2_t v5 = vuzpq_f32(v1, v3);
             const float32x4x2_t v6 = vuzpq_f32(v2, v4);
             
-            ptr1->mData[0] = v5.val[0];
-            ptr2->mData[0] = v6.val[0];
-            ptr3->mData[0] = v5.val[1];
-            ptr4->mData[0] = v6.val[1];
+            ptr1->m_data[0] = v5.val[0];
+            ptr2->m_data[0] = v6.val[0];
+            ptr3->m_data[0] = v5.val[1];
+            ptr4->m_data[0] = v6.val[1];
         }
         
     #endif
@@ -530,7 +530,7 @@ struct fft_impl
     template <class T, int vec_size>
     static void pass_trig_table_reorder(split_type<T> *input, fft_setup_type<T> *setup, uintptr_t length, uintptr_t pass)
     {
-        using vector_type = SIMDType<T, vec_size>;
+        using vector_type = simd_type<T, vec_size>;
 
         uintptr_t size = static_cast<uintptr_t>(2u) << pass;
         uintptr_t incr = size / (vec_size << 1);
@@ -605,7 +605,7 @@ struct fft_impl
     template <class T, int vec_size>
     static void pass_trig_table(split_type<T> *input, fft_setup_type<T> *setup, uintptr_t length, uintptr_t pass)
     {
-        using vector_type = SIMDType<T, vec_size>;
+        using vector_type = simd_type<T, vec_size>;
 
         uintptr_t size = static_cast<uintptr_t>(2u) << pass;
         uintptr_t incr = size / (vec_size << 1);
@@ -880,7 +880,7 @@ struct fft_impl
     template <class T, int vec_size>
     static void unzip_impl(const T *input, T *real, T *imag, uintptr_t half_length, uintptr_t offset)
     {
-        using vector_type = SIMDType<T, vec_size>;
+        using vector_type = simd_type<T, vec_size>;
 
         const vector_type *in_ptr = reinterpret_cast<const vector_type*>(input + (2 * offset));
         
@@ -907,7 +907,7 @@ struct fft_impl
     template <class T>
     static void unzip_complex(const T *input, split_type<T> *output, uintptr_t half_length)
     {
-        constexpr int v_size = SIMDLimits<T>::max_size;
+        constexpr int v_size = simd_limits<T>::max_size;
         
         if (is_aligned(input) && is_aligned(output->realp) && is_aligned(output->imagp))
         {
@@ -924,7 +924,7 @@ struct fft_impl
     template <class T, int vec_size>
     static void zip_impl(const T *real, const T *imag, T *output, uintptr_t half_length, uintptr_t offset)
     {
-        using vector_type = SIMDType<T, vec_size>;
+        using vector_type = simd_type<T, vec_size>;
 
         const vector_type *realp = reinterpret_cast<const vector_type*>(real + offset);
         const vector_type *imagp = reinterpret_cast<const vector_type*>(imag + offset);
@@ -938,7 +938,7 @@ struct fft_impl
     template <class T>
     static void zip_complex(const split_type<T> *input, T *output, uintptr_t half_length)
     {
-        constexpr int v_size = SIMDLimits<T>::max_size;
+        constexpr int v_size = simd_limits<T>::max_size;
         
         if (is_aligned(output) && is_aligned(input->realp) && is_aligned(input->imagp))
         {
@@ -1031,7 +1031,7 @@ struct fft_impl
             if (!is_aligned(input->realp) || !is_aligned(input->imagp))
                 fft_passes<T, 1>(input, setup, fft_log2);
             else
-                fft_passes<T, SIMDLimits<T>::max_size>(input, setup, fft_log2);
+                fft_passes<T, simd_limits<T>::max_size>(input, setup, fft_log2);
         }
         else
             small_fft(input, fft_log2);

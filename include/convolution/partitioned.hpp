@@ -19,7 +19,7 @@ class convolve_partitioned
     // N.B. fixed_min_fft_size_log2 must take into account of the loop unrolling of vectors
     // N.B. fixed_max_fft_size_log2 is perhaps conservative right now
     
-    using vector_type = SIMDType<T, SIMDLimits<T>::max_size>;
+    using vector_type = simd_type<T, simd_limits<T>::max_size>;
     
     static constexpr int loop_unroll_size = 4;
     static constexpr int fixed_min_fft_size_log2 = impl::ilog2(vector_type::size * loop_unroll_size);

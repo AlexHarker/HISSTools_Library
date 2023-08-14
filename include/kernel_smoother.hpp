@@ -61,7 +61,7 @@ public:
         
         Allocator& allocator = processor::m_allocator;
         
-        const int N = SIMDLimits<T>::max_size;
+        const int N = simd_limits<T>::max_size;
         
         width_lo = std::min(static_cast<double>(length), std::max(1.0, width_lo));
         width_hi = std::min(static_cast<double>(length), std::max(1.0, width_hi));
@@ -291,7 +291,7 @@ private:
     template <int N>
     void apply_filter(T *out, const T *data, const T *filter, uintptr_t width, T gain)
     {
-        using vector_type = SIMDType<double, N>;
+        using vector_type = simd_type<double, N>;
         
         vector_type filter_val = filter[width - 1] * vector_type(data);
         
@@ -305,7 +305,7 @@ private:
     template <int N>
     void apply_filter_symmetric(T *out, const T *data, const T *filter, uintptr_t half_width, T gain)
     {
-        using vector_type = SIMDType<double, N>;
+        using vector_type = simd_type<double, N>;
         
         vector_type filter_val = filter[0] * vector_type(data);
         
