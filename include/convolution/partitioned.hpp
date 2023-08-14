@@ -170,7 +170,7 @@ public:
         uintptr_t buffer_position = m_offset;
 
         T *buffer_temp_1 = m_partition_temp.realp;
-        Split buffer_temp_2 = m_impulse_buffer;
+        split_type buffer_temp_2 = m_impulse_buffer;
 
         for (; length > 0; buffer_position += fft_size_halved, num_partitions++)
         {
@@ -203,8 +203,8 @@ public:
     
     void process(const IO *in, IO *out, uintptr_t num_samples, bool accumulate = false)
     {
-        Split<T> ir_temp;
-        Split<T> in_temp;
+        split_type<T> ir_temp;
+        split_type<T> in_temp;
         
         // Scheduling variables
         
@@ -384,7 +384,7 @@ private:
 
     // Process a partition
     
-    static void process_partition(Split<T> in_1, Split<T> in_2, Split<T> out, uintptr_t num_bins)
+    static void process_partition(split_type<T> in_1, split_type<T> in_2, split_type<T> out, uintptr_t num_bins)
     {
         uintptr_t num_vecs = num_bins / vector_type::size;
         
@@ -453,7 +453,7 @@ private:
             *(out_ptr++) = *(temp_ptr++) * scale;
     }
     
-    static void offset_split_pointer(Split<T> &complex_1, const Split<T> &complex_2, uintptr_t offset)
+    static void offset_split_pointer(split_type<T> &complex_1, const split_type<T> &complex_2, uintptr_t offset)
     {
         complex_1.realp = complex_2.realp + offset;
         complex_1.imagp = complex_2.imagp + offset;
@@ -467,7 +467,7 @@ private:
     
     // FFT variables
     
-    Setup<T> m_fft_setup;
+    setup_type<T> m_fft_setup;
     
     uintptr_t m_max_fft_size_log2;
     uintptr_t m_fft_size_log2;
@@ -485,10 +485,10 @@ private:
     
     T *m_fft_buffers[4];
     
-    Split<T> m_impulse_buffer;
-    Split<T> m_input_buffer;
-    Split<T> m_accum_buffer;
-    Split<T> m_partition_temp;
+    split_type<T> m_impulse_buffer;
+    split_type<T> m_input_buffer;
+    split_type<T> m_accum_buffer;
+    split_type<T> m_partition_temp;
     
     // Flags
     

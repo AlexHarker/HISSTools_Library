@@ -86,8 +86,8 @@ public:
         uintptr_t fft_size = processor::max_fft_size() >= sizes.fft() ? sizes.fft() : 0;
         
         T *ptr = allocator.template allocate<T>(fft_size * 2 + filter_full + length + filter_size * 2);
-        Split<T> io { ptr, ptr + (fft_size >> 1) };
-        Split<T> st { io.realp + fft_size, io.imagp + fft_size };
+        split_type<T> io { ptr, ptr + (fft_size >> 1) };
+        split_type<T> st { io.realp + fft_size, io.imagp + fft_size };
         T *filter = ptr + (fft_size << 1);
         T *padded = filter + filter_full;
         
@@ -316,7 +316,7 @@ private:
         filter_val.store(out);
     }
     
-    void apply_filter_fft(T *out, const T *data, const T *filter, Split<T>& io, Split<T>& temp, uintptr_t width, uintptr_t n, T gain)
+    void apply_filter_fft(T *out, const T *data, const T *filter, split_type<T>& io, split_type<T>& temp, uintptr_t width, uintptr_t n, T gain)
     {
         uintptr_t data_width = n + width - 1;
         op_sizes sizes(data_width, width, processor::EdgeMode::Linear);

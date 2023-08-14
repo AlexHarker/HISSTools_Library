@@ -75,7 +75,7 @@ private:
 };
 
 template <class T>
-void fillSplit(Split<T> split, int max_log2)
+void fillsplit_type(split_type<T> split, int max_log2)
 {
     for (long i = 0; i < (1 << max_log2); i++)
     {
@@ -87,8 +87,8 @@ void fillSplit(Split<T> split, int max_log2)
 template <class T>
 uint64_t crash_test(int min_log2, int max_log2)
 {
-    Setup<T> setup;
-    Split<T> split;
+    setup_type<T> setup;
+    split_type<T> split;
     
     split.realp = (T *) malloc(sizeof(T) * 1 << max_log2);
     split.imagp = (T *) malloc(sizeof(T) * 1 << max_log2);
@@ -139,10 +139,10 @@ uint64_t crash_test(int min_log2, int max_log2)
 }
 
 template <class T>
-uint64_t single_test(int size, void (*Fn)(Setup<T>, Split<T> *, uintptr_t))
+uint64_t single_test(int size, void (*Fn)(setup_type<T>, split_type<T> *, uintptr_t))
 {
-    Setup<T> setup;
-    Split<T> split;
+    setup_type<T> setup;
+    split_type<T> split;
     
     split.realp = (T *) malloc(sizeof(T) * 1 << size);
     split.imagp = (T *) malloc(sizeof(T) * 1 << size);
@@ -200,7 +200,7 @@ uint64_t matched_size_test(int min_log2, int max_log2)
 template <class T, class U>
 bool zip_correctness_test(int min_log2, int max_log2)
 {
-    Split<T> split;
+    split_type<T> split;
     
     U *ptr = (U *) malloc(sizeof(U) * 1 << max_log2);
     split.realp = (T *) malloc(sizeof(T) * 1 << (max_log2 - 1));
@@ -251,7 +251,7 @@ bool zip_correctness_test(int min_log2, int max_log2)
 template <class T, class U>
 uint64_t zip_test(int min_log2, int max_log2)
 {
-    Split<T> split;
+    split_type<T> split;
     
     U *ptr = (U *) malloc(sizeof(U) * 1 << max_log2);
     split.realp = (T *) malloc(sizeof(T) * 1 << (max_log2 - 1));

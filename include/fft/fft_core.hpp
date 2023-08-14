@@ -24,33 +24,33 @@ HISSTOOLS_NAMESPACE_START()
 // Splits
 
 template<>
-struct Split<double> : DSPDoubleSplitComplex, impl::TypeBase<double>
+struct split_type<double> : DSPDoubleSplitComplex, impl::TypeBase<double>
 {
-    Split() {}
-    Split(double *real, double *imag) : DSPDoubleSplitComplex{ real, imag } {}
+    split_type() {}
+    split_type(double *real, double *imag) : DSPDoubleSplitComplex{ real, imag } {}
 };
 
 template<>
-struct Split<float> : DSPSplitComplex, impl::TypeBase<float>
+struct split_type<float> : DSPSplitComplex, impl::TypeBase<float>
 {
-    Split() {}
-    Split(float *real, float *imag) : DSPSplitComplex{ real, imag } {}
+    split_type() {}
+    split_type(float *real, float *imag) : DSPSplitComplex{ real, imag } {}
 };
 
-// Setups
+// setup_types
 
 template<>
-struct Setup<double> : impl::SetupBase<double, FFTSetupD>
+struct setup_type<double> : impl::SetupBase<double, FFTSetupD>
 {
-    Setup() {}
-    Setup(FFTSetupD setup) : SetupBase(setup) {}
+    setup_type() {}
+    setup_type(FFTSetupD setup) : SetupBase(setup) {}
 };
 
 template<>
-struct Setup<float> : impl::SetupBase<float, FFTSetup>
+struct setup_type<float> : impl::SetupBase<float, FFTSetup>
 {
-    Setup() {}
-    Setup(FFTSetup setup) : SetupBase(setup) {}
+    setup_type() {}
+    setup_type(FFTSetup setup) : SetupBase(setup) {}
 };
 
 #endif
@@ -79,7 +79,7 @@ struct hisstools_fft_impl
         }
 
         uintptr_t m_max_fft_log2;
-        Split<T> m_tables[28];
+        split_type<T> m_tables[28];
     };
     
 // Aligned Allocation
@@ -353,7 +353,7 @@ struct hisstools_fft_impl
     // Pass One and Two with Re-ordering
     
     template <class T, int vec_size>
-    static void pass_1_2_reorder(Split<T> *input, uintptr_t length)
+    static void pass_1_2_reorder(split_type<T> *input, uintptr_t length)
     {
         using VecType = Vector4x<T, vec_size> ;
         
@@ -426,7 +426,7 @@ struct hisstools_fft_impl
     // Pass Three With Re-ordering
     
     template <class T, int vec_size>
-    static void pass_3_reorder(Split<T> *input, uintptr_t length)
+    static void pass_3_reorder(split_type<T> *input, uintptr_t length)
     {
         using VecType = Vector4x<T, vec_size>;
         
@@ -489,7 +489,7 @@ struct hisstools_fft_impl
     // Pass Three Without Re-ordering
     
     template <class T, int vec_size>
-    static void pass_3(Split<T> *input, uintptr_t length)
+    static void pass_3(split_type<T> *input, uintptr_t length)
     {
         using VecType = Vector4x<T, vec_size>;
 
@@ -528,7 +528,7 @@ struct hisstools_fft_impl
     // A Pass Requiring Tables With Re-ordering
     
     template <class T, int vec_size>
-    static void pass_trig_table_reorder(Split<T> *input, SetupType<T> *setup, uintptr_t length, uintptr_t pass)
+    static void pass_trig_table_reorder(split_type<T> *input, SetupType<T> *setup, uintptr_t length, uintptr_t pass)
     {
         using VecType = SIMDType<T, vec_size>;
 
@@ -603,7 +603,7 @@ struct hisstools_fft_impl
     // A Pass Requiring Tables Without Re-ordering
     
     template <class T, int vec_size>
-    static void pass_trig_table(Split<T> *input, SetupType<T> *setup, uintptr_t length, uintptr_t pass)
+    static void pass_trig_table(split_type<T> *input, SetupType<T> *setup, uintptr_t length, uintptr_t pass)
     {
         using VecType = SIMDType<T, vec_size>;
 
@@ -656,7 +656,7 @@ struct hisstools_fft_impl
     // A Real Pass Requiring Trig Tables (Never Reorders)
     
     template <bool ifft, class T>
-    static void pass_real_trig_table(Split<T> *input, SetupType<T> *setup, uintptr_t fft_log2)
+    static void pass_real_trig_table(split_type<T> *input, SetupType<T> *setup, uintptr_t fft_log2)
     {
         uintptr_t length = static_cast<uintptr_t>(1u) << (fft_log2 - 1u);
         uintptr_t lengthM1 = length - 1;
@@ -716,7 +716,7 @@ struct hisstools_fft_impl
     // Small Complex FFTs (2, 4 or 8 points)
     
     template <class T>
-    static void small_fft(Split<T> *input, uintptr_t fft_log2)
+    static void small_fft(split_type<T> *input, uintptr_t fft_log2)
     {
         T *r1_ptr = input->realp;
         T *i1_ptr = input->imagp;
@@ -817,7 +817,7 @@ struct hisstools_fft_impl
     // Small Real FFTs (2 or 4 points)
     
     template <bool ifft, class T>
-    static void small_real_fft(Split<T> *input, uintptr_t fft_log2)
+    static void small_real_fft(split_type<T> *input, uintptr_t fft_log2)
     {
         T *r1_ptr = input->realp;
         T *i1_ptr = input->imagp;
@@ -892,7 +892,7 @@ struct hisstools_fft_impl
     }
     
     template <class T, class U>
-    static void unzip_complex(const U *input, Split<T> *output, uintptr_t half_length)
+    static void unzip_complex(const U *input, split_type<T> *output, uintptr_t half_length)
     {
         T *realp = output->realp;
         T *imagp = output->imagp;
@@ -905,7 +905,7 @@ struct hisstools_fft_impl
     }
     
     template <class T>
-    static void unzip_complex(const T *input, Split<T> *output, uintptr_t half_length)
+    static void unzip_complex(const T *input, split_type<T> *output, uintptr_t half_length)
     {
         constexpr int v_size = SIMDLimits<T>::max_size;
         
@@ -936,7 +936,7 @@ struct hisstools_fft_impl
     }
     
     template <class T>
-    static void zip_complex(const Split<T> *input, T *output, uintptr_t half_length)
+    static void zip_complex(const split_type<T> *input, T *output, uintptr_t half_length)
     {
         constexpr int v_size = SIMDLimits<T>::max_size;
         
@@ -953,7 +953,7 @@ struct hisstools_fft_impl
     // Unzip With Zero Padding
     
     template <class T, class U>
-    static void unzip_zero(const U *input, Split<T> *output, uintptr_t in_length, uintptr_t log2n)
+    static void unzip_zero(const U *input, split_type<T> *output, uintptr_t in_length, uintptr_t log2n)
     {
         T odd_sample = static_cast<T>(input[in_length - 1]);
         T *realp = output->realp;
@@ -992,7 +992,7 @@ struct hisstools_fft_impl
     // FFT Passes Template
     
     template <class T, int max_vec_size>
-    static void fft_passes(Split<T> *input, SetupType<T> *setup, uintptr_t fft_log2)
+    static void fft_passes(split_type<T> *input, SetupType<T> *setup, uintptr_t fft_log2)
     {
         constexpr int A = min(max_vec_size,  4);
         constexpr int B = min(max_vec_size,  8);
@@ -1024,7 +1024,7 @@ struct hisstools_fft_impl
     // A Complex FFT
     
     template <class T>
-    static void hisstools_fft(Split<T> *input, SetupType<T> *setup, uintptr_t fft_log2)
+    static void hisstools_fft(split_type<T> *input, SetupType<T> *setup, uintptr_t fft_log2)
     {
         if (fft_log2 >= 4)
         {
@@ -1040,16 +1040,16 @@ struct hisstools_fft_impl
     // A Complex iFFT
     
     template <class T>
-    static void hisstools_ifft(Split<T> *input, SetupType<T> *setup, uintptr_t fft_log2)
+    static void hisstools_ifft(split_type<T> *input, SetupType<T> *setup, uintptr_t fft_log2)
     {
-        Split<T> swap(input->imagp, input->realp);
+        split_type<T> swap(input->imagp, input->realp);
         hisstools_fft(&swap, setup, fft_log2);
     }
     
     // A Real FFT
     
     template <class T>
-    static void hisstools_rfft(Split<T> *input, SetupType<T> *setup, uintptr_t fft_log2)
+    static void hisstools_rfft(split_type<T> *input, SetupType<T> *setup, uintptr_t fft_log2)
     {
         if (fft_log2 >= 3)
         {
@@ -1063,7 +1063,7 @@ struct hisstools_fft_impl
     // A Real iFFT
     
     template <class T>
-    static void hisstools_rifft(Split<T> *input, SetupType<T> *setup, uintptr_t fft_log2)
+    static void hisstools_rifft(split_type<T> *input, SetupType<T> *setup, uintptr_t fft_log2)
     {
         if (fft_log2 >= 3)
         {
@@ -1104,64 +1104,64 @@ struct hisstools_fft_impl
     
     // FFT and iFFT Routines
     
-    static void hisstools_fft(Split<double> *input, Setup<double> setup, uintptr_t log2n)
+    static void hisstools_fft(split_type<double> *input, setup_type<double> setup, uintptr_t log2n)
     {
         vDSP_fft_zipD(setup, input, 1, log2n, FFT_FORWARD);
     }
     
-    static void hisstools_fft(Split<float> *input, Setup<float> setup, uintptr_t log2n)
+    static void hisstools_fft(split_type<float> *input, setup_type<float> setup, uintptr_t log2n)
     {
         vDSP_fft_zip(setup, input, 1, log2n, FFT_FORWARD);
     }
     
-    static void hisstools_rfft(Split<double> *input, Setup<double> setup, uintptr_t log2n)
+    static void hisstools_rfft(split_type<double> *input, setup_type<double> setup, uintptr_t log2n)
     {
         vDSP_fft_zripD(setup, input, 1, log2n, FFT_FORWARD);
     }
     
-    static void hisstools_rfft(Split<float> *input, Setup<float> setup, uintptr_t log2n)
+    static void hisstools_rfft(split_type<float> *input, setup_type<float> setup, uintptr_t log2n)
     {
         vDSP_fft_zrip(setup, input, 1, log2n, FFT_FORWARD);
     }
     
-    static void hisstools_ifft(Split<double> *input, Setup<double> setup, uintptr_t log2n)
+    static void hisstools_ifft(split_type<double> *input, setup_type<double> setup, uintptr_t log2n)
     {
         vDSP_fft_zipD(setup, input, 1, log2n, FFT_INVERSE);
     }
     
-    static void hisstools_ifft(Split<float> *input, Setup<float> setup, uintptr_t log2n)
+    static void hisstools_ifft(split_type<float> *input, setup_type<float> setup, uintptr_t log2n)
     {
         vDSP_fft_zip(setup, input, 1, log2n, FFT_INVERSE);
     }
     
-    static void hisstools_rifft(Split<double> *input, Setup<double> setup, uintptr_t log2n)
+    static void hisstools_rifft(split_type<double> *input, setup_type<double> setup, uintptr_t log2n)
     {
         vDSP_fft_zripD(setup, input, 1, log2n, FFT_INVERSE);
     }
     
-    static void hisstools_rifft(Split<float> *input, Setup<float> setup, uintptr_t log2n)
+    static void hisstools_rifft(split_type<float> *input, setup_type<float> setup, uintptr_t log2n)
     {
         vDSP_fft_zrip(setup, input, 1, log2n, FFT_INVERSE);
     }
     
     // Zip and Unzip
     
-    static void zip_complex(const Split<double> *input, double *output, uintptr_t half_length)
+    static void zip_complex(const split_type<double> *input, double *output, uintptr_t half_length)
     {
         vDSP_ztocD(input, 1, reinterpret_cast<DOUBLE_COMPLEX *>(output), 2, half_length);
     }
     
-    static void zip_complex(const Split<float> *input, float *output, uintptr_t half_length)
+    static void zip_complex(const split_type<float> *input, float *output, uintptr_t half_length)
     {
         vDSP_ztoc(input, 1, reinterpret_cast<COMPLEX *>(output), 2, half_length);
     }
     
-    static void unzip_complex(const double *input, Split<double> *output, uintptr_t half_length)
+    static void unzip_complex(const double *input, split_type<double> *output, uintptr_t half_length)
     {
         vDSP_ctozD(reinterpret_cast<const DOUBLE_COMPLEX *>(input), 2, output, 1, half_length);
     }
     
-    static void unzip_complex(const float *input, Split<float> *output, uintptr_t half_length)
+    static void unzip_complex(const float *input, split_type<float> *output, uintptr_t half_length)
     {
         vDSP_ctoz(reinterpret_cast<const COMPLEX *>(input), 2, output, 1, half_length);
     }
@@ -1175,10 +1175,10 @@ struct hisstools_fft_impl
 // Setup definition when using the HISSTools codepath
 
 template <class T>
-struct Setup : impl::SetupBase<T, hisstools_fft_impl::SetupType<T> *>
+struct setup_type : impl::SetupBase<T, hisstools_fft_impl::SetupType<T> *>
 {
-    Setup() {}
-    Setup(hisstools_fft_impl::SetupType<T> *setup)
+    setup_type() {}
+    setup_type(hisstools_fft_impl::SetupType<T> *setup)
     : impl::SetupBase<T, hisstools_fft_impl::SetupType<T> *>(setup)
     {}
 };

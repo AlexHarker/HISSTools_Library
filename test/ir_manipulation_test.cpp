@@ -96,8 +96,8 @@ void fillSplit(SPLIT split, uintptr_t fft_log2)
 template <class T>
 uint64_t timing_test(std::string test, uintptr_t fft_log2, double phase, bool zero, int testSize)
 {
-    Setup<T> setup;
-    Split<T> split;
+    setup_type<T> setup;
+    split_type<T> split;
     
     uintptr_t fft_size = 1 << fft_log2;
     
