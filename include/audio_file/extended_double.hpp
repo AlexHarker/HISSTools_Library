@@ -13,29 +13,29 @@ HISSTOOLS_NAMESPACE_START()
 
 struct extended_double_convertor
 {
-    using Endianness = base_audio_file::endianness;
+    using endianness = base_audio_file::endianness;
     
     double infinity() { return std::numeric_limits<double>::infinity(); }
-    double quiet_NaN() { return std::numeric_limits<double>::quiet_NaN(); }
+    double quiet_nan() { return std::numeric_limits<double>::quiet_NaN(); }
     
-    uint32_t get_u32(const char* bytes, Endianness endianness)
+    uint32_t get_u32(const char* bytes, endianness endianity)
     {
-        return get_bytes<uint32_t, 4>(bytes, endianness);
+        return get_bytes<uint32_t, 4>(bytes, endianity);
     }
     
-    uint16_t get_u16(const char* bytes, Endianness endianness)
+    uint16_t get_u16(const char* bytes, endianness endianity)
     {
-        return get_bytes<uint16_t, 2>(bytes, endianness);
+        return get_bytes<uint16_t, 2>(bytes, endianity);
     }
     
     double operator()(const char* bytes)
     {
         // Get double from big-endian IEEE 80-bit extended floating point format
         
-        bool     sign        = get_u16(bytes + 0, Endianness::BIG) & 0x8000;
-        int32_t  exponent    = get_u16(bytes + 0, Endianness::BIG) & 0x7FFF;
-        uint32_t hi_mantissa = get_u32(bytes + 2, Endianness::BIG);
-        uint32_t lo_mantissa = get_u32(bytes + 6, Endianness::BIG);
+        bool     sign        = get_u16(bytes + 0, endianness::BIG) & 0x8000;
+        int32_t  exponent    = get_u16(bytes + 0, endianness::BIG) & 0x7FFF;
+        uint32_t hi_mantissa = get_u32(bytes + 2, endianness::BIG);
+        uint32_t lo_mantissa = get_u32(bytes + 6, endianness::BIG);
         
         // Special handlers for zeros
         
@@ -47,7 +47,7 @@ struct extended_double_convertor
         if (exponent == 0x7FFF)
         {
             if (hi_mantissa || lo_mantissa)
-                return quiet_NaN();
+                return quiet_nan();
             
             return sign ? -infinity() : infinity();
         }
@@ -108,9 +108,9 @@ struct extended_double_convertor
             }
         }
         
-        set_bytes<2>(exponent, Endianness::BIG, bytes + 0);
-        set_bytes<4>(hi_mantissa, Endianness::BIG, bytes + 2);
-        set_bytes<4>(lo_mantissa, Endianness::BIG, bytes + 6);
+        set_bytes<2>(exponent, endianness::BIG, bytes + 0);
+        set_bytes<4>(hi_mantissa, endianness::BIG, bytes + 2);
+        set_bytes<4>(lo_mantissa, endianness::BIG, bytes + 6);
     }
 };
 
