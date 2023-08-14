@@ -21,7 +21,7 @@ public:
     
     // Constructor
     
-    convolve_n_to_mono(uint32_t in_chans, uintptr_t max_length, LatencyMode latency)
+    convolve_n_to_mono(uint32_t in_chans, uintptr_t max_length, latency_mode latency)
     {
         for (uint32_t i = 0; i < in_chans; i++)
             m_convolvers.emplace_back(max_length, latency);

@@ -22,14 +22,14 @@ public:
     
     // Constructors / Destructor
     
-    convolve_multichannel(uint32_t num_ins, uint32_t num_outs, LatencyMode latency)
+    convolve_multichannel(uint32_t num_ins, uint32_t num_outs, latency_mode latency)
     : m_parallel(false)
     {
         for (uint32_t i = 0; i < std::max(num_outs, 1U); i++)
             m_convolvers.emplace_back(std::max(num_ins, 1U), 16384, latency);
     }
     
-    convolve_multichannel(uint32_t num_io, LatencyMode latency)
+    convolve_multichannel(uint32_t num_io, latency_mode latency)
     : m_parallel(true)
     {
         for (uint32_t i = 0; i < std::max(num_io, 1U); i++)

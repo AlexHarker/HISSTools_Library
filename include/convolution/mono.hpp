@@ -18,26 +18,26 @@
 
 HISSTOOLS_NAMESPACE_START()
 
-enum class LatencyMode
+enum class latency_mode
 {
-    Zero,
-    Short,
-    Medium,
-} ;
+    ZERO,
+    SHORT,
+    MEDIUM,
+};
 
 template <class T, class IO = T>
 class convolve_mono
 {
-    using CT = convolve_time_domain<T, IO>;
-    using CP = convolve_partitioned<T, IO>;
-    using PartPtr = typename memory_swap<CP>::Ptr;
-    using PartUniquePtr = std::unique_ptr<CP>;
+    using time_domain_type = convolve_time_domain<T, IO>;
+    using partition_type = convolve_partitioned<T, IO>;
+    using partition_pointer = typename memory_swap<partition_type>::Ptr;
+    using partition_unique_pointer = std::unique_ptr<partition_type>;
     
 public:
     
     // Constructors
     
-    convolve_mono(uintptr_t max_length, LatencyMode latency)
+    convolve_mono(uintptr_t max_length, latency_mode latency)
     : m_allocator(nullptr)
     , m_part_4(0)
     , m_length(0)
@@ -47,9 +47,9 @@ public:
     {
         switch (latency)
         {
-            case LatencyMode::Zero:     set_partitions(max_length, true, 256, 1024, 4096, 16384);     break;
-            case LatencyMode::Short:    set_partitions(max_length, false, 256, 1024, 4096, 16384);    break;
-            case LatencyMode::Medium:   set_partitions(max_length, false, 1024, 4096, 16384);         break;
+            case latency_mode::ZERO:     set_partitions(max_length, true, 256, 1024, 4096, 16384);     break;
+            case latency_mode::SHORT:    set_partitions(max_length, false, 256, 1024, 4096, 16384);    break;
+            case latency_mode::MEDIUM:   set_partitions(max_length, false, 1024, 4096, 16384);         break;
         }
     }
     
@@ -102,7 +102,7 @@ public:
     
     void set_reset_offset(intptr_t offset = -1)
     {
-        PartPtr part_4 = m_part_4.access();
+        partition_pointer part_4 = m_part_4.access();
         
         set_reset_offset(part_4, offset);
     }
@@ -110,7 +110,7 @@ public:
     convolve_error resize(uintptr_t length)
     {
         m_length = 0;
-        PartPtr part_4 = m_part_4.equal(m_allocator, large_free, length);
+        partition_pointer part_4 = m_part_4.equal(m_allocator, large_free, length);
         
         if (part_4.get())
             part_4.get()->set_reset_offset(m_reset_offset);
@@ -126,11 +126,11 @@ public:
         // Lock or resize first to ensure that audio finishes processing before we replace
         
         m_length = 0;
-        PartPtr part4 = request_resize ? m_part_4.equal(m_allocator, large_free, length) : m_part_4.access();
+        partition_pointer part4 = request_resize ? m_part_4.equal(m_allocator, large_free, length) : m_part_4.access();
         
         if (part4.get())
         {
-            for_all(&CT::template set<T>, &CP::template set<T>, part4, typed_input.get(), length);
+            for_all(&time_domain_type::template set<T>, &partition_type::template set<T>, part4, typed_input.get(), length);
             part4.get()->set_reset_offset(m_reset_offset);
             m_length = length;
             reset();
@@ -155,13 +155,13 @@ public:
     
     void process(const IO *in, IO *out, uintptr_t num_samples, bool accumulate = false)
     {
-        PartPtr part_4 = m_part_4.attempt();
+        partition_pointer part_4 = m_part_4.attempt();
         
         if (m_length && m_length <= part_4.size())
         {
             if (m_reset)
             {
-                for_all(&CT::reset, &CP::reset, part_4);
+                for_all(&time_domain_type::reset, &partition_type::reset, part_4);
                 m_reset = false;
             }
                         
@@ -180,10 +180,10 @@ public:
     
     void set_partitions(uintptr_t max_length,
                         bool zero_latency,
-                        uint32_t A,
-                        uint32_t B = 0,
-                        uint32_t C = 0,
-                        uint32_t D = 0)
+                        uint32_t a,
+                        uint32_t b = 0,
+                        uint32_t c = 0,
+                        uint32_t d = 0)
     {
         // Utilities
         
@@ -195,32 +195,32 @@ public:
                 throw std::runtime_error("invalid FFT size or order");
         };
         
-        auto create_part = [](PartUniquePtr& obj, uint32_t& offset, uint32_t size, uint32_t next)
+        auto create_part = [](partition_unique_pointer& obj, uint32_t& offset, uint32_t size, uint32_t next)
         {
-            obj.reset(new CP(size, (next - size) >> 1, offset, (next - size) >> 1));
+            obj.reset(new partition_type(size, (next - size) >> 1, offset, (next - size) >> 1));
             offset += (next - size) >> 1;
         };
         
         // Sanity checks
         
-        check_and_store_fft_size(A, 0);
-        check_and_store_fft_size(B, A);
-        check_and_store_fft_size(C, B);
-        check_and_store_fft_size(D, C);
+        check_and_store_fft_size(a, 0);
+        check_and_store_fft_size(b, a);
+        check_and_store_fft_size(c, b);
+        check_and_store_fft_size(d, c);
         
         if (!num_sizes())
             throw std::runtime_error("no valid FFT sizes given");
         
         // Lock to ensure we have exclusive access
         
-        PartPtr part_4 = m_part_4.access();
+        partition_pointer part_4 = m_part_4.access();
         
         uint32_t offset = zero_latency ? m_sizes[0] >> 1 : 0;
         uint32_t final_size = m_sizes[num_sizes() - 1];
         
         // Allocate paritions in unique pointers
         
-        if (zero_latency) m_time.reset(new CT(0, m_sizes[0] >> 1));
+        if (zero_latency) m_time.reset(new time_domain_type(0, m_sizes[0] >> 1));
         if (num_sizes() == 4) create_part(m_part_1, offset, m_sizes[0], m_sizes[1]);
         if (num_sizes() > 2) create_part(m_part_2, offset, m_sizes[num_sizes() - 3], m_sizes[num_sizes() - 2]);
         if (num_sizes() > 1) create_part(m_part_3, offset, m_sizes[num_sizes() - 2], m_sizes[num_sizes() - 1]);
@@ -229,7 +229,7 @@ public:
         
         m_allocator = [offset, final_size](uintptr_t size)
         {
-            return new CP(final_size, std::max(size, uintptr_t(final_size)) - offset, offset, 0);
+            return new partition_type(final_size, std::max(size, uintptr_t(final_size)) - offset, offset, 0);
         };
         
         part_4.equal(m_allocator, large_free, max_length);
@@ -244,7 +244,7 @@ private:
     
     size_t num_sizes() { return m_sizes.size(); }
 
-    void set_reset_offset(PartPtr &part4, intptr_t offset = -1)
+    void set_reset_offset(partition_pointer &part4, intptr_t offset = -1)
     {
         if (offset < 0)
             offset = m_rand_dist(m_rand_gen);
@@ -260,8 +260,8 @@ private:
     
     // Utilities
     
-    template <typename TimeMethod, typename PartMethod, typename ...Args>
-    void for_all(TimeMethod time_method, PartMethod part_method, PartPtr& part_4, Args... args)
+    template <typename T, typename P, typename ...Args>
+    void for_all(T time_method, P part_method, partition_pointer& part_4, Args... args)
     {
         if (m_time) (m_time.get()->*time_method)(args...);
         if (m_part_1) (m_part_1.get()->*part_method)(args...);
@@ -270,21 +270,21 @@ private:
         if (part_4.get()) (part_4.get()->*part_method)(args...);
     }
     
-    static void large_free(CP *large_partition)
+    static void large_free(partition_type *large_partition)
     {
         delete large_partition;
     }
     
-    typename memory_swap<CP>::AllocFunc m_allocator;
+    typename memory_swap<partition_type>::AllocFunc m_allocator;
     
     std::vector<uint32_t> m_sizes;
     
-    std::unique_ptr<CT> m_time;
-    std::unique_ptr<CP> m_part_1;
-    std::unique_ptr<CP> m_part_2;
-    std::unique_ptr<CP> m_part_3;
+    std::unique_ptr<time_domain_type> m_time;
+    std::unique_ptr<partition_type> m_part_1;
+    std::unique_ptr<partition_type> m_part_2;
+    std::unique_ptr<partition_type> m_part_3;
     
-    memory_swap<CP> m_part_4;
+    memory_swap<partition_type> m_part_4;
     
     uintptr_t m_length;
     
@@ -297,6 +297,6 @@ private:
     std::uniform_int_distribution<uintptr_t> m_rand_dist;
 };
 
-HISSTOOLS_NAMESPACE_START()
+HISSTOOLS_NAMESPACE_END()
 
 #endif /* HISSTOOLS_CONVOLUTION_MONO_HPP */
