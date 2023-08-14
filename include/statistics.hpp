@@ -104,8 +104,8 @@ double stat_min_position(const T input, size_t size)
 
 // Counts
 
-template <class T, typename CountOp>
-double stat_count(const T input, size_t size, CountOp op)
+template <class T, typename Op>
+double stat_count(const T input, size_t size, Op op)
 {
     size_t count = 0;
     
