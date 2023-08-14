@@ -8,7 +8,7 @@ HISSTOOLS_NAMESPACE_START()
 
 // Enumeration of interpolation types
 
-enum class InterpType { None, Linear, CubicHermite, CubicLagrange, CubicBSpline };
+enum class interp_type { NONE, LINEAR, CUBIC_HERMITE, CUBIC_LAGRANGE, CUBIC_BSPLINE };
 
 // Linear
 
