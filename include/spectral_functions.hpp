@@ -10,6 +10,10 @@
 #include "namespace.hpp"
 #include "fft/fft.hpp"
 
+#if !defined(M_PI)
+#define M_PI 3.141592653589793238462643383279502884L 
+#endif
+
 HISSTOOLS_NAMESPACE_START()
 
 namespace impl

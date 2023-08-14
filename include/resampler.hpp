@@ -13,6 +13,10 @@
 #include "namespace.hpp"
 
 // N.B. - clean up for other usage (different phases / consider other windows etc.)
+#if !defined(M_PI)
+#define M_PI 3.141592653589793238462643383279502884L 
+#endif
+
 
 HISSTOOLS_NAMESPACE_START()
 
