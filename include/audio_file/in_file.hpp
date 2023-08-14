@@ -15,19 +15,19 @@
 
 HISSTOOLS_NAMESPACE_START()
 
-class IAudioFile : public base_audio_file
+class in_audio_file : public base_audio_file
 {
-    enum class AIFFTag
+    enum class aiff_tag
     {
-        Unknown = 0x0,
-        Version = 0x1,
-        Common = 0x2,
-        Audio = 0x4
+        UNKNOWN = 0x0,
+        VERSION = 0x1,
+        COMMON  = 0x2,
+        AUDIO   = 0x4
     };
     
     struct postion_restore
     {
-        postion_restore(IAudioFile &parent)
+        postion_restore(in_audio_file &parent)
         : m_parent(parent)
         , m_position(parent.position_internal())
         {
@@ -39,7 +39,7 @@ class IAudioFile : public base_audio_file
             m_parent.seek_internal(m_position);
         }
         
-        IAudioFile &m_parent;
+        in_audio_file &m_parent;
         uintptr_t m_position;
     };
     
@@ -47,14 +47,14 @@ public:
     
     // Constructor and Destructor
     
-    IAudioFile() {}
+    in_audio_file() {}
     
-    IAudioFile(const std::string& file)
+    in_audio_file(const std::string& file)
     {
         open(file);
     }
     
-    ~IAudioFile()
+    ~in_audio_file()
     {
         close();
     }
@@ -257,18 +257,18 @@ private:
     
     // AIFF Helper
     
-    bool get_aiff_chunk_header(AIFFTag& enumerated_tag, uint32_t& chunk_size)
+    bool get_aiff_chunk_header(aiff_tag& enumerated_tag, uint32_t& chunk_size)
     {
         char tag[4];
         
-        enumerated_tag = AIFFTag::Unknown;
+        enumerated_tag = aiff_tag::UNKNOWN;
         
         if (!read_chunk_header(tag, chunk_size))
             return false;
         
-        if      (match_tag(tag, "FVER")) enumerated_tag = AIFFTag::Version;
-        else if (match_tag(tag, "COMM")) enumerated_tag = AIFFTag::Common;
-        else if (match_tag(tag, "SSND")) enumerated_tag = AIFFTag::Audio;
+        if      (match_tag(tag, "FVER")) enumerated_tag = aiff_tag::VERSION;
+        else if (match_tag(tag, "COMM")) enumerated_tag = aiff_tag::COMMON;
+        else if (match_tag(tag, "SSND")) enumerated_tag = aiff_tag::AUDIO;
         
         return true;
     }
@@ -304,11 +304,11 @@ private:
     
     error_type parse_aiff_header(const char* fileSubtype)
     {
-        AIFFTag tag;
+        aiff_tag tag;
         
         char chunk[22];
         
-        uint32_t format_valid = static_cast<uint32_t>(AIFFTag::Common) | static_cast<uint32_t>(AIFFTag::Audio);
+        uint32_t format_valid = static_cast<uint32_t>(aiff_tag::COMMON) | static_cast<uint32_t>(aiff_tag::AUDIO);
         uint32_t format_check = 0;
         uint32_t chunk_size;
         
@@ -322,7 +322,7 @@ private:
             
             switch (tag)
             {
-                case AIFFTag::Common:
+                case aiff_tag::COMMON:
                 {
                     // Read common chunk (at least 18 bytes and up to 22)
                     
@@ -340,13 +340,13 @@ private:
                     // If there are no frames then it is not required for there to be an audio (SSND) chunk
                     
                     if (!frames())
-                        format_check |= static_cast<uint32_t>(AIFFTag::Audio);
+                        format_check |= static_cast<uint32_t>(aiff_tag::AUDIO);
                     
                     if (match_tag(fileSubtype, "AIFC"))
                     {
                         // Require a version chunk
                         
-                        //formatValid |= static_cast<uint32_t>(AIFFTag::Version);
+                        //formatValid |= static_cast<uint32_t>(aiff_tag::VERSION);
                         
                         // Set parameters based on format
                         
@@ -364,7 +364,7 @@ private:
                     break;
                 }
                     
-                case AIFFTag::Version:
+                case aiff_tag::VERSION:
                 {
                     // Read format number and check for the correct version of the AIFC specification
                     
@@ -377,7 +377,7 @@ private:
                     break;
                 }
                     
-                case AIFFTag::Audio:
+                case aiff_tag::AUDIO:
                 {
                     if (!read_chunk(chunk, 4, chunk_size))
                         return error_type::FMT_BAD;
@@ -389,7 +389,7 @@ private:
                     break;
                 }
                     
-                case AIFFTag::Unknown:
+                case aiff_tag::UNKNOWN:
                 {
                     // Read no data, but update the file position
                     
