@@ -100,8 +100,8 @@ double convertIEEEExtended(double x)
 {
     char bytes[10];
     
-    HISSTools::extended_double_convertor()(reinterpret_cast<unsigned char *>(bytes), x);
-    auto y = HISSTools::extended_double_convertor()(bytes);
+    htl::extended_double_convertor()(reinterpret_cast<unsigned char *>(bytes), x);
+    auto y = htl::extended_double_convertor()(bytes);
     
     if (x != y && !(compareNans(x, y)))
         throw;
