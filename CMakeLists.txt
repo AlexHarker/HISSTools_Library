@@ -19,7 +19,7 @@ set_target_properties(
 target_compile_features(
     ${PROJECT_NAME} 
     INTERFACE 
-        cxx_std_14
+        cxx_std_11
 )
 
 #tests
