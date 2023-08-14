@@ -1,92 +1,93 @@
 
-#ifndef RANDOM_GENERATOR_HPP
-#define RANDOM_GENERATOR_HPP
+#ifndef HISSTOOLS_RANDOM_GENERATOR_HPP
+#define HISSTOOLS_RANDOM_GENERATOR_HPP
 
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <random>
 
-namespace random_generators
+#include "namespace.hpp"
+
+HISSTOOLS_NAMESPACE_START()
+
+// Basic CMWC Generator
+
+// A complementary modulo with carry algorithm (proposed by George Marsaglia)
+// Details can be found in:
+// Marsaglia, G. (2003). "Random number generators". Journal of Modern Applied Statistical Methods 2
+// See - http://digitalcommons.wayne.edu/cgi/viewcontent.cgi?article=1725&context=jmasm
+
+// The memory requirement is 34 unsigned 32 bit integers (can be altered using cmwc_lag_size)
+// The period length is currently circa 2^1054 - 1 which shold be more than adequate for most purposes
+
+// N.B. cmwc_lag_size must be a power of two
+// N.B. cmwc_a_value should be a suitable value according to cmwc_lag_size
+
+class cmwc_generator
 {
-    // Basic CMWC Generator
-
-    // A complementary modulo with carry algorithm (proposed by George Marsaglia)
-    // Details can be found in:
-    // Marsaglia, G. (2003). "Random number generators". Journal of Modern Applied Statistical Methods 2
-    // See - http://digitalcommons.wayne.edu/cgi/viewcontent.cgi?article=1725&context=jmasm
-
-    // The memory requirement is 34 unsigned 32 bit integers (can be altered using cmwc_lag_size)
-    // The period length is currently circa 2^1054 - 1 which shold be more than adequate for most purposes
-
-    // N.B. cmwc_lag_size must be a power of two
-    // N.B. cmwc_a_value should be a suitable value according to cmwc_lag_size
-
-    class cmwc
+    static constexpr uint32_t cmwc_lag_size = 32;
+    static constexpr uint64_t cmwc_a_value = 987655670LL;
+    
+public:
+    
+    inline uint32_t operator()()
     {
-        static constexpr uint32_t cmwc_lag_size = 32;
-        static constexpr uint64_t cmwc_a_value = 987655670LL;
+        uint32_t i = m_increment;
+        uint32_t c = m_carry;
+        uint32_t x;
         
-    public:
+        uint64_t t;
         
-        inline uint32_t operator()()
+        i = (i + 1) & (cmwc_lag_size - 1);
+        t = cmwc_a_value * m_state[i] + c;
+        c = (t >> 32);
+        x = static_cast<uint32_t>((t + c) & 0xFFFFFFFF);
+        
+        if (x < c)
         {
-            uint32_t i = m_increment;
-            uint32_t c = m_carry;
-            uint32_t x;
-            
-            uint64_t t;
-            
-            i = (i + 1) & (cmwc_lag_size - 1);
-            t = cmwc_a_value * m_state[i] + c;
-            c = (t >> 32);
-            x = static_cast<uint32_t>((t + c) & 0xFFFFFFFF);
-            
-            if (x < c)
-            {
-                x++;
-                c++;
-            }
-            
-            m_state[i] = (0xFFFFFFFE - x);
-            m_increment = i;
-            m_carry = c;
-            
-            return m_state[i];
+            x++;
+            c++;
         }
         
-        // Seeding (specific / OS-specific random values)
+        m_state[i] = (0xFFFFFFFE - x);
+        m_increment = i;
+        m_carry = c;
         
-        void seed(uint32_t *init)
-        {
-            m_increment = (cmwc_lag_size - 1);
-            m_carry = 123;
-            
-            for (uint32_t i = 0; i < cmwc_lag_size; i++)
-                m_state[i] = init[i];
-        }
+        return m_state[i];
+    }
+    
+    // Seeding (specific / OS-specific random values)
+    
+    void seed(uint32_t* init)
+    {
+        m_increment = (cmwc_lag_size - 1);
+        m_carry = 123;
         
-        void rand_seed()
-        {
-            uint32_t seeds[cmwc_lag_size];
-            
-            std::random_device rd;
-            
-            for (uint32_t i = 0; i < cmwc_lag_size; i++)
-                seeds[i] = rd();
+        for (uint32_t i = 0; i < cmwc_lag_size; i++)
+            m_state[i] = init[i];
+    }
+    
+    void rand_seed()
+    {
+        uint32_t seeds[cmwc_lag_size];
         
-            seed(seeds);
-        }
+        std::random_device rd;
         
-        // State
-        
-        uint32_t m_increment;
-        uint32_t m_carry;
-        uint32_t m_state[cmwc_lag_size];
-    };
-}
+        for (uint32_t i = 0; i < cmwc_lag_size; i++)
+            seeds[i] = rd();
+    
+        seed(seeds);
+    }
+    
+    // State
+    
+    uint32_t m_increment;
+    uint32_t m_carry;
+    uint32_t m_state[cmwc_lag_size];
+};
 
-template <typename Generator = random_generators::cmwc>
+template <typename Generator = cmwc_generator>
 class random_generator
 {
 public:
@@ -125,11 +126,11 @@ public:
     };
     
     random_generator()                  { m_generator.rand_seed(); }
-    random_generator(uint32_t *init)    { m_generator.seed(init); }
+    random_generator(uint32_t* init)    { m_generator.seed(init); }
 
     // Seeding (specific / random values)
     
-    void seed(uint32_t *init)   { m_generator.seed(init); }
+    void seed(uint32_t* init)   { m_generator.seed(init); }
     void rand_seed()            { m_generator.rand_seed(); }
     
     // Generate a Single Pseudo-random Unsigned Integer (full range /  in the range [0, n] / in the range [lo, hi])
@@ -338,4 +339,6 @@ private:
     Generator m_generator;
 };
 
-#endif /* RANDOM_GENERATOR_HPP */
+HISSTOOLS_NAMESPACE_END()
+
+#endif /* HISSTOOLS_RANDOM_GENERATOR_HPP */

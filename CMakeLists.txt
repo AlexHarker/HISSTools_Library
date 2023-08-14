@@ -19,11 +19,13 @@ set_target_properties(
 target_compile_features(
     ${PROJECT_NAME} 
     INTERFACE 
-        cxx_std_11
+        cxx_std_14
 )
 
 #tests
-if(BUILD_TESTING)
+option(BUILD_TESTS OFF)
+
+if(BUILD_TESTS)
     enable_testing()
 
     if(BUILD_TEST)
@@ -47,7 +49,7 @@ if(BUILD_TESTING)
             COMMAND $<TARGET_FILE:${TEST_NAME}>
         )
     endforeach()
-endif(BUILD_TESTING)
+endif(BUILD_TESTS)
 
 #install
 include(GNUInstallDirs)

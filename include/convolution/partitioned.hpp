@@ -1,16 +1,17 @@
 
-#ifndef CONVOLVE_PARTITIONED_HPP
-#define CONVOLVE_PARTITIONED_HPP
-
-#include "../fft/fft.hpp"
-
-#include "utilities.hpp"
-#include "../simd_support.hpp"
-
+#ifndef HISSTOOLS_CONVOLUTION_PARTITIONED_HPP
+#define HISSTOOLS_CONVOLUTION_PARTITIONED_HPP
 
 #include <algorithm>
 #include <cstdint>
 #include <random>
+
+#include "../simd_support.hpp"
+#include "../namespace.hpp"
+#include "utilities.hpp"
+#include "../fft/fft.hpp"
+
+HISSTOOLS_NAMESPACE_START()
 
 template <class T, class IO = T>
 class convolve_partitioned
@@ -18,10 +19,10 @@ class convolve_partitioned
     // N.B. fixed_min_fft_size_log2 must take into account of the loop unrolling of vectors
     // N.B. fixed_max_fft_size_log2 is perhaps conservative right now
     
-    using VecType = SIMDType<T, SIMDLimits<T>::max_size>;
+    using vector_type = simd_type<T, simd_limits<T>::max_size>;
     
     static constexpr int loop_unroll_size = 4;
-    static constexpr int fixed_min_fft_size_log2 = impl::ilog2(VecType::size * loop_unroll_size);
+    static constexpr int fixed_min_fft_size_log2 = impl::ilog2(vector_type::size * loop_unroll_size);
     static constexpr int fixed_max_fft_size_log2 = 20;
     
 public:
@@ -96,17 +97,17 @@ public:
     convolve_partitioned(convolve_partitioned&& obj) = delete;
     convolve_partitioned& operator = (convolve_partitioned&& obj) = delete;
     
-    ConvolveError set_fft_size(uintptr_t fft_size)
+    convolve_error set_fft_size(uintptr_t fft_size)
     {
         uintptr_t fft_size_log2 = impl::ilog2(fft_size);
         
-        ConvolveError error = ConvolveError::None;
+        convolve_error error = convolve_error::NONE;
         
         if (fft_size_log2 < fixed_min_fft_size_log2 || fft_size_log2 > m_max_fft_size_log2)
-            return ConvolveError::FFTSizeOutOfRange;
+            return convolve_error::FFT_SIZE_OUTSIDE_RANGE;
         
         if (fft_size != (uintptr_t(1) << fft_size_log2))
-            error = ConvolveError::FFTSizeNonPowerOfTwo;
+            error = convolve_error::FFT_SIZE_NOT_POW2;
         
         // Set fft variables iff the fft size has actually actually changed
         
@@ -121,11 +122,11 @@ public:
         return error;
     }
     
-    ConvolveError set_length(uintptr_t length)
+    convolve_error set_length(uintptr_t length)
     {
         m_length = std::min(length, m_max_impulse_length);
         
-        return (length > m_max_impulse_length) ? ConvolveError::PartitionLengthTooLarge : ConvolveError::None;
+        return (length > m_max_impulse_length) ? convolve_error::PARTITION_LEN_TOO_LARGE : convolve_error::NONE;
     }
     
     void set_offset(uintptr_t offset)
@@ -139,11 +140,11 @@ public:
     }
     
     template <class U>
-    ConvolveError set(const U *input, uintptr_t length)
+    convolve_error set(const U* input, uintptr_t length)
     {
         conformed_input<T, U> typed_input(input, length);
 
-        ConvolveError error = ConvolveError::None;
+        convolve_error error = convolve_error::NONE;
         
         // FFT variables
         
@@ -160,7 +161,7 @@ public:
         if (length > m_max_impulse_length)
         {
             length = m_max_impulse_length;
-            error = ConvolveError::MemAllocTooSmall;
+            error = convolve_error::MEMORY_ALLOC_TOO_SMALL;
         }
         
         // Partition / load the impulse
@@ -168,8 +169,8 @@ public:
         uintptr_t num_partitions = 0;
         uintptr_t buffer_position = m_offset;
 
-        T *buffer_temp_1 = m_partition_temp.realp;
-        Split buffer_temp_2 = m_impulse_buffer;
+        T* buffer_temp_1 = m_partition_temp.realp;
+        split_type buffer_temp_2 = m_impulse_buffer;
 
         for (; length > 0; buffer_position += fft_size_halved, num_partitions++)
         {
@@ -200,10 +201,10 @@ public:
         m_reset_flag = true;
     }
     
-    void process(const IO *in, IO *out, uintptr_t num_samples, bool accumulate = false)
+    void process(const IO* in, IO* out, uintptr_t num_samples, bool accumulate = false)
     {
-        Split<T> ir_temp;
-        Split<T> in_temp;
+        split_type<T> ir_temp;
+        split_type<T> in_temp;
         
         // Scheduling variables
         
@@ -320,13 +321,13 @@ public:
                 // Do the fft into the input buffer and add first partition (needed now)
                 // Then do ifft, scale and store (overlap-save)
                 
-                T *fft_input = m_fft_buffers[(rw_counter == fft_size) ? 1 : 0];
+                T* fft_input = m_fft_buffers[(rw_counter == fft_size) ? 1 : 0];
                 
                 offset_split_pointer(in_temp, m_input_buffer, (m_input_position * fft_size_halved));
                 hisstools_rfft(m_fft_setup, fft_input, &in_temp, fft_size, m_fft_size_log2);
                 process_partition(in_temp, m_impulse_buffer, m_accum_buffer, fft_size_halved);
                 hisstools_rifft(m_fft_setup, &m_accum_buffer, m_fft_buffers[2], m_fft_size_log2);
-                scale_store<VecType>(m_fft_buffers[3], m_fft_buffers[2], fft_size, (rw_counter != fft_size));
+                scale_store<vector_type>(m_fft_buffers[3], m_fft_buffers[2], fft_size, (rw_counter != fft_size));
                 
                 // Clear accumulation buffer
                 
@@ -361,11 +362,11 @@ private:
     template <int N>
     struct loop_unroll
     {
-        using VT = VecType;
-        using CVT = const VecType;
+        using vt = vector_type;
+        using cvt = const vector_type;
         using recurse = loop_unroll<N - 1>;
         
-        inline void multiply(VT *& out_r, VT *& out_i, CVT *in_r1, CVT *in_i1, CVT *in_r2, CVT *in_i2, uintptr_t i)
+        inline void multiply(vt*& out_r, vt*& out_i, cvt* in_r1, cvt* in_i1, cvt* in_r2, cvt* in_i2, uintptr_t i)
         {
             *out_r++ += (in_r1[i] * in_r2[i]) - (in_i1[i] * in_i2[i]);
             *out_i++ += (in_r1[i] * in_i2[i]) + (in_i1[i] * in_r2[i]);
@@ -383,16 +384,16 @@ private:
 
     // Process a partition
     
-    static void process_partition(Split<T> in_1, Split<T> in_2, Split<T> out, uintptr_t num_bins)
+    static void process_partition(split_type<T> in_1, split_type<T> in_2, split_type<T> out, uintptr_t num_bins)
     {
-        uintptr_t num_vecs = num_bins / VecType::size;
+        uintptr_t num_vecs = num_bins / vector_type::size;
         
-        const VecType *in_r1 = reinterpret_cast<const VecType *>(in_1.realp);
-        const VecType *in_i1 = reinterpret_cast<const VecType *>(in_1.imagp);
-        const VecType *in_r2 = reinterpret_cast<const VecType *>(in_2.realp);
-        const VecType *in_i2 = reinterpret_cast<const VecType *>(in_2.imagp);
-        VecType *out_r = reinterpret_cast<VecType *>(out.realp);
-        VecType *out_i = reinterpret_cast<VecType *>(out.imagp);
+        const vector_type* in_r1 = reinterpret_cast<const vector_type*>(in_1.realp);
+        const vector_type* in_i1 = reinterpret_cast<const vector_type*>(in_1.imagp);
+        const vector_type* in_r2 = reinterpret_cast<const vector_type*>(in_2.realp);
+        const vector_type* in_i2 = reinterpret_cast<const vector_type*>(in_2.imagp);
+        vector_type* out_r = reinterpret_cast<vector_type*>(out.realp);
+        vector_type* out_i = reinterpret_cast<vector_type*>(out.imagp);
         
         T nyquist_1 = in_1.imagp[0];
         T nyquist_2 = in_2.imagp[0];
@@ -415,26 +416,26 @@ private:
         in_2.imagp[0] = nyquist_2;
     }
 
-    ConvolveError set_max_fft_size(uintptr_t max_fft_size)
+    convolve_error set_max_fft_size(uintptr_t max_fft_size)
     {
         uintptr_t max_fft_size_log2 = impl::ilog2(max_fft_size);
         
-        ConvolveError error = ConvolveError::None;
+        convolve_error error = convolve_error::NONE;
         
         if (max_fft_size_log2 > fixed_max_fft_size_log2)
         {
-            error = ConvolveError::FFTSizeOutOfRange;
+            error = convolve_error::FFT_SIZE_OUTSIDE_RANGE;
             max_fft_size_log2 = fixed_max_fft_size_log2;
         }
         
         if (max_fft_size_log2 && max_fft_size_log2 < fixed_min_fft_size_log2)
         {
-            error = ConvolveError::FFTSizeOutOfRange;
+            error = convolve_error::FFT_SIZE_OUTSIDE_RANGE;
             max_fft_size_log2 = fixed_min_fft_size_log2;
         }
         
         if (max_fft_size != (uintptr_t(1) << max_fft_size_log2))
-            error = ConvolveError::FFTSizeNonPowerOfTwo;
+            error = convolve_error::FFT_SIZE_NOT_POW2;
         
         m_max_fft_size_log2 = max_fft_size_log2;
         
@@ -442,17 +443,17 @@ private:
     }
     
     template <class U>
-    static void scale_store(T *out, T *temp, uintptr_t fft_size, bool offset)
+    static void scale_store(T* out, T* temp, uintptr_t fft_size, bool offset)
     {
-        U *out_ptr = reinterpret_cast<U *>(out + (offset ? fft_size >> 1: 0));
-        U *temp_ptr = reinterpret_cast<U *>(temp);
+        U* out_ptr = reinterpret_cast<U*>(out + (offset ? fft_size >> 1: 0));
+        U* temp_ptr = reinterpret_cast<U*>(temp);
         U scale(T(1) / static_cast<T>(fft_size << 2));
         
         for (uintptr_t i = 0; i < (fft_size / (U::size * 2)); i++)
             *(out_ptr++) = *(temp_ptr++) * scale;
     }
     
-    static void offset_split_pointer(Split<T> &complex_1, const Split<T> &complex_2, uintptr_t offset)
+    static void offset_split_pointer(split_type<T> &complex_1, const split_type<T> &complex_2, uintptr_t offset)
     {
         complex_1.realp = complex_2.realp + offset;
         complex_1.imagp = complex_2.imagp + offset;
@@ -466,7 +467,7 @@ private:
     
     // FFT variables
     
-    Setup<T> m_fft_setup;
+    setup_type<T> m_fft_setup;
     
     uintptr_t m_max_fft_size_log2;
     uintptr_t m_fft_size_log2;
@@ -482,12 +483,12 @@ private:
     
     // Internal buffers
     
-    T *m_fft_buffers[4];
+    T* m_fft_buffers[4];
     
-    Split<T> m_impulse_buffer;
-    Split<T> m_input_buffer;
-    Split<T> m_accum_buffer;
-    Split<T> m_partition_temp;
+    split_type<T> m_impulse_buffer;
+    split_type<T> m_input_buffer;
+    split_type<T> m_accum_buffer;
+    split_type<T> m_partition_temp;
     
     // Flags
     
@@ -500,4 +501,6 @@ private:
     std::uniform_int_distribution<uintptr_t> m_rand_dist;
 };
 
-#endif /* CONVOLVE_PARTITIONED_HPP */
+HISSTOOLS_NAMESPACE_END()
+
+#endif /* HISSTOOLS_CONVOLUTION_PARTITIONED_HPP */

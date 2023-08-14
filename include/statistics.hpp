@@ -1,11 +1,15 @@
 
-#ifndef STATISTICS_HPP
-#define STATISTICS_HPP
+#ifndef HISSTOOLS_STATISTICS_HPP
+#define HISSTOOLS_STATISTICS_HPP
 
 #include <algorithm>
 #include <limits>
 #include <numeric>
 #include <cmath>
+
+#include "namespace.hpp"
+
+HISSTOOLS_NAMESPACE_START()
 
 namespace impl
 {
@@ -100,8 +104,8 @@ double stat_min_position(const T input, size_t size)
 
 // Counts
 
-template <class T, typename CountOp>
-double stat_count(const T input, size_t size, CountOp op)
+template <class T, typename Op>
+double stat_count(const T input, size_t size, Op op)
 {
     size_t count = 0;
     
@@ -381,4 +385,6 @@ double stat_crest(const T input, size_t size)
     return stat_max(input, size) / stat_rms(input, size);
 }
 
-#endif /* STATISTICS_HPP */
+HISSTOOLS_NAMESPACE_END()
+
+#endif /* HISSTOOLS_STATISTICS_HPP */

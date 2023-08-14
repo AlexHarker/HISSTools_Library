@@ -1,27 +1,29 @@
 
-#ifndef CONVOLVE_TIME_DOMAIN_HPP
-#define CONVOLVE_TIME_DOMAIN_HPP
-
-#include "utilities.hpp"
-#include "../simd_support.hpp"
-
+#ifndef HISSTOOLS_CONVOLUTION_TIME_DOMAIN_HPP
+#define HISSTOOLS_CONVOLUTION_TIME_DOMAIN_HPP
 
 #include <array>
 #include <cstdint>
 #include <algorithm>
 
+#include "../simd_support.hpp"
+#include "../namespace.hpp"
+#include "utilities.hpp"
+
 #if defined __APPLE__ && !defined NO_APPLE_ACCELERATE
 #include <Accelerate/Accelerate.h>
 #endif
 
+HISSTOOLS_NAMESPACE_START()
+
 template <class T, class IO = T>
 class convolve_time_domain
 {
-    using VecType = SIMDType<T, SIMDLimits<T>::max_size>;
+    using vector_type = simd_type<T, simd_limits<T>::max_size>;
 
     static constexpr int loop_unroll_size = 4;
-    static constexpr int vec_size_shift = impl::ilog2(VecType::size);
-    static constexpr int padding_resolution = loop_unroll_size * VecType::size;
+    static constexpr int vec_size_shift = impl::ilog2(vector_type::size);
+    static constexpr int padding_resolution = loop_unroll_size * vector_type::size;
     static constexpr int padding_shift = impl::ilog2(padding_resolution);
     static constexpr int max_impulse_length = 2048;
     static constexpr int max_buffer_length = 4096;
@@ -62,11 +64,11 @@ public:
     convolve_time_domain(convolve_time_domain&& obj) = delete;
     convolve_time_domain& operator = (convolve_time_domain&& obj) = delete;
     
-    ConvolveError set_length(uintptr_t length)
+    convolve_error set_length(uintptr_t length)
     {
         m_length = std::min(length, uintptr_t(max_impulse_length));
         
-        return length > max_impulse_length ? ConvolveError::TimeLengthOutOfRange : ConvolveError::None;
+        return length > max_impulse_length ? convolve_error::TIME_LENGTH_OUTSIDE_RANGE : convolve_error::NONE;
     }
     
     void set_offset(uintptr_t offset)
@@ -75,7 +77,7 @@ public:
     }
     
     template <class U>
-    ConvolveError set(const U *input, uintptr_t length)
+    convolve_error set(const U* input, uintptr_t length)
     {
         conformed_input<T, U> typed_input(input, length);
 
@@ -89,7 +91,7 @@ public:
             new_length = std::min(length - m_offset, (m_length ? m_length : max_impulse_length));
             uintptr_t pad = padded_length(new_length) - new_length;
 
-            const T *offset_input = typed_input.get() + m_offset;
+            const T* offset_input = typed_input.get() + m_offset;
                         
             std::fill_n(m_impulse_buffer, pad, T(0));
             std::reverse_copy(offset_input, offset_input + new_length, m_impulse_buffer + pad);
@@ -98,7 +100,7 @@ public:
         reset();
         m_impulse_length = new_length;
         
-        return (!m_length && (length - m_offset) > max_impulse_length) ? ConvolveError::TimeImpulseTooLong : ConvolveError::None;
+        return (!m_length && (length - m_offset) > max_impulse_length) ? convolve_error::TIME_IMPULSE_TOO_LONG : convolve_error::NONE;
     }
     
     void reset()
@@ -106,7 +108,7 @@ public:
         m_reset = true;
     }
     
-    void process(const IO *in, IO *out, uintptr_t num_samples, bool accumulate = false)
+    void process(const IO* in, IO* out, uintptr_t num_samples, bool accumulate = false)
     {
         auto loop_size = [&]()
         {
@@ -163,18 +165,18 @@ public:
 private:
     
 #if defined __APPLE__ && !defined NO_APPLE_ACCELERATE
-    static void convolve(const float *in, const float *impulse, float *output, uintptr_t N, uintptr_t L)
+    static void convolve(const float* in, const float* impulse, float* output, uintptr_t N, uintptr_t L)
     {
         vDSP_conv(in + 1 - L,  1, impulse, 1, output, 1, N, L);
     }
     
-    static void convolve(const double *in, const double *impulse, double *output, uintptr_t N, uintptr_t L)
+    static void convolve(const double* in, const double* impulse, double* output, uintptr_t N, uintptr_t L)
     {
         vDSP_convD(in + 1 - L,  1, impulse, 1, output, 1, N, L);
     }
     
     template <void Func(IO&, IO), class U>
-    static void convolve(const T *in, const T *impulse, U *output, uintptr_t N, uintptr_t L)
+    static void convolve(const T* in, const T* impulse, U* output, uintptr_t N, uintptr_t L)
     {
         T temp[N];
         
@@ -183,7 +185,7 @@ private:
     }
     
     template <>
-    static void convolve<impl::copy_to_result<IO>, T>(const T *in, const T *impulse, T *output, uintptr_t N, uintptr_t L)
+    static void convolve<impl::copy_to_result<IO>, T>(const T* in, const T* impulse, T* output, uintptr_t N, uintptr_t L)
     {
         convolve(in, impulse, output, N, L);
     }
@@ -196,20 +198,20 @@ private:
     {
         using recurse = loop_unroll<N - 1, M>;
         
-        inline void multiply(VecType *accum, const T* input, const VecType& impulse)
+        inline void multiply(vector_type* accum, const T* input, const vector_type& impulse)
         {
-            *accum += VecType(input) * impulse;
+            *accum += vector_type(input) * impulse;
             recurse().multiply(++accum, ++input, impulse);
         }
         
-        inline void unroll(VecType *accum, const T*& input, const VecType *impulse, uintptr_t idx)
+        inline void unroll(vector_type* accum, const T*& input, const vector_type* impulse, uintptr_t idx)
         {
             loop_unroll<M, M>().multiply(accum, input, impulse[idx]);
-            recurse().unroll(accum, input += VecType::size, impulse, ++idx);
+            recurse().unroll(accum, input += vector_type::size, impulse, ++idx);
         }
         
         template <void Func(IO&, IO)>
-        inline void store(IO *& output, VecType *accum)
+        inline void store(IO*& output, vector_type* accum)
         {
             Func(*output, static_cast<IO>(sum(*accum)));
             recurse().template store<Func>(++output, ++accum);
@@ -232,19 +234,19 @@ private:
     // Convolution functions
     
     template <void Func(IO&, IO), int UR>
-    static void convolve_unrolled(const T *in,
-                                       const VecType *impulse,
-                                       IO *output,
+    static void convolve_unrolled(const T* in,
+                                       const vector_type* impulse,
+                                       IO* output,
                                        uintptr_t& idx,
                                        uintptr_t N,
                                        uintptr_t L)
     {
         for (; (idx + (UR - 1)) < N; idx += UR)
         {
-            std::array<VecType, UR> accum;
+            std::array<vector_type, UR> accum;
             accum.fill(T(0));
             
-            const T *input = in - L + 1 + idx;
+            const T* input = in - L + 1 + idx;
                         
             for (uintptr_t j = 0; j < (L >> vec_size_shift); j += loop_unroll_size)
                 loop_unroll<loop_unroll_size, UR>().unroll(accum.data(), input, impulse, j);
@@ -256,9 +258,9 @@ private:
     // U and V will always evaluate to T and IO, but templating solves clashes with more explicit apple versions above
     
     template <void Func(IO&, IO), class U, class V>
-    static void convolve(const U *in, const U *impulse, V *output, uintptr_t N, uintptr_t L)
+    static void convolve(const U* in, const U* impulse, V* output, uintptr_t N, uintptr_t L)
     {
-        const VecType *v_impulse = reinterpret_cast<const VecType *>(impulse);
+        const vector_type* v_impulse = reinterpret_cast<const vector_type*>(impulse);
 
         uintptr_t idx = 0;
                        
@@ -269,7 +271,7 @@ private:
         convolve_unrolled<Func, 1>(in, v_impulse, output, idx, N, L);
     }
     
-    static void convolve(const T *in, const T *impulse, IO *output, uintptr_t N, uintptr_t L, bool accumulate)
+    static void convolve(const T* in, const T* impulse, IO* output, uintptr_t N, uintptr_t L, bool accumulate)
     {
         L = padded_length(L);
 
@@ -286,8 +288,8 @@ private:
     
     // Internal buffers
     
-    T *m_impulse_buffer;
-    T *m_input_buffer;
+    T* m_impulse_buffer;
+    T* m_input_buffer;
     
     uintptr_t m_input_position;
     uintptr_t m_impulse_length;
@@ -300,4 +302,6 @@ private:
     bool m_reset;
 };
 
-#endif /* CONVOLVE_TIME_DOMAIN_HPP */
+HISSTOOLS_NAMESPACE_END()
+
+#endif /* HISSTOOLS_CONVOLUTION_TIME_DOMAIN_HPP */

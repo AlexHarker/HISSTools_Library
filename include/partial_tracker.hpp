@@ -1,6 +1,6 @@
 
-#ifndef PARTIAL_TRACKER_HPP
-#define PARTIAL_TRACKER_HPP
+#ifndef HISSTOOLS_PARTIAL_TRACKER_HPP
+#define HISSTOOLS_PARTIAL_TRACKER_HPP
 
 #include <algorithm>
 #include <cmath>
@@ -8,6 +8,9 @@
 #include <tuple>
 
 #include "allocator.hpp"
+#include "namespace.hpp"
+
+HISSTOOLS_NAMESPACE_START()
 
 template <typename T>
 class peak
@@ -158,8 +161,8 @@ public:
 template <typename T, bool Changes = false, typename Allocator = malloc_allocator>
 class partial_tracker
 {
-    typedef T (*CostType)(T, T, T);
-    typedef const T&(peak<T>::*GetMethod)() const;
+    using cost_type = T (*)(T, T, T);
+    using get_method = const T&(peak<T>::*)() const;
     
     using cost = std::tuple<T, size_t, size_t>;
     
@@ -221,7 +224,7 @@ public:
         m_changes.reset();
     }
     
-    void process(peak<T> *peaks, size_t n_peaks, T start_threshold)
+    void process(peak<T>* peaks, size_t n_peaks, T start_threshold)
     {
         // Setup
         
@@ -357,8 +360,8 @@ private:
         return 1 - std::exp(-cost);
     }
     
-    template <CostType CostFunc, GetMethod Freq, GetMethod Amp>
-    size_t find_costs(cpeak<T> *peaks, size_t n_peaks)
+    template <cost_type Cost, get_method Freq, get_method Amp>
+    size_t find_costs(cpeak<T>* peaks, size_t n_peaks)
     {
         size_t n_costs = 0;
         
@@ -374,8 +377,8 @@ private:
                     cpeak<T>& a = peaks[i];
                     cpeak<T>& b = m_tracks[j].m_peak;
                     
-                    T cost = CostFunc((a.*Freq)(), (b.*Freq)(), freq_scale)
-                    + CostFunc((a.*Amp)(), (b.*Amp)(), amp_scale);
+                    T cost = Cost((a.*Freq)(), (b.*Freq)(), freq_scale)
+                    + Cost((a.*Amp)(), (b.*Amp)(), amp_scale);
                     
                     if (cost < m_max_cost)
                         m_costs[n_costs++] = std::make_tuple(cost, i, j);
@@ -386,7 +389,7 @@ private:
         return n_costs;
     }
     
-    size_t find_costs(peak<T> *peaks, size_t n_peaks)
+    size_t find_costs(peak<T>* peaks, size_t n_peaks)
     {
         // Conveniences for code length
         
@@ -433,12 +436,14 @@ private:
     
     // Tracking data
     
-    track<T> *m_tracks;
-    cost *m_costs;
-    bool *m_peak_assigned;
-    bool *m_track_assigned;
+    track<T>* m_tracks;
+    cost* m_costs;
+    bool* m_peak_assigned;
+    bool* m_track_assigned;
     
     change_tracker<T, Changes> m_changes;
 };
 
-#endif /* PARTIAL_TRACKER_HPP */
+HISSTOOLS_NAMESPACE_END()
+
+#endif /* HISSTOOLS_PARTIAL_TRACKER_HPP */
