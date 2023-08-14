@@ -12,7 +12,7 @@ HISSTOOLS_NAMESPACE_START()
 
 // Enumeration of edge types
 
-enum class EdgeMode { ZeroPad, Extend, Wrap, Fold, Mirror, Extrapolate };
+enum class edge_mode { ZERO_PAD, EXTEND, WRAP, FOLD, MIRROR, EXTRAPOLATE };
 
 // Base class for table fetchers
 
@@ -389,16 +389,16 @@ void table_read_extrapolate(Table fetcher, T *out, const U *positions, intptr_t 
 // Main read call for variable edge behaviour
 
 template <class T, class U, class Table>
-void table_read_edges(Table fetcher, T *out, const U *positions, intptr_t n_samps, T mul, interp_type interp, EdgeMode edges, bool bound)
+void table_read_edges(Table fetcher, T *out, const U *positions, intptr_t n_samps, T mul, interp_type interp, edge_mode edges, bool bound)
 {
     switch (edges)
     {
-        case EdgeMode::ZeroPad:     table_read_zeropad(fetcher, out, positions, n_samps, mul, interp, bound);       break;
-        case EdgeMode::Extend:      table_read_extend(fetcher, out, positions, n_samps, mul, interp, bound);        break;
-        case EdgeMode::Wrap:        table_read_wrap(fetcher, out, positions, n_samps, mul, interp, bound);          break;
-        case EdgeMode::Fold:        table_read_fold(fetcher, out, positions, n_samps, mul, interp, bound);          break;
-        case EdgeMode::Mirror:      table_read_mirror(fetcher, out, positions, n_samps, mul, interp, bound);        break;
-        case EdgeMode::Extrapolate: table_read_extrapolate(fetcher, out, positions, n_samps, mul, interp, bound);   break;
+        case edge_mode::ZERO_PAD:    table_read_zeropad(fetcher, out, positions, n_samps, mul, interp, bound);       break;
+        case edge_mode::EXTEND:      table_read_extend(fetcher, out, positions, n_samps, mul, interp, bound);        break;
+        case edge_mode::WRAP:        table_read_wrap(fetcher, out, positions, n_samps, mul, interp, bound);          break;
+        case edge_mode::FOLD:        table_read_fold(fetcher, out, positions, n_samps, mul, interp, bound);          break;
+        case edge_mode::MIRROR:      table_read_mirror(fetcher, out, positions, n_samps, mul, interp, bound);        break;
+        case edge_mode::EXTRAPOLATE: table_read_extrapolate(fetcher, out, positions, n_samps, mul, interp, bound);   break;
     }
 }
 
