@@ -13,7 +13,7 @@ HISSTOOLS_NAMESPACE_START()
 
 struct extended_double_convertor
 {
-    using Endianness = BaseAudioFile::Endianness;
+    using Endianness = base_audio_file::endianness;
     
     double infinity() { return std::numeric_limits<double>::infinity(); }
     double quiet_NaN() { return std::numeric_limits<double>::quiet_NaN(); }

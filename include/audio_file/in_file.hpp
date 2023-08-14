@@ -15,7 +15,7 @@
 
 HISSTOOLS_NAMESPACE_START()
 
-class IAudioFile : public BaseAudioFile
+class IAudioFile : public base_audio_file
 {
     enum class AIFFTag
     {
@@ -75,7 +75,7 @@ public:
                 seek();
             }
             else
-                set_error_bit(Error::CouldNotOpen);
+                set_error_bit(error_type::OPEN_FAILED);
         }
     }
     
@@ -198,14 +198,14 @@ private:
     
     // Getters
     
-    uint32_t get_u32(const char* bytes, Endianness endianness)
+    uint32_t get_u32(const char* bytes, endianness endianity)
     {
-        return get_bytes<uint32_t, 4>(bytes, endianness);
+        return get_bytes<uint32_t, 4>(bytes, endianity);
     }
     
-    uint16_t get_u16(const char* bytes, Endianness endianness)
+    uint16_t get_u16(const char* bytes, endianness endianity)
     {
-        return get_bytes<uint16_t, 2>(bytes, endianness);
+        return get_bytes<uint16_t, 2>(bytes, endianity);
     }
     
     // Chunk Reading
@@ -275,7 +275,7 @@ private:
     
     // Parse Headers
     
-    Error parse_header()
+    error_type parse_header()
     {
         char chunk[12] = {};
         
@@ -285,7 +285,7 @@ private:
         // `Read file header
         
         if (!read_internal(chunk, 12))
-            return Error::BadFormat;
+            return error_type::FMT_BAD;
         
         // AIFF or AIFC
         
@@ -299,10 +299,10 @@ private:
         
         // No known format found
         
-        return Error::UnknownFormat;
+        return error_type::FMT_UNKNOWN;
     }
     
-    Error parse_aiff_header(const char* fileSubtype)
+    error_type parse_aiff_header(const char* fileSubtype)
     {
         AIFFTag tag;
         
@@ -312,7 +312,7 @@ private:
         uint32_t format_check = 0;
         uint32_t chunk_size;
         
-        m_format = audio_file_format(FileType::AIFF);
+        m_format = audio_file_format(file_type::AIFF);
         
         // Iterate over chunks
         
@@ -327,7 +327,7 @@ private:
                     // Read common chunk (at least 18 bytes and up to 22)
                     
                     if (!read_chunk(chunk, (chunk_size > 22) ? 22 : ((chunk_size < 18) ? 18 : chunk_size), chunk_size))
-                        return Error::BadFormat;
+                        return error_type::FMT_BAD;
                     
                     // Retrieve relevant data (AIFF or AIFC) and set AIFF defaults
                     
@@ -352,14 +352,14 @@ private:
                         
                         m_format = AIFCCompression::to_format(chunk + 18, bit_depth);
                         
-                        if (get_file_type() == FileType::NONE)
-                            return Error::UnsupportedAIFCFormat;
+                        if (get_file_type() == file_type::NONE)
+                            return error_type::AIFC_FMT_UNSUPPORTED;
                     }
                     else
-                        m_format = audio_file_format(FileType::AIFF, NumericType::INTEGER, bit_depth, Endianness::BIG);
+                        m_format = audio_file_format(file_type::AIFF, numeric_type::INTEGER, bit_depth, endianness::BIG);
                     
                     if (!m_format.is_valid())
-                        return Error::UnsupportedPCMFormat;
+                        return error_type::PCM_FMT_UNSUPPORTED;
                     
                     break;
                 }
@@ -369,10 +369,10 @@ private:
                     // Read format number and check for the correct version of the AIFC specification
                     
                     if (!read_chunk(chunk, 4, chunk_size))
-                        return Error::BadFormat;
+                        return error_type::FMT_BAD;
                     
                     if (get_u32(chunk, header_endianness()) != AIFC_CURRENT_SPECIFICATION)
-                        return Error::WrongAIFCVersion;
+                        return error_type::AIFC_WRONG_VERSION;
                     
                     break;
                 }
@@ -380,7 +380,7 @@ private:
                 case AIFFTag::Audio:
                 {
                     if (!read_chunk(chunk, 4, chunk_size))
-                        return Error::BadFormat;
+                        return error_type::FMT_BAD;
                     
                     // Audio data starts after a 32-bit block size value (ignored) plus an offset readh here
                     
@@ -394,7 +394,7 @@ private:
                     // Read no data, but update the file position
                     
                     if (!read_chunk(nullptr, 0, chunk_size))
-                        return Error::BadFormat;
+                        return error_type::FMT_BAD;
                     
                     break;
                 }
@@ -407,30 +407,30 @@ private:
         // Check that all relevant chunks were found
         
         if ((~format_check) & format_valid)
-            return Error::BadFormat;
+            return error_type::FMT_BAD;
         
-        return Error::None;
+        return error_type::NONE;
     }
     
-    Error parse_wave_header(const char* file_type)
+    error_type parse_wave_header(const char* file_type)
     {
         char chunk[40];
         
         uint32_t chunk_size;
         
-        m_format = audio_file_format(FileType::WAVE);
+        m_format = audio_file_format(file_type::WAVE);
         
         // Check endianness
         
-        Endianness endianness = match_tag(file_type, "RIFX") ? Endianness::BIG : Endianness::LITTLE;
+        endianness endianity = match_tag(file_type, "RIFX") ? endianness::BIG : endianness::LITTLE;
         
         // Search for the format chunk and read the format chunk as needed, checking for a valid size
         
         if (!(find_chunk("fmt ", chunk_size)) || (chunk_size != 16 && chunk_size != 18 && chunk_size != 40))
-            return Error::BadFormat;
+            return error_type::FMT_BAD;
         
         if (!read_chunk(chunk, chunk_size, chunk_size))
-            return Error::BadFormat;
+            return error_type::FMT_BAD;
         
         // Retrieve relevant data
         
@@ -446,15 +446,15 @@ private:
             constexpr unsigned char guid[14] = { 0x00,0x00,0x00,0x00,0x10,0x00,0x80,0x00,0x00,0xAA,0x00,0x38,0x9B,0x71 };
             
             if (std::memcmp(chunk + 26, &guid, 14) != 0)
-                return Error::UnsupportedWaveFormat;
+                return error_type::WAV_FMT_UNSUPPORTED;
         }
         
         // Check for a valid format byte (currently PCM or float only)
         
         if (format_byte != 0x0001 && format_byte != 0x0003)
-            return Error::UnsupportedWaveFormat;
+            return error_type::WAV_FMT_UNSUPPORTED;
         
-        NumericType type = format_byte == 0x0003 ? NumericType::FLOAT : NumericType::INTEGER;
+        numeric_type type = format_byte == 0x0003 ? numeric_type::FLOAT : numeric_type::INTEGER;
         
         m_num_channels = get_u16(chunk + 2, header_endianness());
         m_sampling_rate = get_u32(chunk + 4, header_endianness());
@@ -462,19 +462,19 @@ private:
         // Search for the data chunk and retrieve frame size and file offset to audio data
         
         if (!find_chunk("data", chunk_size))
-            return Error::BadFormat;
+            return error_type::FMT_BAD;
         
         // Set Format
         
-        m_format = audio_file_format(FileType::WAVE, type, bit_depth, endianness);
+        m_format = audio_file_format(file_type::WAVE, type, bit_depth, endianity);
         
         if (!m_format.is_valid())
-            return Error::UnsupportedPCMFormat;
+            return error_type::PCM_FMT_UNSUPPORTED;
         
         m_num_frames = chunk_size / frame_byte_count();
         m_pcm_offset = position_internal();
         
-        return Error::None;
+        return error_type::NONE;
     }
     
     // Conversions
@@ -504,7 +504,7 @@ private:
     template <class T, class U, int N, int Shift, class V>
     void read_loop(V* output, uintptr_t j, uintptr_t loop_samples, uintptr_t byte_step)
     {
-        const Endianness endianness = audio_endianness();
+        const endianness endianness = audio_endianness();
         
         for (uintptr_t i = 0; i < loop_samples; i++, j += byte_step)
             output[i] = convert(get_bytes<U, N>(m_buffer.data() + j, endianness) << Shift, T(0), V(0));
@@ -532,30 +532,30 @@ private:
             
             switch (get_pcm_format())
             {
-                case PCMFormat::INT8:
-                    if (get_file_type() == FileType::WAVE)
+                case pcm_format::INT8:
+                    if (get_file_type() == file_type::WAVE)
                         read_loop<uint8_t, uint8_t, 1, 0>(output, j, loop_samples, byte_step);
                     else
                         read_loop<uint32_t, uint32_t, 1, 24>(output, j, loop_samples, byte_step);
                     break;
                     
-                case PCMFormat::INT16:
+                case pcm_format::INT16:
                     read_loop<uint32_t, uint32_t, 2, 16>(output, j, loop_samples, byte_step);
                     break;
                     
-                case PCMFormat::INT24:
+                case pcm_format::INT24:
                     read_loop<uint32_t, uint32_t, 3,  8>(output, j, loop_samples, byte_step);
                     break;
                     
-                case PCMFormat::INT32:
+                case pcm_format::INT32:
                     read_loop<uint32_t, uint32_t, 4,  0>(output, j, loop_samples, byte_step);
                     break;
                     
-                case PCMFormat::Float32:
+                case pcm_format::Float32:
                     read_loop<float, uint32_t, 4,  0>(output, j, loop_samples, byte_step);
                     break;
                     
-                case PCMFormat::FLOAT64:
+                case pcm_format::FLOAT64:
                     read_loop<double, uint64_t, 8,  0>(output, j, loop_samples, byte_step);
                     break;
                     
