@@ -20,7 +20,7 @@ class spectral_processor
     
 public:
     
-    enum class EdgeMode { Linear, Wrap, WrapCentre, Fold, FoldRepeat };
+    enum class edge_mode { LINEAR, WRAP, WRAP_CENTRE, FOLD, FOLD_REPEAT };
     
     struct in_ptr
     {
@@ -161,24 +161,24 @@ public:
     
     // Convolution
     
-    void convolve(T *r_out, T *i_out, in_ptr r_in1, in_ptr i_in1, in_ptr r_in2, in_ptr i_in2, EdgeMode mode)
+    void convolve(T *r_out, T *i_out, in_ptr r_in1, in_ptr i_in1, in_ptr r_in2, in_ptr i_in2, edge_mode mode)
     {
         binary_op<ir_convolve_complex, arrange_convolve<split_type>>(r_out, i_out, r_in1, i_in1, r_in2, i_in2, mode);
     }
     
-    void convolve(T *output, in_ptr in1, in_ptr in2, EdgeMode mode)
+    void convolve(T *output, in_ptr in1, in_ptr in2, edge_mode mode)
     {
         binary_op<ir_convolve_real, arrange_convolve<T*>>(output, in1, in2, mode);
     }
     
     // Correlation
     
-    void correlate(T *r_out, T *i_out, in_ptr r_in1, in_ptr i_in1, in_ptr r_in2, in_ptr i_in2, EdgeMode mode)
+    void correlate(T *r_out, T *i_out, in_ptr r_in1, in_ptr i_in1, in_ptr r_in2, in_ptr i_in2, edge_mode mode)
     {
         binary_op<ir_correlate_complex, arrange_correlate<split_type>>(r_out, i_out, r_in1, i_in1, r_in2, i_in2, mode);
     }
     
-    void correlate(T *output, in_ptr in1, in_ptr in2, EdgeMode mode)
+    void correlate(T *output, in_ptr in1, in_ptr in2, edge_mode mode)
     {
         binary_op<ir_correlate_real, arrange_correlate<T*>>(output, in1, in2, mode);
     }
@@ -207,12 +207,12 @@ public:
         scale_vector(output, fft_size, T(0.5) / (T) fft_size);
     }
     
-    uintptr_t convolved_size(uintptr_t size1, uintptr_t size2, EdgeMode mode) const
+    uintptr_t convolved_size(uintptr_t size1, uintptr_t size2, edge_mode mode) const
     {
         return calc_conv_corr_size(size1, size2, mode);
     }
     
-    uintptr_t correlated_size(uintptr_t size1, uintptr_t size2, EdgeMode mode) const
+    uintptr_t correlated_size(uintptr_t size1, uintptr_t size2, edge_mode mode) const
     {
         return calc_conv_corr_size(size1, size2, mode);
     }
@@ -222,7 +222,7 @@ public:
         if (!size1 || !size2)
             return 0;
         
-        op_sizes sizes(size1, size2, EdgeMode::Linear);
+        op_sizes sizes(size1, size2, edge_mode::LINEAR);
         
         return sizes.fft();
     }
@@ -322,13 +322,13 @@ protected:
     
     struct op_sizes
     {
-        op_sizes(uintptr_t size1, uintptr_t size2, EdgeMode mode)
+        op_sizes(uintptr_t size1, uintptr_t size2, edge_mode mode)
         : m_mode(mode), m_size1(size1), m_size2(size2), m_fft_size_log2(calc_fft_size_log2(calc_size()))
         {}
         
-        EdgeMode mode() const           { return m_mode; }
+        edge_mode mode() const           { return m_mode; }
         
-        bool foldMode() const           { return m_mode == EdgeMode::Fold || m_mode == EdgeMode::FoldRepeat; }
+        bool foldMode() const           { return m_mode == edge_mode::FOLD || m_mode == edge_mode::FOLD_REPEAT; }
 
         uintptr_t size1() const         { return m_size1; }
         uintptr_t size2() const         { return m_size2; }
@@ -349,7 +349,7 @@ protected:
                 return fold_copy() + (min() - 1);
         }
         
-        EdgeMode m_mode;
+        edge_mode m_mode;
         uintptr_t m_size1, m_size2, m_fft_size_log2;
     };
     
@@ -449,20 +449,20 @@ protected:
         
         switch (sizes.mode())
         {
-            case EdgeMode::Linear:
+            case edge_mode::LINEAR:
             {
                 copy(output, spectrum, 0, 0, sizes.linear());
                 break;
             }
                 
-            case EdgeMode::Wrap:
+            case edge_mode::WRAP:
             {
                 copy(output, spectrum, 0, 0, sizes.max());
                 wrap(output, spectrum, 0, sizes.linear(), min_m1);
                 break;
             }
         
-            case EdgeMode::WrapCentre:
+            case edge_mode::WRAP_CENTRE:
             {
                 uintptr_t wrapped = min_m1 >> 1;
                 copy(output, spectrum, 0, wrapped, sizes.max());
@@ -471,8 +471,8 @@ protected:
                 break;
             }
                 
-            case EdgeMode::Fold:
-            case EdgeMode::FoldRepeat:
+            case edge_mode::FOLD:
+            case edge_mode::FOLD_REPEAT:
             {
                 copy(output, spectrum, 0, min_m1, sizes.max());
                 break;
@@ -487,14 +487,14 @@ protected:
     
         switch (sizes.mode())
         {
-            case EdgeMode::Linear:
+            case edge_mode::LINEAR:
             {
                 copy(output, spectrum, 0, 0, sizes.size1());
                 copy(output, spectrum, sizes.size1(), sizes.fft() - size2_m1, size2_m1);
                 break;
             }
                 
-            case EdgeMode::Wrap:
+            case edge_mode::WRAP:
             {
                 copy(output, spectrum, 0, 0, sizes.size1());
                 zero(output, sizes.size1(), sizes.size2());
@@ -502,7 +502,7 @@ protected:
                 break;
             }
                 
-            case EdgeMode::WrapCentre:
+            case edge_mode::WRAP_CENTRE:
             {
                 uintptr_t wrapped1 = (sizes.min() - 1) >> 1;
                 uintptr_t wrapped2 = std::min(size2_m1, sizes.max() - wrapped1);
@@ -518,8 +518,8 @@ protected:
                 break;
             }
             
-            case EdgeMode::Fold:
-            case EdgeMode::FoldRepeat:
+            case edge_mode::FOLD:
+            case edge_mode::FOLD_REPEAT:
             {
                 if (sizes.size1() >= sizes.size2())
                 {
@@ -543,7 +543,7 @@ protected:
     typedef void (*ComplexArrange)(split_type<T>, split_type<T>, op_sizes&);
     typedef void (*RealArrange)(T *, split_type<T>, op_sizes&);
 
-    uintptr_t calc_conv_corr_size(uintptr_t size1, uintptr_t size2, EdgeMode mode) const
+    uintptr_t calc_conv_corr_size(uintptr_t size1, uintptr_t size2, edge_mode mode) const
     {
         if (!size1 || !size2)
             return 0;
@@ -553,7 +553,7 @@ protected:
         if ((sizes.fft() > max_fft_size()))
             return 0;
         
-        return mode != EdgeMode::Linear ? sizes.max() : sizes.linear();
+        return mode != edge_mode::LINEAR ? sizes.max() : sizes.linear();
     }
     
     template <SpectralOp Op>
@@ -561,7 +561,7 @@ protected:
     {
         bool fold1 = sizes.foldMode() && sizes.size1() >= sizes.size2();
         bool fold2 = sizes.foldMode() && !fold1;
-        bool repeat = sizes.mode() == EdgeMode::FoldRepeat;
+        bool repeat = sizes.mode() == edge_mode::FOLD_REPEAT;
         uintptr_t fold_size = sizes.min() >> 1;
         
         copy_fold_zero(io, r_in1, i_in1, sizes.fft(), fold1 ? fold_size : 0, repeat);
@@ -576,7 +576,7 @@ protected:
     }
     
     template <SpectralOp Op, ComplexArrange arrange>
-    void binary_op(T *r_out, T *i_out, in_ptr r_in1, in_ptr i_in1, in_ptr r_in2, in_ptr i_in2, EdgeMode mode)
+    void binary_op(T *r_out, T *i_out, in_ptr r_in1, in_ptr i_in1, in_ptr r_in2, in_ptr i_in2, edge_mode mode)
     {
         auto get_first = [](in_ptr ptr)
         {
@@ -624,7 +624,7 @@ protected:
         else
         {
             uintptr_t fold_size = sizes.min() >> 1;
-            bool repeat = sizes.mode() == EdgeMode::FoldRepeat;
+            bool repeat = sizes.mode() == edge_mode::FOLD_REPEAT;
 
             if (sizes.size1() >= sizes.size2())
             {
@@ -646,7 +646,7 @@ protected:
     }
     
     template <SpectralOp Op, RealArrange arrange>
-    void binary_op(T *output, in_ptr in1, in_ptr in2, EdgeMode mode)
+    void binary_op(T *output, in_ptr in1, in_ptr in2, edge_mode mode)
     {
         if (!calc_conv_corr_size(in1.m_size, in2.m_size, mode))
             return;

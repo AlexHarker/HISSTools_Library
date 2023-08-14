@@ -78,7 +78,7 @@ public:
         uintptr_t max_per_filter = static_cast<uintptr_t>(width_mul ? (2.0 / std::abs(width_mul)) + 1.0 : length);
         uintptr_t data_width = max_per_filter + (filter_full - 1);
         
-        op_sizes sizes(data_width, filter_full, processor::EdgeMode::Linear);
+        op_sizes sizes(data_width, filter_full, processor::edge_mode::LINEAR);
         
         if (auto_resize_fft && processor::max_fft_size() < sizes.fft())
             set_max_fft_size(sizes.fft());
@@ -319,7 +319,7 @@ private:
     void apply_filter_fft(T *out, const T *data, const T *filter, split_type<T>& io, split_type<T>& temp, uintptr_t width, uintptr_t n, T gain)
     {
         uintptr_t data_width = n + width - 1;
-        op_sizes sizes(data_width, width, processor::EdgeMode::Linear);
+        op_sizes sizes(data_width, width, processor::edge_mode::LINEAR);
         in_ptr data_in(data, data_width);
         in_ptr filter_in(filter, width);
         
