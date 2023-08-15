@@ -15,7 +15,7 @@ HISSTOOLS_NAMESPACE_START()
 template <class T, class IO = T>
 class convolve_n_to_mono
 {
-    using conversion_type = convolve_n_to_mono;
+    using cn = convolve_n_to_mono;
 
 public:
     
@@ -35,7 +35,7 @@ public:
     
     void clear(bool resize)
     {
-        for_all(static_cast<void (conversion_type::*)(uint32_t, uint32_t, bool)>(&conversion_type::clear), resize);
+        for_all(static_cast<void (cn::*)(uint32_t, uint32_t, bool)>(&cn::clear), resize);
     }
     
     void clear(uint32_t in_chan, bool resize)
@@ -47,7 +47,7 @@ public:
     
     void reset()
     {
-        for_all(static_cast<void (conversion_type::*)(uint32_t, uint32_t, bool)>(&conversion_type::clear));
+        for_all(static_cast<void (cn::*)(uint32_t, uint32_t, bool)>(&cn::clear));
     }
     
     convolve_error reset(uint32_t in_chan)
