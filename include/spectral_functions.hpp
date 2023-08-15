@@ -4,9 +4,10 @@
 
 // thanks windows
 #define _USE_MATH_DEFINES
-#include <cmath>
+#include <math.h>
 
 #include <algorithm>
+#include <cmath>
 #include <complex>
 
 #include "simd_support.hpp"

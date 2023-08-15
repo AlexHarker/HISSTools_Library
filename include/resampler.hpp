@@ -4,10 +4,11 @@
 
 // thanks windows
 #define _USE_MATH_DEFINES
-#include <cmath>
+#include <math.h>
 
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <cstdint>
 #include <vector>
 
