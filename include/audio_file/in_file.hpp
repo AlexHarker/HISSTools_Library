@@ -551,7 +551,7 @@ private:
                     read_loop<uint32_t, uint32_t, 4,  0>(output, j, loop_samples, byte_step);
                     break;
                     
-                case pcm_format::Float32:
+                case pcm_format::FLOAT32:
                     read_loop<float, uint32_t, 4,  0>(output, j, loop_samples, byte_step);
                     break;
                     
