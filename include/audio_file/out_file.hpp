@@ -506,7 +506,7 @@ private:
                     write_loop<uint32_t, uint32_t, 4>(input, j, loop_samples, byte_step);
                     break;
                     
-                case pcm_format::Float32:
+                case pcm_format::FLOAT32:
                     write_loop<uint32_t, float, 4>(input, j, loop_samples, byte_step);
                     break;
                     
