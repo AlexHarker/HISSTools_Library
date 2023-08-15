@@ -20,18 +20,18 @@ HISSTOOLS_NAMESPACE_START()
 
 enum class latency_mode
 {
-    ZERO,
-    SHORT,
-    MEDIUM,
+    zero_latency,
+    short_latency,
+    medium_latency,
 };
 
 template <class T, class IO = T>
 class convolve_mono
 {
-    using time_domain_type = convolve_time_domain<T, IO>;
-    using partition_type = convolve_partitioned<T, IO>;
-    using partition_pointer = typename memory_swap<partition_type>::pointer_type;
-    using partition_unique_pointer = std::unique_ptr<partition_type>;
+    using ct = convolve_time_domain<T, IO>;
+    using cp = convolve_partitioned<T, IO>;
+    using partition_pointer = typename memory_swap<cp>::pointer_type;
+    using partition_unique_pointer = std::unique_ptr<cp>;
     
 public:
     
@@ -47,9 +47,9 @@ public:
     {
         switch (latency)
         {
-            case latency_mode::ZERO:     set_partitions(max_length, true, 256, 1024, 4096, 16384);     break;
-            case latency_mode::SHORT:    set_partitions(max_length, false, 256, 1024, 4096, 16384);    break;
-            case latency_mode::MEDIUM:   set_partitions(max_length, false, 1024, 4096, 16384);         break;
+            case latency_mode::zero_latency:     set_partitions(max_length, true, 256, 1024, 4096, 16384);     break;
+            case latency_mode::short_latency:    set_partitions(max_length, false, 256, 1024, 4096, 16384);    break;
+            case latency_mode::medium_latency:   set_partitions(max_length, false, 1024, 4096, 16384);         break;
         }
     }
     
@@ -115,7 +115,7 @@ public:
         if (part_4.get())
             part_4.get()->set_reset_offset(m_reset_offset);
         
-        return part_4.size() == length ? convolve_error::NONE : convolve_error::MEMORY_UNAVAILABLE;
+        return part_4.size() == length ? convolve_error::none : convolve_error::memory_unavailable;
     }
     
     template <class U>
@@ -130,25 +130,25 @@ public:
         
         if (part4.get())
         {
-            for_all(&time_domain_type::template set<T>, &partition_type::template set<T>, part4, typed_input.get(), length);
+            for_all(&ct::template set<T>, &cp::template set<T>, part4, typed_input.get(), length);
             part4.get()->set_reset_offset(m_reset_offset);
             m_length = length;
             reset();
         }
         
         if (length && !part4.get())
-            return convolve_error::MEMORY_UNAVAILABLE;
+            return convolve_error::memory_unavailable;
         
         if (length > part4.size())
-            return convolve_error::MEMORY_ALLOC_TOO_SMALL;
+            return convolve_error::memory_alloc_too_small;
         
-        return convolve_error::NONE;
+        return convolve_error::none;
     }
     
     convolve_error reset()
     {
         m_reset = true;
-        return convolve_error::NONE;
+        return convolve_error::none;
     }
     
     // Process
@@ -161,7 +161,7 @@ public:
         {
             if (m_reset)
             {
-                for_all(&time_domain_type::reset, &partition_type::reset, part_4);
+                for_all(&ct::reset, &cp::reset, part_4);
                 m_reset = false;
             }
                         
@@ -197,7 +197,7 @@ public:
         
         auto create_part = [](partition_unique_pointer& obj, uint32_t& offset, uint32_t size, uint32_t next)
         {
-            obj.reset(new partition_type(size, (next - size) >> 1, offset, (next - size) >> 1));
+            obj.reset(new cp(size, (next - size) >> 1, offset, (next - size) >> 1));
             offset += (next - size) >> 1;
         };
         
@@ -220,7 +220,7 @@ public:
         
         // Allocate paritions in unique pointers
         
-        if (zero_latency) m_time.reset(new time_domain_type(0, m_sizes[0] >> 1));
+        if (zero_latency) m_time.reset(new ct(0, m_sizes[0] >> 1));
         if (num_sizes() == 4) create_part(m_part_1, offset, m_sizes[0], m_sizes[1]);
         if (num_sizes() > 2) create_part(m_part_2, offset, m_sizes[num_sizes() - 3], m_sizes[num_sizes() - 2]);
         if (num_sizes() > 1) create_part(m_part_3, offset, m_sizes[num_sizes() - 2], m_sizes[num_sizes() - 1]);
@@ -229,7 +229,7 @@ public:
         
         m_allocator = [offset, final_size](uintptr_t size)
         {
-            return new partition_type(final_size, std::max(size, uintptr_t(final_size)) - offset, offset, 0);
+            return new cp(final_size, std::max(size, uintptr_t(final_size)) - offset, offset, 0);
         };
         
         part_4.equal(m_allocator, large_free, max_length);
@@ -270,21 +270,21 @@ private:
         if (part_4.get()) (part_4.get()->*part_method)(args...);
     }
     
-    static void large_free(partition_type* large_partition)
+    static void large_free(cp* large_partition)
     {
         delete large_partition;
     }
     
-    typename memory_swap<partition_type>::alloc_func m_allocator;
+    typename memory_swap<cp>::alloc_func m_allocator;
     
     std::vector<uint32_t> m_sizes;
     
-    std::unique_ptr<time_domain_type> m_time;
-    std::unique_ptr<partition_type> m_part_1;
-    std::unique_ptr<partition_type> m_part_2;
-    std::unique_ptr<partition_type> m_part_3;
+    std::unique_ptr<ct> m_time;
+    std::unique_ptr<cp> m_part_1;
+    std::unique_ptr<cp> m_part_2;
+    std::unique_ptr<cp> m_part_3;
     
-    memory_swap<partition_type> m_part_4;
+    memory_swap<cp> m_part_4;
     
     uintptr_t m_length;
     

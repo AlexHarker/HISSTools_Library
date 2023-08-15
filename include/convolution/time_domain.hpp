@@ -68,7 +68,7 @@ public:
     {
         m_length = std::min(length, uintptr_t(max_impulse_length));
         
-        return length > max_impulse_length ? convolve_error::TIME_LENGTH_OUTSIDE_RANGE : convolve_error::NONE;
+        return length > max_impulse_length ? convolve_error::time_length_outside_range : convolve_error::none;
     }
     
     void set_offset(uintptr_t offset)
@@ -100,7 +100,8 @@ public:
         reset();
         m_impulse_length = new_length;
         
-        return (!m_length && (length - m_offset) > max_impulse_length) ? convolve_error::TIME_IMPULSE_TOO_LONG : convolve_error::NONE;
+        return (!m_length && (length - m_offset) > max_impulse_length) ? convolve_error::time_impulse_too_long 
+                                                                       : convolve_error::none;
     }
     
     void reset()
@@ -185,7 +186,8 @@ private:
     }
     
     template <>
-    static void convolve<impl::copy_to_result<IO>, T>(const T* in, const T* impulse, T* output, uintptr_t N, uintptr_t L)
+    static void convolve<impl::copy_to_result<IO>, T>(const T* in, const T* impulse, T* output, uintptr_t N, 
+                                                                                                uintptr_t L)
     {
         convolve(in, impulse, output, N, L);
     }

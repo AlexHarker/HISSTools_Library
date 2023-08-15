@@ -9,9 +9,6 @@
 #include <functional>
 
 #include "../simd_support.hpp"
-#include "../namespace.hpp"
-
-HISSTOOLS_NAMESPACE_START()
 
 // Type definitions for Apple / HISSTools FFT
 
@@ -431,7 +428,7 @@ struct fft_impl
         using vector_type = vector_4x<T, vec_size>;
         
         uintptr_t offset = length >> 5;
-        uintptr_t outerLoop = length >> 6;
+        uintptr_t outer_loop = length >> 6;
         
         vector_type tr;
         vector_type ti;
@@ -476,7 +473,7 @@ struct fft_impl
             *i2_ptr++ = i2 + i6;
             *i2_ptr++ = i2 - i6;
             
-            if (!(++j % outerLoop))
+            if (!(++j % outer_loop))
             {
                 r1_ptr += offset;
                 r2_ptr += offset;
@@ -528,7 +525,8 @@ struct fft_impl
     // A Pass Requiring Tables With Re-ordering
     
     template <class T, int vec_size>
-    static void pass_trig_table_reorder(split_type<T>* input, fft_setup_type<T>* setup, uintptr_t length, uintptr_t pass)
+    static void pass_trig_table_reorder(split_type<T>* input, fft_setup_type<T>* setup, uintptr_t length, 
+                                                                                        uintptr_t pass)
     {
         using vector_type = simd_type<T, vec_size>;
 
@@ -536,7 +534,7 @@ struct fft_impl
         uintptr_t incr = size / (vec_size << 1);
         uintptr_t loop = size;
         uintptr_t offset = (length >> pass) / (vec_size << 1);
-        uintptr_t outerLoop = ((length >> 1) / size) / (static_cast<uintptr_t>(1u) << pass);
+        uintptr_t outer_loop = ((length >> 1) / size) / (static_cast<uintptr_t>(1u) << pass);
         
         vector_type* r1_ptr = reinterpret_cast<vector_type*>(input->realp);
         vector_type* i1_ptr = reinterpret_cast<vector_type*>(input->imagp);
@@ -590,7 +588,7 @@ struct fft_impl
             i1_ptr += incr;
             i2_ptr += incr;
             
-            if (!(++j % outerLoop))
+            if (!(++j % outer_loop))
             {
                 r1_ptr += offset;
                 r2_ptr += offset;
@@ -987,16 +985,15 @@ struct fft_impl
     
     // Utility Helper
 
-    static constexpr int min(int a, int b) { return a < b ? a : b; }
-
+    static constexpr int constexpr_min(int a, int b) { return a < b ? a : b; }
     // FFT Passes Template
     
     template <class T, int max_vec_size>
     static void fft_passes(split_type<T>* input, fft_setup_type<T>* setup, uintptr_t fft_log2)
     {
-        constexpr int A = min(max_vec_size,  4);
-        constexpr int B = min(max_vec_size,  8);
-        constexpr int C = min(max_vec_size, 16);
+        constexpr int A = constexpr_min(max_vec_size,  4);
+        constexpr int B = constexpr_min(max_vec_size,  8);
+        constexpr int C = constexpr_min(max_vec_size, 16);
         const uintptr_t length = static_cast<uintptr_t>(1u) << fft_log2;
         uintptr_t i;
         
@@ -1184,7 +1181,5 @@ struct setup_type : impl::setup_base<T, fft_impl::fft_setup_type<T>*>
 };
 
 #endif
-
-HISSTOOLS_NAMESPACE_END()
 
 #endif /* HISSTOOLS_FFT_CORE_HPP */

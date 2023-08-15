@@ -24,70 +24,72 @@ HISSTOOLS_NAMESPACE_START()
 // N.B. cmwc_lag_size must be a power of two
 // N.B. cmwc_a_value should be a suitable value according to cmwc_lag_size
 
-class cmwc_generator
-{
-    static constexpr uint32_t cmwc_lag_size = 32;
-    static constexpr uint64_t cmwc_a_value = 987655670LL;
-    
-public:
-    
-    inline uint32_t operator()()
+namespace impl {
+    class cmwc_generator
     {
-        uint32_t i = m_increment;
-        uint32_t c = m_carry;
-        uint32_t x;
+        static constexpr uint32_t cmwc_lag_size = 32;
+        static constexpr uint64_t cmwc_a_value = 987655670LL;
         
-        uint64_t t;
+    public:
         
-        i = (i + 1) & (cmwc_lag_size - 1);
-        t = cmwc_a_value * m_state[i] + c;
-        c = (t >> 32);
-        x = static_cast<uint32_t>((t + c) & 0xFFFFFFFF);
-        
-        if (x < c)
+        inline uint32_t operator()()
         {
-            x++;
-            c++;
+            uint32_t i = m_increment;
+            uint32_t c = m_carry;
+            uint32_t x;
+            
+            uint64_t t;
+            
+            i = (i + 1) & (cmwc_lag_size - 1);
+            t = cmwc_a_value * m_state[i] + c;
+            c = (t >> 32);
+            x = static_cast<uint32_t>((t + c) & 0xFFFFFFFF);
+            
+            if (x < c)
+            {
+                x++;
+                c++;
+            }
+            
+            m_state[i] = (0xFFFFFFFE - x);
+            m_increment = i;
+            m_carry = c;
+            
+            return m_state[i];
         }
         
-        m_state[i] = (0xFFFFFFFE - x);
-        m_increment = i;
-        m_carry = c;
+        // Seeding (specific / OS-specific random values)
         
-        return m_state[i];
-    }
-    
-    // Seeding (specific / OS-specific random values)
-    
-    void seed(uint32_t* init)
-    {
-        m_increment = (cmwc_lag_size - 1);
-        m_carry = 123;
+        void seed(uint32_t* init)
+        {
+            m_increment = (cmwc_lag_size - 1);
+            m_carry = 123;
+            
+            for (uint32_t i = 0; i < cmwc_lag_size; i++)
+                m_state[i] = init[i];
+        }
         
-        for (uint32_t i = 0; i < cmwc_lag_size; i++)
-            m_state[i] = init[i];
-    }
-    
-    void rand_seed()
-    {
-        uint32_t seeds[cmwc_lag_size];
+        void rand_seed()
+        {
+            uint32_t seeds[cmwc_lag_size];
+            
+            std::random_device rd;
+            
+            for (uint32_t i = 0; i < cmwc_lag_size; i++)
+                seeds[i] = rd();
         
-        std::random_device rd;
+            seed(seeds);
+        }
         
-        for (uint32_t i = 0; i < cmwc_lag_size; i++)
-            seeds[i] = rd();
-    
-        seed(seeds);
-    }
-    
-    // State
-    
-    uint32_t m_increment;
-    uint32_t m_carry;
-    uint32_t m_state[cmwc_lag_size];
-};
+        // State
+        
+        uint32_t m_increment;
+        uint32_t m_carry;
+        uint32_t m_state[cmwc_lag_size];
+    };
+}
 
-template <typename Generator = cmwc_generator>
+template <typename Generator = impl::cmwc_generator>
 class random_generator
 {
 public:

@@ -13,22 +13,22 @@ class audio_file_format
 {
 public:
     
-    enum class file_type    { NONE, AIFF, AIFC, WAVE };
-    enum class pcm_format   { INT8, INT16, INT24, INT32, FLOAT32, FLOAT64 };
-    enum class numeric_type { INTEGER, FLOAT };
-    enum class endianness   { LITTLE, BIG };
+    enum class file_type    { none, aiff, aifc, wave };
+    enum class pcm_format   { int8, int16, int24, int32, float32, float64 };
+    enum class numeric_type { integer, floating };
+    enum class endianness   { little, big };
     
     audio_file_format()
-    : m_file_type(file_type::NONE)
-    , m_pcm_format(pcm_format::INT16)
-    , m_endianness(endianness::LITTLE)
+    : m_file_type(file_type::none)
+    , m_pcm_format(pcm_format::int16)
+    , m_endianness(endianness::little)
     , m_valid(false)
     {}
     
     audio_file_format(file_type type)
     : m_file_type(type)
-    , m_pcm_format(pcm_format::INT16)
-    , m_endianness(type == file_type::WAVE ? endianness::LITTLE : endianness::BIG)
+    , m_pcm_format(pcm_format::int16)
+    , m_endianness(type == file_type::wave ? endianness::little : endianness::big)
     , m_valid(false)
     {}
     
@@ -41,7 +41,7 @@ public:
     
     audio_file_format(file_type type, numeric_type num_type, uint16_t bit_depth, endianness endianity)
     : m_file_type(type)
-    , m_pcm_format(pcm_format::INT16)
+    , m_pcm_format(pcm_format::int16)
     , m_endianness(endianity)
     , m_valid(false)
     {
@@ -54,13 +54,13 @@ public:
         
         std::vector<valid_format> valid_formats =
         {
-            { numeric_type::INTEGER,  8, pcm_format::INT8 },
-            { numeric_type::INTEGER,  8, pcm_format::INT8 },
-            { numeric_type::INTEGER, 16, pcm_format::INT16 },
-            { numeric_type::INTEGER, 24, pcm_format::INT24 },
-            { numeric_type::INTEGER, 32, pcm_format::INT32 },
-            { numeric_type::FLOAT,   32, pcm_format::FLOAT32 },
-            { numeric_type::FLOAT,   64, pcm_format::FLOAT64 },
+            { numeric_type::integer,   8, pcm_format::int8 },
+            { numeric_type::integer,   8, pcm_format::int8 },
+            { numeric_type::integer,  16, pcm_format::int16 },
+            { numeric_type::integer,  24, pcm_format::int24 },
+            { numeric_type::integer,  32, pcm_format::int32 },
+            { numeric_type::floating, 32, pcm_format::float32 },
+            { numeric_type::floating, 64, pcm_format::float64 },
         };
         
         for (int i = 0; i < valid_formats.size(); i++)
@@ -85,7 +85,7 @@ public:
     
     endianness header_endianness() const
     {
-        return m_file_type == file_type::WAVE ? m_endianness : endianness::BIG;
+        return m_file_type == file_type::wave ? m_endianness : endianness::big;
     }
     
     endianness audio_endianness() const
@@ -97,12 +97,12 @@ public:
     {
         switch (format)
         {
-            case pcm_format::INT8:       return 8;
-            case pcm_format::INT16:      return 16;
-            case pcm_format::INT24:      return 24;
-            case pcm_format::INT32:      return 32;
-            case pcm_format::FLOAT32:    return 32;
-            case pcm_format::FLOAT64:    return 64;
+            case pcm_format::int8:       return 8;
+            case pcm_format::int16:      return 16;
+            case pcm_format::int24:      return 24;
+            case pcm_format::int32:      return 32;
+            case pcm_format::float32:    return 32;
+            case pcm_format::float64:    return 64;
                 
             default:                     return 16;
         }
@@ -112,18 +112,18 @@ public:
     {
         switch (format)
         {
-            case pcm_format::INT8:
-            case pcm_format::INT16:
-            case pcm_format::INT24:
-            case pcm_format::INT32:
-                return numeric_type::INTEGER;
+            case pcm_format::int8:
+            case pcm_format::int16:
+            case pcm_format::int24:
+            case pcm_format::int32:
+                return numeric_type::integer;
                 
-            case pcm_format::FLOAT32:
-            case pcm_format::FLOAT64:
-                return numeric_type::FLOAT;
+            case pcm_format::float32:
+            case pcm_format::float64:
+                return numeric_type::floating;
                 
             default:
-                return numeric_type::INTEGER;
+                return numeric_type::integer;
         }
     }
     
@@ -133,20 +133,20 @@ private:
     {
         // If there's no file type then the format is invalid
         
-        if (m_file_type == file_type::NONE)
+        if (m_file_type == file_type::none)
             return false;
         
         // AIFF doesn't support float types or little-endianness
         
-        if (m_file_type == file_type::AIFF && find_numeric_type(m_pcm_format) == numeric_type::FLOAT)
+        if (m_file_type == file_type::aiff && find_numeric_type(m_pcm_format) == numeric_type::floating)
             return false;
         
-        if (m_file_type == file_type::AIFF && m_endianness != endianness::BIG)
+        if (m_file_type == file_type::aiff && m_endianness != endianness::big)
             return false;
         
         // AIFC only supports little=endianness for 16 bit integers
         
-        if (m_file_type == file_type::AIFC && m_endianness != endianness::BIG && m_pcm_format != pcm_format::INT16)
+        if (m_file_type == file_type::aifc && m_endianness != endianness::big && m_pcm_format != pcm_format::int16)
             return false;
         
         return true;

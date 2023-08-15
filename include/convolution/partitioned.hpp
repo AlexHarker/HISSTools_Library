@@ -101,13 +101,13 @@ public:
     {
         uintptr_t fft_size_log2 = impl::ilog2(fft_size);
         
-        convolve_error error = convolve_error::NONE;
+        convolve_error error = convolve_error::none;
         
         if (fft_size_log2 < fixed_min_fft_size_log2 || fft_size_log2 > m_max_fft_size_log2)
-            return convolve_error::FFT_SIZE_OUTSIDE_RANGE;
+            return convolve_error::fft_size_outside_range;
         
         if (fft_size != (uintptr_t(1) << fft_size_log2))
-            error = convolve_error::FFT_SIZE_NOT_POW2;
+            error = convolve_error::fft_size_not_pow2;
         
         // Set fft variables iff the fft size has actually actually changed
         
@@ -126,7 +126,7 @@ public:
     {
         m_length = std::min(length, m_max_impulse_length);
         
-        return (length > m_max_impulse_length) ? convolve_error::PARTITION_LEN_TOO_LARGE : convolve_error::NONE;
+        return (length > m_max_impulse_length) ? convolve_error::partition_len_too_large : convolve_error::none;
     }
     
     void set_offset(uintptr_t offset)
@@ -144,7 +144,7 @@ public:
     {
         conformed_input<T, U> typed_input(input, length);
 
-        convolve_error error = convolve_error::NONE;
+        convolve_error error = convolve_error::none;
         
         // FFT variables
         
@@ -161,7 +161,7 @@ public:
         if (length > m_max_impulse_length)
         {
             length = m_max_impulse_length;
-            error = convolve_error::MEMORY_ALLOC_TOO_SMALL;
+            error = convolve_error::memory_alloc_too_small;
         }
         
         // Partition / load the impulse
@@ -288,7 +288,8 @@ public:
             if (fft_now)
                 num_partitions_to_do = (m_valid_partitions - m_partitions_done) - 1;
             else
-                num_partitions_to_do = (((m_valid_partitions - 1) * fft_counter) / fft_size_halved) - m_partitions_done;
+                num_partitions_to_do = (((m_valid_partitions - 1) * fft_counter) 
+                                       / fft_size_halved) - m_partitions_done;
             
             while (num_partitions_to_do > 0)
             {
@@ -420,22 +421,22 @@ private:
     {
         uintptr_t max_fft_size_log2 = impl::ilog2(max_fft_size);
         
-        convolve_error error = convolve_error::NONE;
+        convolve_error error = convolve_error::none;
         
         if (max_fft_size_log2 > fixed_max_fft_size_log2)
         {
-            error = convolve_error::FFT_SIZE_OUTSIDE_RANGE;
+            error = convolve_error::fft_size_outside_range;
             max_fft_size_log2 = fixed_max_fft_size_log2;
         }
         
         if (max_fft_size_log2 && max_fft_size_log2 < fixed_min_fft_size_log2)
         {
-            error = convolve_error::FFT_SIZE_OUTSIDE_RANGE;
+            error = convolve_error::fft_size_outside_range;
             max_fft_size_log2 = fixed_min_fft_size_log2;
         }
         
         if (max_fft_size != (uintptr_t(1) << max_fft_size_log2))
-            error = convolve_error::FFT_SIZE_NOT_POW2;
+            error = convolve_error::fft_size_not_pow2;
         
         m_max_fft_size_log2 = max_fft_size_log2;
         

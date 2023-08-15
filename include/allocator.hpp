@@ -11,8 +11,8 @@ HISSTOOLS_NAMESPACE_START()
 
 namespace impl
 {
-    typedef void* (*allocate_function)(size_t);
-    typedef void (*free_function)(void*);
+    using allocate_function = void* (*)(size_t);
+    using free_function = void (*)(void*);
 };
 
 // A template for wrapping functions as an allocator

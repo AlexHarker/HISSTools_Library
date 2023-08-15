@@ -59,20 +59,20 @@ using cpeak = const peak<T>;
 template <typename T>
 struct track
 {
-    enum class State { Off, Start, Continue, Switch };
+    enum class state { off_state, start_state, continue_state, switch_state };
     
-    track() : m_peak(), m_state(State::Off) {}
+    track() : m_peak(), m_state(state::off_state) {}
     
     void set_peak(cpeak<T>& peak, bool start)
     {
         m_peak = peak;
-        m_state = start ? (active() ? State::Switch : State::Start): State::Continue;
+        m_state = start ? (active() ? state::switch_state : state::start_state): state::continue_state;
     }
     
-    bool active() const { return m_state != State::Off; }
+    bool active() const { return m_state != state::off_state; }
     
     peak<T> m_peak;
-    State m_state;
+    state m_state;
 };
 
 template <typename T, bool Impl>

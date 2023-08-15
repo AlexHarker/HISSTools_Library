@@ -15,8 +15,8 @@ HISSTOOLS_NAMESPACE_START()
 template <class T, class IO = T>
 class convolve_multichannel
 {
-    using multichannel_type = convolve_multichannel;
-    using conversion_type = convolve_n_to_mono<T, IO>;
+    using cm = convolve_multichannel;
+    using cn = convolve_n_to_mono<T, IO>;
 
 public:
     
@@ -45,7 +45,7 @@ public:
     
     void clear(bool resize)
     {
-        for_all(static_cast<void (multichannel_type::*)(uint32_t, uint32_t, bool)>(&multichannel_type::clear), resize);
+        for_all(static_cast<void (cm::*)(uint32_t, uint32_t, bool)>(&cm::clear), resize);
     }
     
     void clear(uint32_t in_chan, uint32_t out_chan, bool resize)
@@ -57,12 +57,12 @@ public:
     
     void reset()
     {
-        for_all(static_cast<convolve_error (multichannel_type::*)(uint32_t, uint32_t)>(&multichannel_type::reset));
+        for_all(static_cast<convolve_error (cm::*)(uint32_t, uint32_t)>(&cm::reset));
     }
     
     convolve_error reset(uint32_t in_chan, uint32_t out_chan)
     {
-        auto method = static_cast<convolve_error (conversion_type::*)(uint32_t)>(&conversion_type::reset);
+        auto method = static_cast<convolve_error (cn::*)(uint32_t)>(&cn::reset);
         
         return do_channel(method, out_chan, offset_input(in_chan, out_chan));
     }
@@ -71,7 +71,7 @@ public:
     
     convolve_error resize(uint32_t in_chan, uint32_t out_chan, uintptr_t length)
     {
-        return do_channel(&conversion_type::resize, out_chan, offset_input(in_chan, out_chan), length);
+        return do_channel(&cn::resize, out_chan, offset_input(in_chan, out_chan), length);
     }
     
     template <class U>
@@ -79,7 +79,8 @@ public:
     {
         conformed_input<T, U> typed_input(input, length);
         
-        return do_channel(&conversion_type::template set<T>, out_chan, offset_input(in_chan, out_chan), typed_input.get(), length, resize);
+        return do_channel(&cn::template set<T>, out_chan, offset_input(in_chan, out_chan), typed_input.get(), length, 
+                                                                                                              resize);
     }
     
     // Process
@@ -117,7 +118,7 @@ private:
         if (out_chan < get_num_outs())
             return (m_convolvers[out_chan].*method)(args...);
         else
-            return convolve_error::OUT_CHANNEL_OUTSIDE_RANGE;
+            return convolve_error::out_channel_outside_range;
     }
     
     // Utility to apply an operation to all convolvers
@@ -142,7 +143,7 @@ private:
     
     const bool m_parallel;
         
-    std::vector<conversion_type> m_convolvers;
+    std::vector<cn> m_convolvers;
 };
 
 HISSTOOLS_NAMESPACE_END()

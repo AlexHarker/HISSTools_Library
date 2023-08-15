@@ -20,7 +20,7 @@ class spectral_processor
     
 public:
     
-    enum class edge_mode { LINEAR, WRAP, WRAP_CENTRE, FOLD, FOLD_REPEAT };
+    enum class edge_mode { linear, wrap, wrap_centre, fold, fold_repeat };
     
     struct in_ptr
     {
@@ -222,7 +222,7 @@ public:
         if (!size1 || !size2)
             return 0;
         
-        op_sizes sizes(size1, size2, edge_mode::LINEAR);
+        op_sizes sizes(size1, size2, edge_mode::linear);
         
         return sizes.fft();
     }
@@ -329,7 +329,7 @@ protected:
         
         edge_mode mode() const           { return m_mode; }
         
-        bool foldMode() const           { return m_mode == edge_mode::FOLD || m_mode == edge_mode::FOLD_REPEAT; }
+        bool fold_mode() const           { return m_mode == edge_mode::fold || m_mode == edge_mode::fold_repeat; }
 
         uintptr_t size1() const         { return m_size1; }
         uintptr_t size2() const         { return m_size2; }
@@ -344,7 +344,7 @@ protected:
 
         uintptr_t calc_size() const
         {
-            if (!foldMode())
+            if (!fold_mode())
                 return linear();
             else
                 return fold_copy() + (min() - 1);
@@ -378,7 +378,8 @@ protected:
         std::fill_n(output + offset + in.m_size, size - in.m_size, 0);
     }
     
-    static void copy_fold_zero(split_type<T>& output, in_ptr in1, in_ptr in2, uintptr_t size, uintptr_t fold_size, bool repeat)
+    static void copy_fold_zero(split_type<T>& output, in_ptr in1, in_ptr in2, uintptr_t size, uintptr_t fold_size, 
+                                                                                              bool repeat)
     {
         uintptr_t max_size = std::max(in1.m_size, in2.m_size);
         uintptr_t folded = max_size + (fold_size << 1);
@@ -393,13 +394,15 @@ protected:
     
     // Memory manipulation (complex)
     
-    static void copy(split_type<T>& output, const split_type<T>& spectrum, uintptr_t o_offset, uintptr_t offset, uintptr_t size)
+    static void copy(split_type<T>& output, const split_type<T>& spectrum, uintptr_t o_offset, uintptr_t offset, 
+                                                                                               uintptr_t size)
     {
         std::copy_n(spectrum.realp + offset, size, output.realp + o_offset);
         std::copy_n(spectrum.imagp + offset, size, output.imagp + o_offset);
     }
     
-    static void wrap(split_type<T>& output, const split_type<T>& spectrum, uintptr_t o_offset, uintptr_t offset, uintptr_t size)
+    static void wrap(split_type<T>& output, const split_type<T>& spectrum, uintptr_t o_offset, uintptr_t offset, 
+                                                                                               uintptr_t size)
     {
         for (uintptr_t i = 0; i < size; i++)
         {
@@ -450,20 +453,20 @@ protected:
         
         switch (sizes.mode())
         {
-            case edge_mode::LINEAR:
+            case edge_mode::linear:
             {
                 copy(output, spectrum, 0, 0, sizes.linear());
                 break;
             }
                 
-            case edge_mode::WRAP:
+            case edge_mode::wrap:
             {
                 copy(output, spectrum, 0, 0, sizes.max());
                 wrap(output, spectrum, 0, sizes.linear(), min_m1);
                 break;
             }
         
-            case edge_mode::WRAP_CENTRE:
+            case edge_mode::wrap_centre:
             {
                 uintptr_t wrapped = min_m1 >> 1;
                 copy(output, spectrum, 0, wrapped, sizes.max());
@@ -472,8 +475,8 @@ protected:
                 break;
             }
                 
-            case edge_mode::FOLD:
-            case edge_mode::FOLD_REPEAT:
+            case edge_mode::fold:
+            case edge_mode::fold_repeat:
             {
                 copy(output, spectrum, 0, min_m1, sizes.max());
                 break;
@@ -488,14 +491,14 @@ protected:
     
         switch (sizes.mode())
         {
-            case edge_mode::LINEAR:
+            case edge_mode::linear:
             {
                 copy(output, spectrum, 0, 0, sizes.size1());
                 copy(output, spectrum, sizes.size1(), sizes.fft() - size2_m1, size2_m1);
                 break;
             }
                 
-            case edge_mode::WRAP:
+            case edge_mode::wrap:
             {
                 copy(output, spectrum, 0, 0, sizes.size1());
                 zero(output, sizes.size1(), sizes.size2());
@@ -503,7 +506,7 @@ protected:
                 break;
             }
                 
-            case edge_mode::WRAP_CENTRE:
+            case edge_mode::wrap_centre:
             {
                 uintptr_t wrapped1 = (sizes.min() - 1) >> 1;
                 uintptr_t wrapped2 = std::min(size2_m1, sizes.max() - wrapped1);
@@ -519,8 +522,8 @@ protected:
                 break;
             }
             
-            case edge_mode::FOLD:
-            case edge_mode::FOLD_REPEAT:
+            case edge_mode::fold:
+            case edge_mode::fold_repeat:
             {
                 if (sizes.size1() >= sizes.size2())
                 {
@@ -540,9 +543,9 @@ protected:
    
     // Binary Operations
     
-    typedef void (*SpectralOp)(split_type<T>*, split_type<T>*, split_type<T>*, uintptr_t, T);
-    typedef void (*ComplexArrange)(split_type<T>, split_type<T>, op_sizes&);
-    typedef void (*RealArrange)(T*, split_type<T>, op_sizes&);
+    using spectral_op = void (*)(split_type<T>*, split_type<T>*, split_type<T>*, uintptr_t, T);
+    using complex_arrange = void (*)(split_type<T>, split_type<T>, op_sizes&);
+    using real_arrange = void (*)(T*, split_type<T>, op_sizes&);
 
     uintptr_t calc_conv_corr_size(uintptr_t size1, uintptr_t size2, edge_mode mode) const
     {
@@ -554,15 +557,16 @@ protected:
         if ((sizes.fft() > max_fft_size()))
             return 0;
         
-        return mode != edge_mode::LINEAR ? sizes.max() : sizes.linear();
+        return mode != edge_mode::linear ? sizes.max() : sizes.linear();
     }
     
-    template <SpectralOp Op>
-    void binary_op(split_type<T>& io, split_type<T>& temp, op_sizes& sizes, in_ptr r_in1, in_ptr i_in1, in_ptr r_in2, in_ptr i_in2)
+    template <spectral_op Op>
+    void binary_op(split_type<T>& io, split_type<T>& temp, op_sizes& sizes, in_ptr r_in1, in_ptr i_in1, in_ptr r_in2, 
+                                                                                                        in_ptr i_in2)
     {
-        bool fold1 = sizes.foldMode() && sizes.size1() >= sizes.size2();
-        bool fold2 = sizes.foldMode() && !fold1;
-        bool repeat = sizes.mode() == edge_mode::FOLD_REPEAT;
+        bool fold1 = sizes.fold_mode() && sizes.size1() >= sizes.size2();
+        bool fold2 = sizes.fold_mode() && !fold1;
+        bool repeat = sizes.mode() == edge_mode::fold_repeat;
         uintptr_t fold_size = sizes.min() >> 1;
         
         copy_fold_zero(io, r_in1, i_in1, sizes.fft(), fold1 ? fold_size : 0, repeat);
@@ -576,7 +580,7 @@ protected:
         ifft(io, sizes.fft_log2());
     }
     
-    template <SpectralOp Op, ComplexArrange arrange>
+    template <spectral_op Op, complex_arrange arrange>
     void binary_op(T* r_out, T* i_out, in_ptr r_in1, in_ptr i_in1, in_ptr r_in2, in_ptr i_in2, edge_mode mode)
     {
         auto get_first = [](in_ptr ptr)
@@ -614,10 +618,10 @@ protected:
         }
     }
     
-    template <SpectralOp Op>
+    template <spectral_op Op>
     void binary_op(split_type<T>& io, split_type<T>& temp, op_sizes& sizes, in_ptr in1, in_ptr in2)
     {
-        if (!sizes.foldMode())
+        if (!sizes.fold_mode())
         {
             rfft(io, in1.m_ptr, in1.m_size, sizes.fft_log2());
             rfft(temp, in2.m_ptr, in2.m_size, sizes.fft_log2());
@@ -625,7 +629,7 @@ protected:
         else
         {
             uintptr_t fold_size = sizes.min() >> 1;
-            bool repeat = sizes.mode() == edge_mode::FOLD_REPEAT;
+            bool repeat = sizes.mode() == edge_mode::fold_repeat;
 
             if (sizes.size1() >= sizes.size2())
             {
@@ -646,7 +650,7 @@ protected:
         rifft(io, sizes.fft_log2());
     }
     
-    template <SpectralOp Op, RealArrange arrange>
+    template <spectral_op Op, real_arrange arrange>
     void binary_op(T* output, in_ptr in1, in_ptr in2, edge_mode mode)
     {
         if (!calc_conv_corr_size(in1.m_size, in2.m_size, mode))
