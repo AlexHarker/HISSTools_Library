@@ -29,8 +29,8 @@ namespace window_functions
     
     struct params
     {
-        constexpr params(double aa0 = 0, double aa1 = 0, double aa2 = 0, double aa3 = 0, double aa4 = 0, double exp = 1)
-        : a0(aa0), a1(aa1), a2(aa2), a3(aa3), a4(aa4), exponent(exp) {}
+        constexpr params(double A0 = 0, double A1 = 0, double A2 = 0, double A3 = 0, double A4 = 0, double exp = 1)
+        : a0(A0), a1(A1), a2(A2), a3(A3), a4(A4), exponent(exp) {}
         
         constexpr params(const double* param_array, int N, double exp)
         : a0(N > 0 ? param_array[0] : 0.0)
