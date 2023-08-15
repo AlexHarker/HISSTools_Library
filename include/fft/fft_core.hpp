@@ -984,17 +984,15 @@ struct fft_impl
     
     // Utility Helper
 
-    #if !defined(min)
-    static constexpr int min(int a, int b) { return a < b ? a : b; }
-    #endif
+    static constexpr int constexpr_min(int a, int b) { return a < b ? a : b; }
     // FFT Passes Template
     
     template <class T, int max_vec_size>
     static void fft_passes(split_type<T>* input, fft_setup_type<T>* setup, uintptr_t fft_log2)
     {
-        constexpr int A = min(max_vec_size,  4);
-        constexpr int B = min(max_vec_size,  8);
-        constexpr int C = min(max_vec_size, 16);
+        constexpr int A = constexpr_min(max_vec_size,  4);
+        constexpr int B = constexpr_min(max_vec_size,  8);
+        constexpr int C = constexpr_min(max_vec_size, 16);
         const uintptr_t length = static_cast<uintptr_t>(1u) << fft_log2;
         uintptr_t i;
         
