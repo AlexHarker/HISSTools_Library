@@ -72,9 +72,9 @@ public:
             if (attempt())
                 return;
         
-        auto timeOut = clock::now() + std::chrono::nanoseconds(10000);
+        auto time_out = clock::now() + std::chrono::nanoseconds(10000);
         
-        while (clock::now() < timeOut)
+        while (clock::now() < time_out)
             if (attempt())
                 return;
         

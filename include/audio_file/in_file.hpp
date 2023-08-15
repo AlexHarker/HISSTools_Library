@@ -173,11 +173,11 @@ private:
     
     // Internal File Handling
     
-    bool read_internal(char* buffer, uintptr_t numBytes)
+    bool read_internal(char* buffer, uintptr_t num_bytes)
     {
         m_file.clear();
-        m_file.read(buffer, numBytes);
-        return static_cast<uintptr_t>(m_file.gcount()) == numBytes;
+        m_file.read(buffer, num_bytes);
+        return static_cast<uintptr_t>(m_file.gcount()) == num_bytes;
     }
     
     bool seek_internal(uintptr_t position)
@@ -303,7 +303,7 @@ private:
         return error_type::fmt_unknown;
     }
     
-    error_type parse_aiff_header(const char* fileSubtype)
+    error_type parse_aiff_header(const char* file_subtype)
     {
         aiff_tag tag;
         
@@ -343,11 +343,11 @@ private:
                     if (!frames())
                         format_check |= static_cast<uint32_t>(aiff_tag::audio);
                     
-                    if (match_tag(fileSubtype, "AIFC"))
+                    if (match_tag(file_subtype, "AIFC"))
                     {
                         // Require a version chunk
                         
-                        //formatValid |= static_cast<uint32_t>(aiff_tag::version);
+                        //format_valid |= static_cast<uint32_t>(aiff_tag::version);
                         
                         // Set parameters based on format
                         

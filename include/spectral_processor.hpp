@@ -329,7 +329,7 @@ protected:
         
         edge_mode mode() const           { return m_mode; }
         
-        bool foldMode() const           { return m_mode == edge_mode::fold || m_mode == edge_mode::fold_repeat; }
+        bool fold_mode() const           { return m_mode == edge_mode::fold || m_mode == edge_mode::fold_repeat; }
 
         uintptr_t size1() const         { return m_size1; }
         uintptr_t size2() const         { return m_size2; }
@@ -344,7 +344,7 @@ protected:
 
         uintptr_t calc_size() const
         {
-            if (!foldMode())
+            if (!fold_mode())
                 return linear();
             else
                 return fold_copy() + (min() - 1);
@@ -564,8 +564,8 @@ protected:
     void binary_op(split_type<T>& io, split_type<T>& temp, op_sizes& sizes, in_ptr r_in1, in_ptr i_in1, in_ptr r_in2, 
                                                                                                         in_ptr i_in2)
     {
-        bool fold1 = sizes.foldMode() && sizes.size1() >= sizes.size2();
-        bool fold2 = sizes.foldMode() && !fold1;
+        bool fold1 = sizes.fold_mode() && sizes.size1() >= sizes.size2();
+        bool fold2 = sizes.fold_mode() && !fold1;
         bool repeat = sizes.mode() == edge_mode::fold_repeat;
         uintptr_t fold_size = sizes.min() >> 1;
         
@@ -621,7 +621,7 @@ protected:
     template <spectral_op Op>
     void binary_op(split_type<T>& io, split_type<T>& temp, op_sizes& sizes, in_ptr in1, in_ptr in2)
     {
-        if (!sizes.foldMode())
+        if (!sizes.fold_mode())
         {
             rfft(io, in1.m_ptr, in1.m_size, sizes.fft_log2());
             rfft(temp, in2.m_ptr, in2.m_size, sizes.fft_log2());

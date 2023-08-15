@@ -359,7 +359,7 @@ namespace window_functions
             auto sq = [&](double x) { return x * x; };
             auto cb = [&](double x) { return x * x * x; };
             auto qb = [&](double x) { return sq(sq(x)); };
-            auto toType = [](double x) { return static_cast<T>(x); };
+            auto to_type = [](double x) { return static_cast<T>(x); };
             
             const T* copy_first = nullptr;
             const T* copy_last = nullptr;
@@ -398,39 +398,39 @@ namespace window_functions
             if (p.exponent == 1.0)
             {
                 for (uint32_t i = begin; i < end; i++)
-                    *window++ = toType(Func(i, n, p));
+                    *window++ = to_type(Func(i, n, p));
             }
             else if (p.exponent == 0.5)
             {
                 for (uint32_t i = begin; i < end; i++)
-                    *window++ = toType(std::sqrt(Func(i, n, p)));
+                    *window++ = to_type(std::sqrt(Func(i, n, p)));
             }
             else if (p.exponent == 2.0)
             {
                 for (uint32_t i = begin; i < end; i++)
-                    *window++ = toType(sq(Func(i, n, p)));
+                    *window++ = to_type(sq(Func(i, n, p)));
             }
             else if (p.exponent == 3.0)
             {
                 for (uint32_t i = begin; i < end; i++)
-                    *window++ = toType(cb(Func(i, n, p)));
+                    *window++ = to_type(cb(Func(i, n, p)));
             }
             else if (p.exponent == 4.0)
             {
                 for (uint32_t i = begin; i < end; i++)
-                    *window++ = toType(qb(Func(i, n, p)));
+                    *window++ = to_type(qb(Func(i, n, p)));
             }
             else if (p.exponent > 0 && p.exponent <= max_int && p.exponent == std::floor(p.exponent))
             {
                 int exponent = static_cast<int>(p.exponent);
                 
                 for (uint32_t i = begin; i < end; i++)
-                    *window++ = toType(std::pow(Func(i, n, p), exponent));
+                    *window++ = to_type(std::pow(Func(i, n, p), exponent));
             }
             else
             {
                 for (uint32_t i = begin; i < end; i++)
-                    *window++ = toType(std::pow(Func(i, n, p), p.exponent));
+                    *window++ = to_type(std::pow(Func(i, n, p), p.exponent));
             }
             
             if (symmetric && out_first)

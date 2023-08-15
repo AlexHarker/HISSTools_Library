@@ -428,7 +428,7 @@ struct fft_impl
         using vector_type = vector_4x<T, vec_size>;
         
         uintptr_t offset = length >> 5;
-        uintptr_t outerLoop = length >> 6;
+        uintptr_t outer_loop = length >> 6;
         
         vector_type tr;
         vector_type ti;
@@ -473,7 +473,7 @@ struct fft_impl
             *i2_ptr++ = i2 + i6;
             *i2_ptr++ = i2 - i6;
             
-            if (!(++j % outerLoop))
+            if (!(++j % outer_loop))
             {
                 r1_ptr += offset;
                 r2_ptr += offset;
@@ -534,7 +534,7 @@ struct fft_impl
         uintptr_t incr = size / (vec_size << 1);
         uintptr_t loop = size;
         uintptr_t offset = (length >> pass) / (vec_size << 1);
-        uintptr_t outerLoop = ((length >> 1) / size) / (static_cast<uintptr_t>(1u) << pass);
+        uintptr_t outer_loop = ((length >> 1) / size) / (static_cast<uintptr_t>(1u) << pass);
         
         vector_type* r1_ptr = reinterpret_cast<vector_type*>(input->realp);
         vector_type* i1_ptr = reinterpret_cast<vector_type*>(input->imagp);
@@ -588,7 +588,7 @@ struct fft_impl
             i1_ptr += incr;
             i2_ptr += incr;
             
-            if (!(++j % outerLoop))
+            if (!(++j % outer_loop))
             {
                 r1_ptr += offset;
                 r2_ptr += offset;
