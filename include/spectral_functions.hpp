@@ -2,17 +2,16 @@
 #ifndef HISSTOOLS_SPECTRAL_FUNCTIONS_HPP
 #define HISSTOOLS_SPECTRAL_FUNCTIONS_HPP
 
-#include <algorithm>
+// thanks windows
+#define _USE_MATH_DEFINES
 #include <cmath>
+
+#include <algorithm>
 #include <complex>
 
 #include "simd_support.hpp"
 #include "namespace.hpp"
 #include "fft/fft.hpp"
-
-#if !defined(M_PI)
-#define M_PI 3.141592653589793238462643383279502884L 
-#endif
 
 HISSTOOLS_NAMESPACE_START()
 
