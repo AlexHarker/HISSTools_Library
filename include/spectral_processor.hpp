@@ -378,7 +378,8 @@ protected:
         std::fill_n(output + offset + in.m_size, size - in.m_size, 0);
     }
     
-    static void copy_fold_zero(split_type<T>& output, in_ptr in1, in_ptr in2, uintptr_t size, uintptr_t fold_size, bool repeat)
+    static void copy_fold_zero(split_type<T>& output, in_ptr in1, in_ptr in2, uintptr_t size, uintptr_t fold_size, 
+                                                                                              bool repeat)
     {
         uintptr_t max_size = std::max(in1.m_size, in2.m_size);
         uintptr_t folded = max_size + (fold_size << 1);
@@ -393,13 +394,15 @@ protected:
     
     // Memory manipulation (complex)
     
-    static void copy(split_type<T>& output, const split_type<T>& spectrum, uintptr_t o_offset, uintptr_t offset, uintptr_t size)
+    static void copy(split_type<T>& output, const split_type<T>& spectrum, uintptr_t o_offset, uintptr_t offset, 
+                                                                                               uintptr_t size)
     {
         std::copy_n(spectrum.realp + offset, size, output.realp + o_offset);
         std::copy_n(spectrum.imagp + offset, size, output.imagp + o_offset);
     }
     
-    static void wrap(split_type<T>& output, const split_type<T>& spectrum, uintptr_t o_offset, uintptr_t offset, uintptr_t size)
+    static void wrap(split_type<T>& output, const split_type<T>& spectrum, uintptr_t o_offset, uintptr_t offset, 
+                                                                                               uintptr_t size)
     {
         for (uintptr_t i = 0; i < size; i++)
         {
@@ -558,7 +561,8 @@ protected:
     }
     
     template <spectral_op Op>
-    void binary_op(split_type<T>& io, split_type<T>& temp, op_sizes& sizes, in_ptr r_in1, in_ptr i_in1, in_ptr r_in2, in_ptr i_in2)
+    void binary_op(split_type<T>& io, split_type<T>& temp, op_sizes& sizes, in_ptr r_in1, in_ptr i_in1, in_ptr r_in2, 
+                                                                                                        in_ptr i_in2)
     {
         bool fold1 = sizes.foldMode() && sizes.size1() >= sizes.size2();
         bool fold2 = sizes.foldMode() && !fold1;

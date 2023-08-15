@@ -525,7 +525,8 @@ struct fft_impl
     // A Pass Requiring Tables With Re-ordering
     
     template <class T, int vec_size>
-    static void pass_trig_table_reorder(split_type<T>* input, fft_setup_type<T>* setup, uintptr_t length, uintptr_t pass)
+    static void pass_trig_table_reorder(split_type<T>* input, fft_setup_type<T>* setup, uintptr_t length, 
+                                                                                        uintptr_t pass)
     {
         using vector_type = simd_type<T, vec_size>;
 

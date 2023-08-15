@@ -288,7 +288,8 @@ public:
             if (fft_now)
                 num_partitions_to_do = (m_valid_partitions - m_partitions_done) - 1;
             else
-                num_partitions_to_do = (((m_valid_partitions - 1) * fft_counter) / fft_size_halved) - m_partitions_done;
+                num_partitions_to_do = (((m_valid_partitions - 1) * fft_counter) 
+                                       / fft_size_halved) - m_partitions_done;
             
             while (num_partitions_to_do > 0)
             {

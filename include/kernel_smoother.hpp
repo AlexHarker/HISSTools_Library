@@ -54,7 +54,10 @@ public:
     
     uintptr_t max_fft_size() { return processor::max_fft_size(); }
 
-    void smooth(T* out, const T* in, const T* kernel, uintptr_t length, uintptr_t kernel_length, double width_lo, double width_hi, bool symmetric, edge_mode edges)
+    void smooth(T* out, const T* in, const T* kernel, uintptr_t length, uintptr_t kernel_length, double width_lo, 
+                                                                                                 double width_hi, 
+                                                                                                 bool symmetric, 
+                                                                                                 edge_mode edges)
     {
         if (!length || !kernel_length)
             return;
@@ -316,7 +319,10 @@ private:
         filter_val.store(out);
     }
     
-    void apply_filter_fft(T* out, const T* data, const T* filter, split_type<T>& io, split_type<T>& temp, uintptr_t width, uintptr_t n, T gain)
+    void apply_filter_fft(T* out, const T* data, const T* filter, split_type<T>& io, split_type<T>& temp, 
+                                                                                     uintptr_t width, 
+                                                                                     uintptr_t n, 
+                                                                                     T gain)
     {
         uintptr_t data_width = n + width - 1;
         op_sizes sizes(data_width, width, processor::edge_mode::LINEAR);

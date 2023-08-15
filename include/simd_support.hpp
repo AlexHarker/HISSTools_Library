@@ -303,7 +303,9 @@ struct simd_type {};
 template <class T, int vec_size, int final_size>
 struct sized_vector
 {
+    using sv = sized_vector; // to make lines shorter in operator
     using vector_type = simd_type<T, vec_size>;
+
     static constexpr int size = final_size;
     static constexpr int array_size = final_size / vec_size;
     
@@ -329,25 +331,25 @@ struct sized_vector
     
     void store(T* a) const { static_iterate<>().store(a, *this); }
 
-    friend sized_vector operator + (const sized_vector& a, const sized_vector& b) { return op(a, b, std::plus<vector_type>()); }
-    friend sized_vector operator - (const sized_vector& a, const sized_vector& b) { return op(a, b, std::minus<vector_type>()); }
-    friend sized_vector operator * (const sized_vector& a, const sized_vector& b) { return op(a, b, std::multiplies<vector_type>()); }
-    friend sized_vector operator / (const sized_vector& a, const sized_vector& b) { return op(a, b, std::divides<vector_type>()); }
+    friend sv operator + (const sv& a, const sv& b) { return op(a, b, std::plus<vector_type>()); }
+    friend sv operator - (const sv& a, const sv& b) { return op(a, b, std::minus<vector_type>()); }
+    friend sv operator * (const sv& a, const sv& b) { return op(a, b, std::multiplies<vector_type>()); }
+    friend sv operator / (const sv& a, const sv& b) { return op(a, b, std::divides<vector_type>()); }
     
-    sized_vector& operator += (const sized_vector& b) { return (*this = *this + b); }
-    sized_vector& operator -= (const sized_vector& b) { return (*this = *this - b); }
-    sized_vector& operator *= (const sized_vector& b) { return (*this = *this * b); }
-    sized_vector& operator /= (const sized_vector& b) { return (*this = *this / b); }
+    sv& operator += (const sv& b) { return (*this = *this + b); }
+    sv& operator -= (const sv& b) { return (*this = *this - b); }
+    sv& operator *= (const sv& b) { return (*this = *this * b); }
+    sv& operator /= (const sv& b) { return (*this = *this / b); }
     
-    friend sized_vector min(const sized_vector& a, const sized_vector& b) { return op(a, b, std::min<vector_type>()); }
-    friend sized_vector max(const sized_vector& a, const sized_vector& b) { return op(a, b, std::max<vector_type>()); }
+    friend sv min(const sv& a, const sv& b) { return op(a, b, std::min<vector_type>()); }
+    friend sv max(const sv& a, const sv& b) { return op(a, b, std::max<vector_type>()); }
     
-    friend sized_vector operator == (const sized_vector& a, const sized_vector& b) { return op(a, b, std::equal_to<vector_type>()); }
-    friend sized_vector operator != (const sized_vector& a, const sized_vector& b) { return op(a, b, std::not_equal_to<vector_type>()); }
-    friend sized_vector operator > (const sized_vector& a, const sized_vector& b) { return op(a, b, std::greater<vector_type>()); }
-    friend sized_vector operator < (const sized_vector& a, const sized_vector& b) { return op(a, b, std::less<vector_type>()); }
-    friend sized_vector operator >= (const sized_vector& a, const sized_vector& b) { return op(a, b, std::greater_equal<vector_type>()); }
-    friend sized_vector operator <= (const sized_vector& a, const sized_vector& b) { return op(a, b, std::less_equal<vector_type>()); }
+    friend sv operator == (const sv& a, const sv& b) { return op(a, b, std::equal_to<vector_type>()); }
+    friend sv operator != (const sv& a, const sv& b) { return op(a, b, std::not_equal_to<vector_type>()); }
+    friend sv operator > (const sv& a, const sv& b) { return op(a, b, std::greater<vector_type>()); }
+    friend sv operator < (const sv& a, const sv& b) { return op(a, b, std::less<vector_type>()); }
+    friend sv operator >= (const sv& a, const sv& b) { return op(a, b, std::greater_equal<vector_type>()); }
+    friend sv operator <= (const sv& a, const sv& b) { return op(a, b, std::less_equal<vector_type>()); }
     
     vector_type m_data[array_size];
     
@@ -401,7 +403,8 @@ private:
     struct static_iterate<N, N>
     {
         template <typename Fn>
-        void operator()(sized_vector & /*result*/, const sized_vector& /* a */, const sized_vector& /* b */, Fn const& /* fn */) const {}
+        void operator()(sized_vector & /*result*/, const sized_vector& /* a */, const sized_vector& /* b */, 
+                                                                                Fn const& /* fn */) const {}
         
         void load(sized_vector & /* v */, const T * /* array */) {}
         void store(T * /* array */, const sized_vector& /* v */) {}
@@ -453,7 +456,8 @@ struct simd_type<double, 1>
     
     friend simd_type min(const simd_type& a, const simd_type& b) { return std::min(a.m_val, b.m_val); }
     friend simd_type max(const simd_type& a, const simd_type& b) { return std::max(a.m_val, b.m_val); }
-    friend simd_type sel(const simd_type& a, const simd_type& b, const simd_type& c) { return c.m_val ? b.m_val : a.m_val; }
+    friend simd_type sel(const simd_type& a, const simd_type& b, 
+                                             const simd_type& c) { return c.m_val ? b.m_val : a.m_val; }
     
     friend simd_type operator == (const simd_type& a, const simd_type& b) { return a.m_val == b.m_val; }
     friend simd_type operator != (const simd_type& a, const simd_type& b) { return a.m_val != b.m_val; }
@@ -508,7 +512,8 @@ struct simd_type<float, 1>
     
     friend simd_type min(const simd_type& a, const simd_type& b) { return std::min(a.m_val, b.m_val); }
     friend simd_type max(const simd_type& a, const simd_type& b) { return std::max(a.m_val, b.m_val); }
-    friend simd_type sel(const simd_type& a, const simd_type& b, const simd_type& c) { return c.m_val ? b.m_val : a.m_val; }
+    friend simd_type sel(const simd_type& a, const simd_type& b, 
+                                             const simd_type& c) { return c.m_val ? b.m_val : a.m_val; }
     
     friend simd_type operator == (const simd_type& a, const simd_type& b) { return a.m_val == b.m_val; }
     friend simd_type operator != (const simd_type& a, const simd_type& b) { return a.m_val != b.m_val; }
@@ -775,7 +780,8 @@ public:
     
     friend simd_type min(const simd_type& a, const simd_type& b) { return vminq_f32(a.m_val, b.m_val); }
     friend simd_type max(const simd_type& a, const simd_type& b) { return vmaxq_f32(a.m_val, b.m_val); }
-    friend simd_type sel(const simd_type& a, const simd_type& b, const simd_type& c) { return and_not(c, a) | (b & c); }
+    friend simd_type sel(const simd_type& a, const simd_type& b, 
+                                             const simd_type& c) { return and_not(c, a) | (b & c); }
     
     // N.B. - operand swap for and_not
     friend simd_type and_not(const simd_type& a, const simd_type& b) { return bitwise<vbicq_u32>(b, a); }
@@ -898,8 +904,8 @@ struct simd_type<double, 2> : public simd_vector<double, __m128d, 2>
     friend simd_type sqrt(const simd_type& a) { return _mm_sqrt_pd(a.m_val); }
     
     // N.B. - ties issue
-    friend simd_type round(const simd_type& a) { return _mm_round_pd(a.m_val, _MM_FROUND_TO_NEAREST_INT |_MM_FROUND_NO_EXC); }
     friend simd_type trunc(const simd_type& a) { return _mm_round_pd(a.m_val, _MM_FROUND_TO_ZERO |_MM_FROUND_NO_EXC); }
+    friend simd_type round(const simd_type& a) { return _mm_round_pd(a.m_val, _MM_FROUND_TO_NEAREST_INT |_MM_FROUND_NO_EXC); }
     
     friend simd_type min(const simd_type& a, const simd_type& b) { return _mm_min_pd(a.m_val, b.m_val); }
     friend simd_type max(const simd_type& a, const simd_type& b) { return _mm_max_pd(a.m_val, b.m_val); }

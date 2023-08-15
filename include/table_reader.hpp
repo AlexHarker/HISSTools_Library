@@ -309,8 +309,12 @@ void table_read(Table fetcher, W* out, const X* positions, intptr_t n_samps, dou
     const int vec_size = simd_limits<W>::max_size;
     intptr_t n_vsample = (n_samps / vec_size) * vec_size;
     
-    table_read_loop<simd_type<W, vec_size>, simd_type<fetch_type, vec_size>, X, Table, Reader>(fetcher, out, positions, n_vsample, mul);
-    table_read_loop<simd_type<W, 1>, simd_type<fetch_type, 1>, X, Table, Reader>(fetcher, out + n_vsample, positions + n_vsample, n_samps - n_vsample, mul);
+    table_read_loop<simd_type<W, vec_size>, 
+                    simd_type<fetch_type, vec_size>, 
+                    X, Table, Reader>(fetcher, out, positions, n_vsample, mul);
+    table_read_loop<simd_type<W, 1>, 
+                    simd_type<fetch_type, 1>, 
+                    X, Table, Reader>(fetcher, out + n_vsample, positions + n_vsample, n_samps - n_vsample, mul);
 }
 
 // Main reading call that switches between different types of interpolation
@@ -322,18 +326,29 @@ void table_read(Table fetcher, T* out, const U* positions, intptr_t n_samps, T m
     
     switch(interp)
     {
-        case interp_type::NONE:          table_read<no_interp_reader>(fetcher, out, positions, n_samps, mul);        break;
-        case interp_type::LINEAR:        table_read<linear_reader>(fetcher, out, positions, n_samps, mul);           break;
-        case interp_type::CUBIC_HERMITE: table_read<cubic_hermite_reader>(fetcher, out,positions, n_samps, mul);     break;
-        case interp_type::CUBIC_LAGRANGE:table_read<cubic_lagrange_reader>(fetcher, out, positions, n_samps, mul);   break;
-        case interp_type::CUBIC_BSPLINE: table_read<cubic_bspline_reader>(fetcher, out, positions, n_samps, mul);    break;
+        case interp_type::NONE:          
+            table_read<no_interp_reader>(fetcher, out, positions, n_samps, mul);
+            break;
+        case interp_type::LINEAR:        
+            table_read<linear_reader>(fetcher, out, positions, n_samps, mul);
+            break;
+        case interp_type::CUBIC_HERMITE: 
+            table_read<cubic_hermite_reader>(fetcher, out,positions, n_samps, mul);
+            break;
+        case interp_type::CUBIC_LAGRANGE:
+            table_read<cubic_lagrange_reader>(fetcher, out, positions, n_samps, mul);
+            break;
+        case interp_type::CUBIC_BSPLINE:
+            table_read<cubic_bspline_reader>(fetcher, out, positions, n_samps, mul);
+            break;
     }
 }
 
 // Reading calls to add adaptors to the basic fetcher
 
 template <class T, class U, class Table>
-void table_read_optional_bound(Table fetcher, T* out, const U* positions, intptr_t n_samps, T mul, interp_type interp, bool bound)
+void table_read_optional_bound(Table fetcher, T* out, const U* positions, intptr_t n_samps, T mul, interp_type interp, 
+                                                                                                   bool bound)
 {
     if (bound)
     {
@@ -345,42 +360,48 @@ void table_read_optional_bound(Table fetcher, T* out, const U* positions, intptr
 }
 
 template <class T, class U, class Table>
-void table_read_zeropad(Table fetcher, T* out, const U* positions, intptr_t n_samps, T mul, interp_type interp, bool bound)
+void table_read_zeropad(Table fetcher, T* out, const U* positions, intptr_t n_samps, T mul, interp_type interp, 
+                                                                                            bool bound)
 {
     table_fetcher_zeropad<Table> fetch(fetcher);
     table_read_optional_bound(fetch, out, positions, n_samps, mul, interp, bound);
 }
 
 template <class T, class U, class Table>
-void table_read_extend(Table fetcher, T* out, const U* positions, intptr_t n_samps, T mul, interp_type interp, bool bound)
+void table_read_extend(Table fetcher, T* out, const U* positions, intptr_t n_samps, T mul, interp_type interp, 
+                                                                                           bool bound)
 {
     table_fetcher_extend<Table> fetch(fetcher);
     table_read_optional_bound(fetch, out, positions, n_samps, mul, interp, bound);
 }
 
 template <class T, class U, class Table>
-void table_read_wrap(Table fetcher, T* out, const U* positions, intptr_t n_samps, T mul, interp_type interp, bool bound)
+void table_read_wrap(Table fetcher, T* out, const U* positions, intptr_t n_samps, T mul, interp_type interp, 
+                                                                                         bool bound)
 {
     table_fetcher_wrap<Table> fetch(fetcher);
     table_read_optional_bound(fetch, out, positions, n_samps, mul, interp, bound);
 }
 
 template <class T, class U, class Table>
-void table_read_fold(Table fetcher, T* out, const U* positions, intptr_t n_samps, T mul, interp_type interp, bool bound)
+void table_read_fold(Table fetcher, T* out, const U* positions, intptr_t n_samps, T mul, interp_type interp, 
+                                                                                         bool bound)
 {
     table_fetcher_fold<Table> fetch(fetcher);
     table_read_optional_bound(fetch, out, positions, n_samps, mul, interp, bound);
 }
 
 template <class T, class U, class Table>
-void table_read_mirror(Table fetcher, T* out, const U* positions, intptr_t n_samps, T mul, interp_type interp, bool bound)
+void table_read_mirror(Table fetcher, T* out, const U* positions, intptr_t n_samps, T mul, interp_type interp, 
+                                                                                           bool bound)
 {
     table_fetcher_mirror<Table> fetch(fetcher);
     table_read_optional_bound(fetch, out, positions, n_samps, mul, interp, bound);
 }
 
 template <class T, class U, class Table>
-void table_read_extrapolate(Table fetcher, T* out, const U* positions, intptr_t n_samps, T mul, interp_type interp, bool bound)
+void table_read_extrapolate(Table fetcher, T* out, const U* positions, intptr_t n_samps, T mul, interp_type interp, 
+                                                                                                bool bound)
 {
     table_fetcher_extrapolate<Table> fetch(fetcher);
     table_read_optional_bound(fetch, out, positions, n_samps, mul, interp, bound);
@@ -389,16 +410,29 @@ void table_read_extrapolate(Table fetcher, T* out, const U* positions, intptr_t 
 // Main read call for variable edge behaviour
 
 template <class T, class U, class Table>
-void table_read_edges(Table fetcher, T* out, const U* positions, intptr_t n_samps, T mul, interp_type interp, edge_mode edges, bool bound)
+void table_read_edges(Table fetcher, T* out, const U* positions, intptr_t n_samps, T mul, interp_type interp, 
+                                                                                          edge_mode edges, bool bound)
 {
     switch (edges)
     {
-        case edge_mode::ZERO_PAD:    table_read_zeropad(fetcher, out, positions, n_samps, mul, interp, bound);       break;
-        case edge_mode::EXTEND:      table_read_extend(fetcher, out, positions, n_samps, mul, interp, bound);        break;
-        case edge_mode::WRAP:        table_read_wrap(fetcher, out, positions, n_samps, mul, interp, bound);          break;
-        case edge_mode::FOLD:        table_read_fold(fetcher, out, positions, n_samps, mul, interp, bound);          break;
-        case edge_mode::MIRROR:      table_read_mirror(fetcher, out, positions, n_samps, mul, interp, bound);        break;
-        case edge_mode::EXTRAPOLATE: table_read_extrapolate(fetcher, out, positions, n_samps, mul, interp, bound);   break;
+        case edge_mode::ZERO_PAD:
+            table_read_zeropad(fetcher, out, positions, n_samps, mul, interp, bound);
+            break;
+        case edge_mode::EXTEND:
+            table_read_extend(fetcher, out, positions, n_samps, mul, interp, bound);
+            break;
+        case edge_mode::WRAP:
+            table_read_wrap(fetcher, out, positions, n_samps, mul, interp, bound);
+            break;
+        case edge_mode::FOLD:
+            table_read_fold(fetcher, out, positions, n_samps, mul, interp, bound);
+            break;
+        case edge_mode::MIRROR:
+            table_read_mirror(fetcher, out, positions, n_samps, mul, interp, bound);
+            break;
+        case edge_mode::EXTRAPOLATE:
+            table_read_extrapolate(fetcher, out, positions, n_samps, mul, interp, bound);
+            break;
     }
 }
 

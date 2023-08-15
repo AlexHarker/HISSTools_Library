@@ -7,7 +7,9 @@ A C++ Library for DSP
 ```sh
 mkdir build && cd build
 # build library
-cmake .. -DCMAKE_INSTALL_PREFIX=<absolute/install/parent/dir> -DBUILD_TESTS=<OFF|ON> -DBUILD_TEST=$PWD/../test/<specific_test_to_build.cpp>
+cmake .. -DCMAKE_INSTALL_PREFIX=<absolute/install/parent/dir> 
+         -DBUILD_TESTS=<OFF|ON> 
+         -DBUILD_TEST=$PWD/../test/<specific_test_to_build.cpp>
 # install library CMAKE_INSTALL_PREFIX/include/hisstools
 cmake --build . --target install
 # build specific test, or leave out --target option to build all tests

@@ -79,7 +79,8 @@ public:
     {
         conformed_input<T, U> typed_input(input, length);
         
-        return do_channel(&cn::template set<T>, out_chan, offset_input(in_chan, out_chan), typed_input.get(), length, resize);
+        return do_channel(&cn::template set<T>, out_chan, offset_input(in_chan, out_chan), typed_input.get(), length, 
+                                                                                                              resize);
     }
     
     // Process

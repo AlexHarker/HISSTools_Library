@@ -22,7 +22,8 @@ namespace impl
     struct logarithm    { template <class T> T operator()(T a) const { return std::log(a); } };
 
     struct indices      { template <class T> double operator[](T a) const { return static_cast<double>(a); } };
-    struct log_indices  { template <class T> double operator[](T a) const { return a ? std::log2(static_cast<double>(a)) : 0.0; } };
+    struct log_indices  { 
+        template <class T> double operator[](T a) const { return a ? std::log2(static_cast<double>(a)) : 0.0; } };
 
     template <class T, typename Op>
     struct modified_data
@@ -93,13 +94,15 @@ double stat_max(const T input, size_t size)
 template <class T>
 double stat_max_position(const T input, size_t size)
 {
-    return size ? std::distance(input, std::max_element(input, input + size)) : -std::numeric_limits<double>::infinity();
+    return size ? std::distance(input, std::max_element(input, input + size)) 
+                : -std::numeric_limits<double>::infinity();
 }
 
 template <class T>
 double stat_min_position(const T input, size_t size)
 {
-    return size ? std::distance(input, std::min_element(input, input + size)) : -std::numeric_limits<double>::infinity();
+    return size ? std::distance(input, std::min_element(input, input + size)) 
+                : -std::numeric_limits<double>::infinity();
 }
 
 // Counts
@@ -319,7 +322,8 @@ double stat_skewness(const T input, size_t size)
 {
     double centroid = stat_centroid(input, size);
     double denominator = impl::pow3()(stat_spread(input, size)) * stat_sum(input, size);
-    return denominator ? stat_weighted_sum(impl::indices_diff_op<impl::pow3>(centroid), input, size) / denominator : 0.0;
+    return denominator ? stat_weighted_sum(impl::indices_diff_op<impl::pow3>(centroid), input, size) / denominator 
+                       : 0.0;
 }
 
 template <class T>
@@ -327,7 +331,8 @@ double stat_kurtosis(const T input, size_t size)
 {
     double centroid = stat_centroid(input, size);
     double denominator = impl::pow4()(stat_spread(input, size)) * stat_sum(input, size);
-    return denominator ? stat_weighted_sum(impl::indices_diff_op<impl::pow4>(centroid), input, size) / denominator : std::numeric_limits<double>::infinity();
+    return denominator ? stat_weighted_sum(impl::indices_diff_op<impl::pow4>(centroid), input, size) / denominator 
+                       : std::numeric_limits<double>::infinity();
 }
 
 // Log Shape
@@ -342,7 +347,8 @@ template <class T>
 double stat_log_spread(const T input, size_t size)
 {
     double centroid = stat_log_centroid(input, size);
-    return sqrt(stat_weighted_sum(impl::log_indices_diff_op<impl::pow2>(std::log2(centroid)), input, size) / stat_sum(input, size));
+    return sqrt(stat_weighted_sum(impl::log_indices_diff_op<impl::pow2>(std::log2(centroid)), 
+                                  input, size) / stat_sum(input, size));
 }
 
 template <class T>
@@ -350,7 +356,8 @@ double stat_log_skewness(const T input, size_t size)
 {
     double centroid = stat_log_centroid(input, size);
     double denominator = impl::pow3()(stat_log_spread(input, size)) * stat_sum(input, size);
-    return denominator ? stat_weighted_sum(impl::log_indices_diff_op<impl::pow3>(std::log2(centroid)), input, size) / denominator : 0.0;
+    return denominator ? stat_weighted_sum(impl::log_indices_diff_op<impl::pow3>(std::log2(centroid)), 
+                                           input, size) / denominator : 0.0;
 }
 
 template <class T>
@@ -358,7 +365,8 @@ double stat_log_kurtosis(const T input, size_t size)
 {
     double centroid = stat_log_centroid(input, size);
     double denominator = impl::pow4()(stat_log_spread(input, size)) * stat_sum(input, size);
-    return denominator ? stat_weighted_sum(impl::log_indices_diff_op<impl::pow4>(std::log2(centroid)), input, size) / denominator : std::numeric_limits<double>::infinity();
+    return denominator ? stat_weighted_sum(impl::log_indices_diff_op<impl::pow4>(std::log2(centroid)), 
+                                           input, size) / denominator : std::numeric_limits<double>::infinity();
 }
 
 // Flatness

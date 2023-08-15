@@ -119,7 +119,8 @@ public:
 private:
 
     template <bool B = Approx, typename std::enable_if<B, int>::type = 0>
-    void resample_ratio(std::vector<IO>& output, IO* input, uintptr_t in_length, uintptr_t nsamps, uint32_t num, uint32_t denom)
+    void resample_ratio(std::vector<IO>& output, IO* input, uintptr_t in_length, uintptr_t nsamps, uint32_t num, 
+                                                                                                   uint32_t denom)
     {
         uint32_t filter_offset;
         uint32_t filter_length;

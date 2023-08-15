@@ -26,7 +26,8 @@ public:
         open(file, type, format, channels, sr);
     }
     
-    out_audio_file(const std::string& file, file_type type, pcm_format format, uint16_t channels, double sr, endianness endianity)
+    out_audio_file(const std::string& file, file_type type, pcm_format format, uint16_t channels, double sr, 
+                                                                                                  endianness endianity)
     {
         open(file, type, format, channels, sr, endianity);
     }
@@ -43,7 +44,8 @@ public:
         open(file, type, format, channels, sr, type == file_type::WAVE ? endianness::LITTLE : endianness::BIG);
     }
     
-    void open(const std::string& file, file_type type, pcm_format format, uint16_t channels, double sr, endianness endianity)
+    void open(const std::string& file, file_type type, pcm_format format, uint16_t channels, double sr, 
+                                                                                             endianness endianity)
     {
         close();
         m_file.open(file.c_str(), ios_base::binary | ios_base::in | ios_base::out | ios_base::trunc);
@@ -340,14 +342,16 @@ private:
             if (get_file_type() == file_type::WAVE)
             {
                 success &= seek_internal(4);
-                success &= put_u32(static_cast<uint32_t>(get_header_size() + padded_length(data_size)), header_endianness());
+                success &= put_u32(static_cast<uint32_t>(get_header_size() + padded_length(data_size)), 
+                                                         header_endianness());
                 success &= seek_internal(get_pcm_offset() - 4);
                 success &= put_u32(static_cast<uint32_t>(data_size), header_endianness());
             }
             else
             {
                 success &= seek_internal(4);
-                success &= put_u32(static_cast<uint32_t>(get_header_size() + padded_length(data_size)), header_endianness());
+                success &= put_u32(static_cast<uint32_t>(get_header_size() + padded_length(data_size)), 
+                                                         header_endianness());
                 success &= seek_internal(34);
                 success &= put_u32(static_cast<uint32_t>(frames()), header_endianness());
                 success &= seek_internal(get_pcm_offset() - 12);

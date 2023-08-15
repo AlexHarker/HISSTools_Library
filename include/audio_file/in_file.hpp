@@ -357,7 +357,8 @@ private:
                             return error_type::AIFC_FMT_UNSUPPORTED;
                     }
                     else
-                        m_format = audio_file_format(file_type::AIFF, numeric_type::INTEGER, bit_depth, endianness::BIG);
+                        m_format = audio_file_format(file_type::AIFF, numeric_type::INTEGER, bit_depth, 
+                                                                                             endianness::BIG);
                     
                     if (!m_format.is_valid())
                         return error_type::PCM_FMT_UNSUPPORTED;
@@ -444,7 +445,8 @@ private:
         {
             format_byte = get_u16(chunk + 24, header_endianness());
             
-            constexpr unsigned char guid[14] = { 0x00,0x00,0x00,0x00,0x10,0x00,0x80,0x00,0x00,0xAA,0x00,0x38,0x9B,0x71 };
+            constexpr unsigned char guid[14]
+                            = { 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x80, 0x00, 0x00, 0xAA, 0x00, 0x38, 0x9B, 0x71 };
             
             if (std::memcmp(chunk + 26, &guid, 14) != 0)
                 return error_type::WAV_FMT_UNSUPPORTED;
