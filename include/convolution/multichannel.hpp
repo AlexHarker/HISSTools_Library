@@ -118,7 +118,7 @@ private:
         if (out_chan < get_num_outs())
             return (m_convolvers[out_chan].*method)(args...);
         else
-            return convolve_error::OUT_CHANNEL_OUTSIDE_RANGE;
+            return convolve_error::out_channel_outside_range;
     }
     
     // Utility to apply an operation to all convolvers

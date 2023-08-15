@@ -29,21 +29,21 @@ public:
     
     enum class error_type
     {
-        NONE                    = 0,
-        FILE_ERROR              = 1 << 0,
-        OPEN_FAILED             = 1 << 1,
-        FMT_BAD                 = 1 << 2,
-        FMT_UNKNOWN             = 1 << 3,
-        PCM_FMT_UNSUPPORTED     = 1 << 4,
-        AIFC_WRONG_VERSION      = 1 << 5,
-        AIFC_FMT_UNSUPPORTED    = 1 << 6,
-        WAV_FMT_UNSUPPORTED     = 1 << 7,
-        WRITE_FAILED            = 1 << 8,
+        none                    = 0,
+        file_error              = 1 << 0,
+        open_failed             = 1 << 1,
+        fmt_bad                 = 1 << 2,
+        fmt_unknown             = 1 << 3,
+        pcm_fmt_unsupported     = 1 << 4,
+        aifc_wrong_version      = 1 << 5,
+        aifc_fmt_unsupported    = 1 << 6,
+        wav_fmt_unsupported     = 1 << 7,
+        write_failed            = 1 << 8,
     };
     
     enum AIFC_VERSION
     {
-        AIFC_CURRENT_SPECIFICATION = 0xA2805140
+        aifc_current_specification = 0xA2805140
     };
     
     base_audio_file()
@@ -51,7 +51,7 @@ public:
     , m_num_channels(0)
     , m_num_frames(0)
     , m_pcm_offset(0)
-    , m_error_flags(static_cast<int>(error_type::NONE))
+    , m_error_flags(static_cast<int>(error_type::none))
     {}
     
     virtual ~base_audio_file() {}
@@ -69,7 +69,7 @@ public:
         m_num_frames = 0;
         m_pcm_offset = 0;
         
-        m_error_flags = static_cast<int>(error_type::NONE);
+        m_error_flags = static_cast<int>(error_type::none);
     }
     
     file_type get_file_type() const         { return m_format.get_file_type(); }
@@ -87,16 +87,16 @@ public:
     uint16_t byte_depth() const             { return m_format.byte_depth(); }
     uintptr_t frame_byte_count() const      { return channels() * byte_depth(); }
     
-    bool is_error() const                   { return m_error_flags != static_cast<int>(error_type::NONE); }
+    bool is_error() const                   { return m_error_flags != static_cast<int>(error_type::none); }
     int error_flags() const                 { return m_error_flags; }
     std::vector<error_type> get_errors() const   { return extract_errors_from_flags(error_flags()); }
-    void clear_errors()                     { m_error_flags = static_cast<int>(error_type::NONE); }
+    void clear_errors()                     { m_error_flags = static_cast<int>(error_type::none); }
     
     static std::vector<error_type> extract_errors_from_flags(int flags)
     {
         std::vector<error_type> errors;
         
-        for (int i = 0; i <= static_cast<int>(error_type::WRITE_FAILED); i++)
+        for (int i = 0; i <= static_cast<int>(error_type::write_failed); i++)
         {
             if (flags & (1 << i))
                 errors.push_back(static_cast<error_type>(i));
@@ -109,15 +109,15 @@ public:
     {
         switch (error)
         {
-            case error_type::FILE_ERROR:            return "file error";
-            case error_type::OPEN_FAILED:           return "couldn't open file";
-            case error_type::FMT_BAD:               return "bad format";
-            case error_type::FMT_UNKNOWN:           return "unknown format";
-            case error_type::PCM_FMT_UNSUPPORTED:   return "unsupported pcm format";
-            case error_type::AIFC_WRONG_VERSION:    return "wrong aifc version";
-            case error_type::AIFC_FMT_UNSUPPORTED:  return "unsupported aifc format";
-            case error_type::WAV_FMT_UNSUPPORTED:   return "unsupported wave format";
-            case error_type::WRITE_FAILED:          return "couldn't write file";
+            case error_type::file_error:            return "file error";
+            case error_type::open_failed:           return "couldn't open file";
+            case error_type::fmt_bad:               return "bad format";
+            case error_type::fmt_unknown:           return "unknown format";
+            case error_type::pcm_fmt_unsupported:   return "unsupported pcm format";
+            case error_type::aifc_wrong_version:    return "wrong aifc version";
+            case error_type::aifc_fmt_unsupported:  return "unsupported aifc format";
+            case error_type::wav_fmt_unsupported:   return "unsupported wave format";
+            case error_type::write_failed:          return "couldn't write file";
                 
             default:                                return "no error";
         }

@@ -41,7 +41,7 @@ public:
     
     void open(const std::string& file, file_type type, pcm_format format, uint16_t channels, double sr)
     {
-        open(file, type, format, channels, sr, type == file_type::WAVE ? endianness::LITTLE : endianness::BIG);
+        open(file, type, format, channels, sr, type == file_type::wave ? endianness::little : endianness::big);
     }
     
     void open(const std::string& file, file_type type, pcm_format format, uint16_t channels, double sr, 
@@ -54,7 +54,7 @@ public:
         
         if (is_open() && position_internal() == 0)
         {
-            type = type == file_type::AIFF ? file_type::AIFC : type;
+            type = type == file_type::aiff ? file_type::aifc : type;
             
             m_format = audio_file_format(type, format, endianity);
             m_sampling_rate = sr;
@@ -62,7 +62,7 @@ public:
             m_num_frames = 0;
             m_pcm_offset = 0;
             
-            if (get_file_type() == file_type::WAVE)
+            if (get_file_type() == file_type::wave)
                 write_wave_header();
             else
                 write_aifc_header();
@@ -70,7 +70,7 @@ public:
             m_buffer.resize(work_loop_size() * frame_byte_count());
         }
         else
-            set_error_bit(error_type::OPEN_FAILED);
+            set_error_bit(error_type::open_failed);
     }
     
     // File Position
@@ -229,7 +229,7 @@ private:
         
         // File Header
         
-        if (header_endianness() == endianness::LITTLE)
+        if (header_endianness() == endianness::little)
             success &= put_chunk("RIFF", 36);
         else
             success &= put_chunk("RIFX", 36);
@@ -239,7 +239,7 @@ private:
         // Format Chunk
         
         success &= put_chunk("fmt ", 16);
-        success &= put_u16(get_numeric_type() == numeric_type::INTEGER ? 0x1 : 0x3, header_endianness());
+        success &= put_u16(get_numeric_type() == numeric_type::integer ? 0x1 : 0x3, header_endianness());
         success &= put_u16(channels(), header_endianness());
         success &= put_u32(sampling_rate(), header_endianness());
         
@@ -256,7 +256,7 @@ private:
         m_pcm_offset = position_internal();
         
         if (!success)
-            set_error_bit(error_type::WRITE_FAILED);
+            set_error_bit(error_type::write_failed);
     }
     
     void write_aifc_header()
@@ -288,7 +288,7 @@ private:
         // FVER Chunk
         
         success &= put_chunk("FVER", 4);
-        success &= put_u32(AIFC_CURRENT_SPECIFICATION, header_endianness());
+        success &= put_u32(aifc_current_specification, header_endianness());
         
         // COMM Chunk
         
@@ -314,7 +314,7 @@ private:
         m_pcm_offset = position_internal();
         
         if (!success)
-            set_error_bit(error_type::WRITE_FAILED);
+            set_error_bit(error_type::write_failed);
     }
     
     bool update_header()
@@ -339,7 +339,7 @@ private:
             
             // Update chunk sizes for (file, audio and also frames for AIFF/C)
             
-            if (get_file_type() == file_type::WAVE)
+            if (get_file_type() == file_type::wave)
             {
                 success &= seek_internal(4);
                 success &= put_u32(static_cast<uint32_t>(get_header_size() + padded_length(data_size)), 
@@ -482,7 +482,7 @@ private:
                 
                 if (m_file.gcount() != loop_frames * frame_byte_count())
                 {
-                    set_error_bit(error_type::WRITE_FAILED);
+                    set_error_bit(error_type::write_failed);
                     return;
                 }
             }
@@ -491,30 +491,30 @@ private:
             
             switch (get_pcm_format())
             {
-                case pcm_format::INT8:
-                    if (get_file_type() == file_type::WAVE)
+                case pcm_format::int8:
+                    if (get_file_type() == file_type::wave)
                         write_loop<uint8_t, uint8_t, 1>(input, j, loop_samples, byte_step);
                     else
                         write_loop<uint32_t, uint32_t, 1>(input, j, loop_samples, byte_step);
                     break;
                     
-                case pcm_format::INT16:
+                case pcm_format::int16:
                     write_loop<uint32_t, uint32_t, 2>(input, j, loop_samples, byte_step);
                     break;
                     
-                case pcm_format::INT24:
+                case pcm_format::int24:
                     write_loop<uint32_t, uint32_t, 3>(input, j, loop_samples, byte_step);
                     break;
                     
-                case pcm_format::INT32:
+                case pcm_format::int32:
                     write_loop<uint32_t, uint32_t, 4>(input, j, loop_samples, byte_step);
                     break;
                     
-                case pcm_format::FLOAT32:
+                case pcm_format::float32:
                     write_loop<uint32_t, float, 4>(input, j, loop_samples, byte_step);
                     break;
                     
-                case pcm_format::FLOAT64:
+                case pcm_format::float64:
                     write_loop<uint64_t, double, 8>(input, j, loop_samples, byte_step);
                     break;
             }

@@ -20,7 +20,7 @@ class spectral_processor
     
 public:
     
-    enum class edge_mode { LINEAR, WRAP, WRAP_CENTRE, FOLD, FOLD_REPEAT };
+    enum class edge_mode { linear, wrap, wrap_centre, fold, fold_repeat };
     
     struct in_ptr
     {
@@ -222,7 +222,7 @@ public:
         if (!size1 || !size2)
             return 0;
         
-        op_sizes sizes(size1, size2, edge_mode::LINEAR);
+        op_sizes sizes(size1, size2, edge_mode::linear);
         
         return sizes.fft();
     }
@@ -329,7 +329,7 @@ protected:
         
         edge_mode mode() const           { return m_mode; }
         
-        bool foldMode() const           { return m_mode == edge_mode::FOLD || m_mode == edge_mode::FOLD_REPEAT; }
+        bool foldMode() const           { return m_mode == edge_mode::fold || m_mode == edge_mode::fold_repeat; }
 
         uintptr_t size1() const         { return m_size1; }
         uintptr_t size2() const         { return m_size2; }
@@ -453,20 +453,20 @@ protected:
         
         switch (sizes.mode())
         {
-            case edge_mode::LINEAR:
+            case edge_mode::linear:
             {
                 copy(output, spectrum, 0, 0, sizes.linear());
                 break;
             }
                 
-            case edge_mode::WRAP:
+            case edge_mode::wrap:
             {
                 copy(output, spectrum, 0, 0, sizes.max());
                 wrap(output, spectrum, 0, sizes.linear(), min_m1);
                 break;
             }
         
-            case edge_mode::WRAP_CENTRE:
+            case edge_mode::wrap_centre:
             {
                 uintptr_t wrapped = min_m1 >> 1;
                 copy(output, spectrum, 0, wrapped, sizes.max());
@@ -475,8 +475,8 @@ protected:
                 break;
             }
                 
-            case edge_mode::FOLD:
-            case edge_mode::FOLD_REPEAT:
+            case edge_mode::fold:
+            case edge_mode::fold_repeat:
             {
                 copy(output, spectrum, 0, min_m1, sizes.max());
                 break;
@@ -491,14 +491,14 @@ protected:
     
         switch (sizes.mode())
         {
-            case edge_mode::LINEAR:
+            case edge_mode::linear:
             {
                 copy(output, spectrum, 0, 0, sizes.size1());
                 copy(output, spectrum, sizes.size1(), sizes.fft() - size2_m1, size2_m1);
                 break;
             }
                 
-            case edge_mode::WRAP:
+            case edge_mode::wrap:
             {
                 copy(output, spectrum, 0, 0, sizes.size1());
                 zero(output, sizes.size1(), sizes.size2());
@@ -506,7 +506,7 @@ protected:
                 break;
             }
                 
-            case edge_mode::WRAP_CENTRE:
+            case edge_mode::wrap_centre:
             {
                 uintptr_t wrapped1 = (sizes.min() - 1) >> 1;
                 uintptr_t wrapped2 = std::min(size2_m1, sizes.max() - wrapped1);
@@ -522,8 +522,8 @@ protected:
                 break;
             }
             
-            case edge_mode::FOLD:
-            case edge_mode::FOLD_REPEAT:
+            case edge_mode::fold:
+            case edge_mode::fold_repeat:
             {
                 if (sizes.size1() >= sizes.size2())
                 {
@@ -557,7 +557,7 @@ protected:
         if ((sizes.fft() > max_fft_size()))
             return 0;
         
-        return mode != edge_mode::LINEAR ? sizes.max() : sizes.linear();
+        return mode != edge_mode::linear ? sizes.max() : sizes.linear();
     }
     
     template <spectral_op Op>
@@ -566,7 +566,7 @@ protected:
     {
         bool fold1 = sizes.foldMode() && sizes.size1() >= sizes.size2();
         bool fold2 = sizes.foldMode() && !fold1;
-        bool repeat = sizes.mode() == edge_mode::FOLD_REPEAT;
+        bool repeat = sizes.mode() == edge_mode::fold_repeat;
         uintptr_t fold_size = sizes.min() >> 1;
         
         copy_fold_zero(io, r_in1, i_in1, sizes.fft(), fold1 ? fold_size : 0, repeat);
@@ -629,7 +629,7 @@ protected:
         else
         {
             uintptr_t fold_size = sizes.min() >> 1;
-            bool repeat = sizes.mode() == edge_mode::FOLD_REPEAT;
+            bool repeat = sizes.mode() == edge_mode::fold_repeat;
 
             if (sizes.size1() >= sizes.size2())
             {

@@ -29,11 +29,11 @@ class kernel_smoother : private spectral_processor<T, Allocator>
     template <bool B>
     using enable_if_t = typename std::enable_if<B, int>::type;
     
-    enum class ends_type { ZERO, NON_ZERO, SYM_ZERO, SYM_NON_ZERO };
+    enum class ends_type { zero, non_zero, sym_zero, sym_non_zero };
     
 public:
     
-    enum class edge_mode { ZERO_PAD, EXTEND, WRAP, FOLD, MIRROR };
+    enum class edge_mode { zero_pad, extend, wrap, fold, mirror };
     
     template <typename U = Allocator, enable_if_t<std::is_default_constructible<U>::value> = 0>
     kernel_smoother(uintptr_t max_fft_size = 1 << 18)
@@ -81,7 +81,7 @@ public:
         uintptr_t max_per_filter = static_cast<uintptr_t>(width_mul ? (2.0 / std::abs(width_mul)) + 1.0 : length);
         uintptr_t data_width = max_per_filter + (filter_full - 1);
         
-        op_sizes sizes(data_width, filter_full, processor::edge_mode::LINEAR);
+        op_sizes sizes(data_width, filter_full, processor::edge_mode::linear);
         
         if (auto_resize_fft && processor::max_fft_size() < sizes.fft())
             set_max_fft_size(sizes.fft());
@@ -94,7 +94,7 @@ public:
         T* filter = ptr + (fft_size << 1);
         T* padded = filter + filter_full;
         
-        ends_type ends = ends_type::NON_ZERO;
+        ends_type ends = ends_type::non_zero;
         
         if (kernel_length)
         {
@@ -104,34 +104,34 @@ public:
             const T epsilon = std::numeric_limits<T>::epsilon();
             
             if ((symmetric || test_value_1 < epsilon) && test_value_2 < epsilon)
-                ends = symmetric ? ends_type::SYM_ZERO : ends_type::ZERO;
+                ends = symmetric ? ends_type::sym_zero : ends_type::zero;
         }
         
         // Copy data
         
         switch (edges)
         {
-            case edge_mode::ZERO_PAD:
+            case edge_mode::zero_pad:
                 std::fill_n(padded, filter_size, 0.0);
                 std::copy_n(in, length, padded + filter_size);
                 std::fill_n(padded + filter_size + length, filter_size, 0.0);
                 break;
                 
-            case edge_mode::EXTEND:
+            case edge_mode::extend:
                 std::fill_n(padded, filter_size, in[0]);
                 std::copy_n(in, length, padded + filter_size);
                 std::fill_n(padded + filter_size + length, filter_size, in[length - 1]);
                 break;
                 
-            case edge_mode::WRAP:
+            case edge_mode::wrap:
                 copy_edges<table_fetcher_wrap>(in, padded, length, filter_size);
             break;
                 
-            case edge_mode::FOLD:
+            case edge_mode::fold:
                 copy_edges<table_fetcher_fold>(in, padded, length, filter_size);
                 break;
                 
-            case edge_mode::MIRROR:
+            case edge_mode::mirror:
                 copy_edges<table_fetcher_mirror>(in, padded, length, filter_size);
                 break;
         }
@@ -267,12 +267,12 @@ private:
             return filter[0] * width;
         }
         
-        const double width_adjust = (ends == ends_type::NON_ZERO) ? -1.0 : (ends == ends_type::SYM_ZERO ? 0.0 : 1.0);
+        const double width_adjust = (ends == ends_type::non_zero) ? -1.0 : (ends == ends_type::sym_zero ? 0.0 : 1.0);
         const double scale_width = std::max(1.0, width + width_adjust);
         const double width_normalise = static_cast<double>(kernel_length - 1) / scale_width;
         
-        uintptr_t offset = ends == ends_type::ZERO ? 1 : 0;
-        uintptr_t loop_size = ends == ends_type::NON_ZERO ? width - 1 : width;
+        uintptr_t offset = ends == ends_type::zero ? 1 : 0;
+        uintptr_t loop_size = ends == ends_type::non_zero ? width - 1 : width;
         
         T filter_sum(0);
         
@@ -282,7 +282,7 @@ private:
             filter_sum += filter[j];
         }
         
-        if (ends == ends_type::NON_ZERO)
+        if (ends == ends_type::non_zero)
         {
             filter[width - 1] = kernel[kernel_length - 1];
             filter_sum += filter[width - 1];
@@ -325,7 +325,7 @@ private:
                                                                                      T gain)
     {
         uintptr_t data_width = n + width - 1;
-        op_sizes sizes(data_width, width, processor::edge_mode::LINEAR);
+        op_sizes sizes(data_width, width, processor::edge_mode::linear);
         in_ptr data_in(data, data_width);
         in_ptr filter_in(filter, width);
         

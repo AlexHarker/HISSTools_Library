@@ -20,9 +20,9 @@ HISSTOOLS_NAMESPACE_START()
 
 enum class latency_mode
 {
-    ZERO,
-    SHORT,
-    MEDIUM,
+    zero_latency,
+    short_latency,
+    medium_latency,
 };
 
 template <class T, class IO = T>
@@ -47,9 +47,9 @@ public:
     {
         switch (latency)
         {
-            case latency_mode::ZERO:     set_partitions(max_length, true, 256, 1024, 4096, 16384);     break;
-            case latency_mode::SHORT:    set_partitions(max_length, false, 256, 1024, 4096, 16384);    break;
-            case latency_mode::MEDIUM:   set_partitions(max_length, false, 1024, 4096, 16384);         break;
+            case latency_mode::zero_latency:     set_partitions(max_length, true, 256, 1024, 4096, 16384);     break;
+            case latency_mode::short_latency:    set_partitions(max_length, false, 256, 1024, 4096, 16384);    break;
+            case latency_mode::medium_latency:   set_partitions(max_length, false, 1024, 4096, 16384);         break;
         }
     }
     
@@ -115,7 +115,7 @@ public:
         if (part_4.get())
             part_4.get()->set_reset_offset(m_reset_offset);
         
-        return part_4.size() == length ? convolve_error::NONE : convolve_error::MEMORY_UNAVAILABLE;
+        return part_4.size() == length ? convolve_error::none : convolve_error::memory_unavailable;
     }
     
     template <class U>
@@ -137,18 +137,18 @@ public:
         }
         
         if (length && !part4.get())
-            return convolve_error::MEMORY_UNAVAILABLE;
+            return convolve_error::memory_unavailable;
         
         if (length > part4.size())
-            return convolve_error::MEMORY_ALLOC_TOO_SMALL;
+            return convolve_error::memory_alloc_too_small;
         
-        return convolve_error::NONE;
+        return convolve_error::none;
     }
     
     convolve_error reset()
     {
         m_reset = true;
-        return convolve_error::NONE;
+        return convolve_error::none;
     }
     
     // Process

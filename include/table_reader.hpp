@@ -12,7 +12,7 @@ HISSTOOLS_NAMESPACE_START()
 
 // Enumeration of edge types
 
-enum class edge_mode { ZERO_PAD, EXTEND, WRAP, FOLD, MIRROR, EXTRAPOLATE };
+enum class edge_mode { zero_pad, extend, wrap, fold, mirror, extrapolate };
 
 // Base class for table fetchers
 
@@ -138,7 +138,7 @@ struct table_fetcher_extrapolate : T
         auto beg = [&](intptr_t idx) { return T::operator()(idx); };
         auto end = [&](intptr_t idx) { return T::operator()(T::size - (idx + 1)); };
         
-        if (T::size >= 4 && (interpolation != interp_type::NONE) && (interpolation != interp_type::LINEAR))
+        if (T::size >= 4 && (interpolation != interp_type::none) && (interpolation != interp_type::linear))
         {
             ends[0] = cubic_lagrange_interp<fetch_type>()(fetch_type(-2), beg(0), beg(1), beg(2), beg(3));
             ends[1] = cubic_lagrange_interp<fetch_type>()(fetch_type(-2), end(0), end(1), end(2), end(3));
@@ -326,19 +326,19 @@ void table_read(Table fetcher, T* out, const U* positions, intptr_t n_samps, T m
     
     switch(interp)
     {
-        case interp_type::NONE:          
+        case interp_type::none:          
             table_read<no_interp_reader>(fetcher, out, positions, n_samps, mul);
             break;
-        case interp_type::LINEAR:        
+        case interp_type::linear:        
             table_read<linear_reader>(fetcher, out, positions, n_samps, mul);
             break;
-        case interp_type::CUBIC_HERMITE: 
+        case interp_type::cubic_hermite: 
             table_read<cubic_hermite_reader>(fetcher, out,positions, n_samps, mul);
             break;
-        case interp_type::CUBIC_LAGRANGE:
+        case interp_type::cubic_lagrange:
             table_read<cubic_lagrange_reader>(fetcher, out, positions, n_samps, mul);
             break;
-        case interp_type::CUBIC_BSPLINE:
+        case interp_type::cubic_bspline:
             table_read<cubic_bspline_reader>(fetcher, out, positions, n_samps, mul);
             break;
     }
@@ -415,22 +415,22 @@ void table_read_edges(Table fetcher, T* out, const U* positions, intptr_t n_samp
 {
     switch (edges)
     {
-        case edge_mode::ZERO_PAD:
+        case edge_mode::zero_pad:
             table_read_zeropad(fetcher, out, positions, n_samps, mul, interp, bound);
             break;
-        case edge_mode::EXTEND:
+        case edge_mode::extend:
             table_read_extend(fetcher, out, positions, n_samps, mul, interp, bound);
             break;
-        case edge_mode::WRAP:
+        case edge_mode::wrap:
             table_read_wrap(fetcher, out, positions, n_samps, mul, interp, bound);
             break;
-        case edge_mode::FOLD:
+        case edge_mode::fold:
             table_read_fold(fetcher, out, positions, n_samps, mul, interp, bound);
             break;
-        case edge_mode::MIRROR:
+        case edge_mode::mirror:
             table_read_mirror(fetcher, out, positions, n_samps, mul, interp, bound);
             break;
-        case edge_mode::EXTRAPOLATE:
+        case edge_mode::extrapolate:
             table_read_extrapolate(fetcher, out, positions, n_samps, mul, interp, bound);
             break;
     }
