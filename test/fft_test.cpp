@@ -75,7 +75,7 @@ private:
 };
 
 template <class T>
-void fillsplit_type(split_type<T> split, int max_log2)
+void fillSplit(split_type<T> split, int max_log2)
 {
     for (long i = 0; i < (1 << max_log2); i++)
     {
