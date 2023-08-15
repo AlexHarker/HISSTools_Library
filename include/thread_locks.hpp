@@ -54,7 +54,7 @@ namespace os_specific
 
 class thread_lock
 {
-    using Clock = std::chrono::steady_clock;
+    using clock = std::chrono::steady_clock;
     
 public:
     
@@ -72,9 +72,9 @@ public:
             if (attempt())
                 return;
         
-        auto timeOut = Clock::now() + std::chrono::nanoseconds(10000);
+        auto timeOut = clock::now() + std::chrono::nanoseconds(10000);
         
-        while (Clock::now() < timeOut)
+        while (clock::now() < timeOut)
             if (attempt())
                 return;
         
