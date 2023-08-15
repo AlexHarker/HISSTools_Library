@@ -5,7 +5,6 @@
 #include <cstdint>
 
 #include "../namespace.hpp"
-#include "../simd_support.hpp"
 #include "fft_types.hpp"
 
 /** @file fft.hpp @brief The interface for the HISSTools FFT.
@@ -55,7 +54,11 @@ struct setup_type;
 
 // N.B. Include once basic types are defined
 
+HISSTOOLS_NAMESPACE_END()
+
 #include "fft_core.hpp"
+
+HISSTOOLS_NAMESPACE_START()
 
 /**
     hisstools_create_setup() creates an FFT setup suitable for FFTs and iFFTs up to a maximum specified size.

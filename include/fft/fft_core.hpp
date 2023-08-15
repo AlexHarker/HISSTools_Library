@@ -8,16 +8,23 @@
 #include <cstdlib>
 #include <functional>
 
+#include "../namespace.hpp"
+#include "../simd_support.hpp"
+
 // Type definitions for Apple / HISSTools FFT
 
 #if defined (USE_APPLE_FFT)
 
 #include <Accelerate/Accelerate.h>
 
+#endif
+
+HISSTOOLS_NAMESPACE_START()
+
+#if defined (USE_APPLE_FFT)
 // Type specialisations for use with the Apple FFT
 
 // Splits
-
 template<>
 struct split_type<double> : DSPDoubleSplitComplex, impl::type_base<double>
 {
@@ -1179,5 +1186,7 @@ struct setup_type : impl::setup_base<T, fft_impl::fft_setup_type<T>*>
 };
 
 #endif
+
+HISSTOOLS_NAMESPACE_END()
 
 #endif /* HISSTOOLS_FFT_CORE_HPP */
