@@ -2,9 +2,10 @@
 #ifndef HISSTOOLS_FFT_HPP
 #define HISSTOOLS_FFT_HPP
 
-#include <stdint.h>
+#include <cstdint>
 
 #include "../namespace.hpp"
+#include "../simd_support.hpp"
 #include "fft_types.hpp"
 
 /** @file fft.hpp @brief The interface for the HISSTools FFT.
