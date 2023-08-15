@@ -540,9 +540,9 @@ protected:
    
     // Binary Operations
     
-    typedef void (*SpectralOp)(split_type<T>*, split_type<T>*, split_type<T>*, uintptr_t, T);
-    typedef void (*ComplexArrange)(split_type<T>, split_type<T>, op_sizes&);
-    typedef void (*RealArrange)(T*, split_type<T>, op_sizes&);
+    using SpectralOp = void (*)(split_type<T>*, split_type<T>*, split_type<T>*, uintptr_t, T);
+    using ComplexArrange = void (*)(split_type<T>, split_type<T>, op_sizes&);
+    using RealArrange = void (*)(T*, split_type<T>, op_sizes&);
 
     uintptr_t calc_conv_corr_size(uintptr_t size1, uintptr_t size2, edge_mode mode) const
     {
