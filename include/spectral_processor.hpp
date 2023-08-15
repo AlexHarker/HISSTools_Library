@@ -540,9 +540,9 @@ protected:
    
     // Binary Operations
     
-    using SpectralOp = void (*)(split_type<T>*, split_type<T>*, split_type<T>*, uintptr_t, T);
-    using ComplexArrange = void (*)(split_type<T>, split_type<T>, op_sizes&);
-    using RealArrange = void (*)(T*, split_type<T>, op_sizes&);
+    using spectral_op = void (*)(split_type<T>*, split_type<T>*, split_type<T>*, uintptr_t, T);
+    using complex_arrange = void (*)(split_type<T>, split_type<T>, op_sizes&);
+    using real_arrange = void (*)(T*, split_type<T>, op_sizes&);
 
     uintptr_t calc_conv_corr_size(uintptr_t size1, uintptr_t size2, edge_mode mode) const
     {
@@ -557,7 +557,7 @@ protected:
         return mode != edge_mode::LINEAR ? sizes.max() : sizes.linear();
     }
     
-    template <SpectralOp Op>
+    template <spectral_op Op>
     void binary_op(split_type<T>& io, split_type<T>& temp, op_sizes& sizes, in_ptr r_in1, in_ptr i_in1, in_ptr r_in2, in_ptr i_in2)
     {
         bool fold1 = sizes.foldMode() && sizes.size1() >= sizes.size2();
@@ -576,7 +576,7 @@ protected:
         ifft(io, sizes.fft_log2());
     }
     
-    template <SpectralOp Op, ComplexArrange arrange>
+    template <spectral_op Op, complex_arrange arrange>
     void binary_op(T* r_out, T* i_out, in_ptr r_in1, in_ptr i_in1, in_ptr r_in2, in_ptr i_in2, edge_mode mode)
     {
         auto get_first = [](in_ptr ptr)
@@ -614,7 +614,7 @@ protected:
         }
     }
     
-    template <SpectralOp Op>
+    template <spectral_op Op>
     void binary_op(split_type<T>& io, split_type<T>& temp, op_sizes& sizes, in_ptr in1, in_ptr in2)
     {
         if (!sizes.foldMode())
@@ -646,7 +646,7 @@ protected:
         rifft(io, sizes.fft_log2());
     }
     
-    template <SpectralOp Op, RealArrange arrange>
+    template <spectral_op Op, real_arrange arrange>
     void binary_op(T* output, in_ptr in1, in_ptr in2, edge_mode mode)
     {
         if (!calc_conv_corr_size(in1.m_size, in2.m_size, mode))
