@@ -22,7 +22,7 @@ struct byte_getter
 {
     T operator()(const unsigned char* bytes)
     {
-        return (T(bytes[M - 1]) << byte_shift<N, M - 1, E>()) | byte_getter<T, N, M, E>()(bytes);
+        return (T(bytes[M - 1]) << byte_shift<N, M - 1, E>()) | byte_getter<T, N, M + 1, E>()(bytes);
     }
 };
 
