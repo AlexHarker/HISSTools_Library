@@ -1,16 +1,18 @@
 
-#ifndef ALLOCATOR_HPP
-#define ALLOCATOR_HPP
+#ifndef HISSTOOLS_ALLOCATOR_HPP
+#define HISSTOOLS_ALLOCATOR_HPP
 
 #include <cstdlib>
 
 #include "simd_support.hpp"
+#include "namespace.hpp"
 
+HISSTOOLS_NAMESPACE_START()
 
 namespace impl
 {
-    typedef void *(*allocate_function)(size_t);
-    typedef void (*free_function)(void *);
+    using allocate_function = void* (*)(size_t);
+    using free_function = void (*)(void*);
 };
 
 // A template for wrapping functions as an allocator
@@ -22,7 +24,7 @@ struct function_allocator
     T* allocate(size_t size) { return reinterpret_cast<T*>(alloc(size * sizeof(T))); }
     
     template <typename T>
-    void deallocate(T *ptr) { dealloc(ptr); }
+    void deallocate(T* ptr) { dealloc(ptr); }
 };
 
 using malloc_allocator = function_allocator<malloc, free>;
@@ -35,7 +37,9 @@ struct aligned_allocator
     T* allocate(size_t size) { return allocate_aligned<T>(size); }
     
     template <typename T>
-    void deallocate(T *ptr) { deallocate_aligned(ptr); }
+    void deallocate(T* ptr) { deallocate_aligned(ptr); }
 };
 
-#endif /* ALLOCATOR_HPP */
+HISSTOOLS_NAMESPACE_END()
+
+#endif /* HISSTOOLS_ALLOCATOR_HPP */

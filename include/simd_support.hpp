@@ -1,6 +1,6 @@
 
-#ifndef SIMD_SUPPORT_HPP
-#define SIMD_SUPPORT_HPP
+#ifndef HISSTOOLS_SIMD_SUPPORT_HPP
+#define HISSTOOLS_SIMD_SUPPORT_HPP
 
 #include <algorithm>
 #include <bitset>
@@ -8,6 +8,8 @@
 #include <cstdint>
 #include <cstdlib>
 #include <functional>
+
+#include "namespace.hpp"
 
 #if defined(__arm__) || defined(__arm64) || defined(__aarch64__)
 #include <arm_neon.h>
@@ -40,8 +42,10 @@
 #define SIMD_COMPILER_SUPPORT_VEC256 2
 #define SIMD_COMPILER_SUPPORT_VEC512 3
 
+HISSTOOLS_NAMESPACE_START()
+
 template <class T>
-struct SIMDLimits
+struct simd_limits
 {
     static constexpr int max_size = 1;
     static constexpr int byte_width = alignof(T);
@@ -51,14 +55,14 @@ struct SIMDLimits
 #define SIMD_COMPILER_SUPPORT_LEVEL SIMD_COMPILER_SUPPORT_VEC512
 
 template<>
-struct SIMDLimits<double>
+struct simd_limits<double>
 {
     static constexpr int max_size = 8;
     static constexpr int byte_width = 64;
 };
 
 template<>
-struct SIMDLimits<float>
+struct simd_limits<float>
 {
     static constexpr int max_size = 16;
     static constexpr int byte_width = 64;
@@ -68,14 +72,14 @@ struct SIMDLimits<float>
 #define SIMD_COMPILER_SUPPORT_LEVEL SIMD_COMPILER_SUPPORT_VEC256
 
 template<>
-struct SIMDLimits<double>
+struct simd_limits<double>
 {
     static constexpr int max_size = 4;
     static constexpr int byte_width = 32;
 };
 
 template<>
-struct SIMDLimits<float>
+struct simd_limits<float>
 {
     static constexpr int max_size = 8;
     static constexpr int byte_width = 32;
@@ -86,7 +90,7 @@ struct SIMDLimits<float>
 
 #if defined (__SSE__) || defined(__arm64) || defined(__aarch64__)
 template<>
-struct SIMDLimits<double>
+struct simd_limits<double>
 {
     static constexpr int max_size = 2;
     static constexpr int byte_width = 16;
@@ -94,7 +98,7 @@ struct SIMDLimits<double>
 #endif
 
 template<>
-struct SIMDLimits<float>
+struct simd_limits<float>
 {
     static constexpr int max_size = 4;
     static constexpr int byte_width = 16;
@@ -109,13 +113,13 @@ struct SIMDLimits<float>
 #ifdef __APPLE__
 
 template <class T>
-T *allocate_aligned(size_t size)
+T* allocate_aligned(size_t size)
 {
-    return static_cast<T *>(malloc(size * sizeof(T)));
+    return static_cast<T*>(malloc(size * sizeof(T)));
 }
 
 template <class T>
-void deallocate_aligned(T *ptr)
+void deallocate_aligned(T* ptr)
 {
     free(ptr);
 }
@@ -123,18 +127,18 @@ void deallocate_aligned(T *ptr)
 #elif defined(__linux__)
 
 template <class T>
-T *allocate_aligned(size_t size)
+T* allocate_aligned(size_t size)
 {
-    void *mem = nullptr;
+    void* mem = nullptr;
     
-    if (posix_memalign(&mem, SIMDLimits<T>::byte_width, size * sizeof(T)))
+    if (posix_memalign(&mem, simd_limits<T>::byte_width, size * sizeof(T)))
     	return nullptr;
 
-    return static_cast<T *>(mem);
+    return static_cast<T*>(mem);
 }
 
 template <class T>
-void deallocate_aligned(T *ptr)
+void deallocate_aligned(T* ptr)
 {
     free(ptr);
 }
@@ -142,13 +146,13 @@ void deallocate_aligned(T *ptr)
 #else
 
 template <class T>
-T *allocate_aligned(size_t size)
+T* allocate_aligned(size_t size)
 {
-    return static_cast<T *>(_aligned_malloc(size * sizeof(T), SIMDLimits<T>::byte_width));
+    return static_cast<T*>(_aligned_malloc(size * sizeof(T), simd_limits<T>::byte_width));
 }
 
 template <class T>
-void deallocate_aligned(T *ptr)
+void deallocate_aligned(T* ptr)
 {
     _aligned_free(ptr);
 }
@@ -157,7 +161,7 @@ void deallocate_aligned(T *ptr)
 
 // ******************** Denormal Handling ******************** //
 
-struct SIMDDenormals
+struct simd_denormals
 {
     using denormal_flags = std::bitset<2>;
     
@@ -259,60 +263,61 @@ struct SIMDDenormals
     
     // Set denomal handling using RAII
     
-    SIMDDenormals() : mFlags(flags())
+    simd_denormals() : m_flags(flags())
     {
         off();
     }
     
-    SIMDDenormals(const SIMDDenormals&) = delete;
-    SIMDDenormals& operator=(const SIMDDenormals&) = delete;
+    simd_denormals(const simd_denormals&) = delete;
+    simd_denormals& operator=(const simd_denormals&) = delete;
     
-    ~SIMDDenormals()
+    ~simd_denormals()
     {
-        set(mFlags);
+        set(m_flags);
     }
 
 private:
     
-    denormal_flags mFlags;
+    denormal_flags m_flags;
 };
 
 // ******************** Basic Data Type Definitions ******************** //
 
 template <class T, class U, int vec_size>
-struct SIMDVector
+struct simd_vector
 {
     static constexpr int size = vec_size;
     using scalar_type = T;
     
-    SIMDVector() {}
-    SIMDVector(U a) : mVal(a) {}
+    simd_vector() {}
+    simd_vector(U a) : m_val(a) {}
     
-    U mVal;
+    U m_val;
 };
 
 template <class T, int vec_size>
-struct SIMDType {};
+struct simd_type {};
 
 // ************* A Vector of Given Size (Made of Vectors) ************** //
 
 template <class T, int vec_size, int final_size>
-struct SizedVector
+struct sized_vector
 {
-    using SV = SizedVector;
-    using VecType = SIMDType<T, vec_size>;
+    using sv = sized_vector; // to make lines shorter in operator
+    using vector_type = simd_type<T, vec_size>;
+
     static constexpr int size = final_size;
     static constexpr int array_size = final_size / vec_size;
     
-    SizedVector() {}
-    SizedVector(const T& a) { static_iterate<>().set(*this, a); }
-    SizedVector(const SizedVector *ptr) { *this = *ptr; }
-    SizedVector(const T *array) { static_iterate<>().load(*this, array); }
+    sized_vector() {}
+    sized_vector(const T& a) { static_iterate<>().set(*this, a); }
+    sized_vector(const sized_vector* ptr) { *this = *ptr; }
+    sized_vector(const T* array) { static_iterate<>().load(*this, array); }
     
     // For scalar conversions use a constructor
     
     template <class U>
-    SizedVector(const SizedVector<U, 1, final_size>& vec)
+    sized_vector(const sized_vector<U, 1, final_size>& vec)
     {
         static_iterate<>().set(*this, vec);
     }
@@ -320,33 +325,33 @@ struct SizedVector
     // Attempt to cast types directly for conversions if casts are provided
     
     template <class U>
-    SizedVector(const SizedVector<U, final_size, final_size>& v)
-    : SizedVector(v.mData[0])
+    sized_vector(const sized_vector<U, final_size, final_size>& v)
+    : sized_vector(v.m_data[0])
     {}
     
-    void store(T *a) const { static_iterate<>().store(a, *this); }
+    void store(T* a) const { static_iterate<>().store(a, *this); }
 
-    friend SV operator + (const SV& a, const SV& b) { return op(a, b, std::plus<VecType>()); }
-    friend SV operator - (const SV& a, const SV& b) { return op(a, b, std::minus<VecType>()); }
-    friend SV operator * (const SV& a, const SV& b) { return op(a, b, std::multiplies<VecType>()); }
-    friend SV operator / (const SV& a, const SV& b) { return op(a, b, std::divides<VecType>()); }
+    friend sv operator + (const sv& a, const sv& b) { return op(a, b, std::plus<vector_type>()); }
+    friend sv operator - (const sv& a, const sv& b) { return op(a, b, std::minus<vector_type>()); }
+    friend sv operator * (const sv& a, const sv& b) { return op(a, b, std::multiplies<vector_type>()); }
+    friend sv operator / (const sv& a, const sv& b) { return op(a, b, std::divides<vector_type>()); }
     
-    SV& operator += (const SV& b) { return (*this = *this + b); }
-    SV& operator -= (const SV& b) { return (*this = *this - b); }
-    SV& operator *= (const SV& b) { return (*this = *this * b); }
-    SV& operator /= (const SV& b) { return (*this = *this / b); }
+    sv& operator += (const sv& b) { return (*this = *this + b); }
+    sv& operator -= (const sv& b) { return (*this = *this - b); }
+    sv& operator *= (const sv& b) { return (*this = *this * b); }
+    sv& operator /= (const sv& b) { return (*this = *this / b); }
     
-    friend SV min(const SV& a, const SV& b) { return op(a, b, std::min<VecType>()); }
-    friend SV max(const SV& a, const SV& b) { return op(a, b, std::max<VecType>()); }
+    friend sv min(const sv& a, const sv& b) { return op(a, b, std::min<vector_type>()); }
+    friend sv max(const sv& a, const sv& b) { return op(a, b, std::max<vector_type>()); }
     
-    friend SV operator == (const SV& a, const SV& b) { return op(a, b, std::equal_to<VecType>()); }
-    friend SV operator != (const SV& a, const SV& b) { return op(a, b, std::not_equal_to<VecType>()); }
-    friend SV operator > (const SV& a, const SV& b) { return op(a, b, std::greater<VecType>()); }
-    friend SV operator < (const SV& a, const SV& b) { return op(a, b, std::less<VecType>()); }
-    friend SV operator >= (const SV& a, const SV& b) { return op(a, b, std::greater_equal<VecType>()); }
-    friend SV operator <= (const SV& a, const SV& b) { return op(a, b, std::less_equal<VecType>()); }
+    friend sv operator == (const sv& a, const sv& b) { return op(a, b, std::equal_to<vector_type>()); }
+    friend sv operator != (const sv& a, const sv& b) { return op(a, b, std::not_equal_to<vector_type>()); }
+    friend sv operator > (const sv& a, const sv& b) { return op(a, b, std::greater<vector_type>()); }
+    friend sv operator < (const sv& a, const sv& b) { return op(a, b, std::less<vector_type>()); }
+    friend sv operator >= (const sv& a, const sv& b) { return op(a, b, std::greater_equal<vector_type>()); }
+    friend sv operator <= (const sv& a, const sv& b) { return op(a, b, std::less_equal<vector_type>()); }
     
-    VecType mData[array_size];
+    vector_type m_data[array_size];
     
 private:
     
@@ -360,34 +365,34 @@ private:
         using iterate = static_iterate<First + 1, Last>;
         
         template <typename Fn>
-        inline void operator()(SV &result, const SV& a, const SV& b, Fn const& fn) const
+        inline void operator()(sized_vector &result, const sized_vector& a, const sized_vector& b, Fn const& fn) const
         {
-            result.mData[First] = fn(a.mData[First], b.mData[First]);
+            result.m_data[First] = fn(a.m_data[First], b.m_data[First]);
             iterate()(result, a, b, fn);
         }
         
-        inline void load(SV &v, const T *array)
+        inline void load(sized_vector &v, const T* array)
         {
-            v.mData[First] = VecType(array + First * vec_size);
+            v.m_data[First] = vector_type(array + First * vec_size);
             iterate().load(v, array);
         }
         
-        inline void store(T *array, const SV& v)
+        inline void store(T* array, const sized_vector& v)
         {
-            v.mData[First].store(array + First * vec_size);
+            v.m_data[First].store(array + First * vec_size);
             iterate().store(array, v);
         }
         
-        inline void set(SV &v, const T& a)
+        inline void set(sized_vector &v, const T& a)
         {
-            v.mData[First] = a;
+            v.m_data[First] = a;
             iterate().set(v, a);
         }
         
         template <class U>
-        inline void set(SV &v, const SizedVector<U, 1, final_size>& a)
+        inline void set(sized_vector &v, const sized_vector<U, 1, final_size>& a)
         {
-            v.mData[First] = a.mData[First];
+            v.m_data[First] = a.m_data[First];
             iterate().set(v, a);
         }
     };
@@ -398,22 +403,23 @@ private:
     struct static_iterate<N, N>
     {
         template <typename Fn>
-        void operator()(SV & /*result*/, const SV& /* a */, const SV& /* b */, Fn const& /* fn */) const {}
+        void operator()(sized_vector & /*result*/, const sized_vector& /* a */, const sized_vector& /* b */, 
+                                                                                Fn const& /* fn */) const {}
         
-        void load(SV & /* v */, const T * /* array */) {}
-        void store(T * /* array */, const SV& /* v */) {}
-        void set(SV & /* v */, const T& /* a */) {}
+        void load(sized_vector & /* v */, const T * /* array */) {}
+        void store(T * /* array */, const sized_vector& /* v */) {}
+        void set(sized_vector & /* v */, const T& /* a */) {}
         
         template <class U>
-        void set(SV & /* v */, const SizedVector<U, 1, final_size>& /* a */) {}
+        void set(sized_vector & /* v */, const sized_vector<U, 1, final_size>& /* a */) {}
     };
     
     // Op template
     
     template <typename Op>
-    friend SV op(const SV& a, const SV& b, Op op)
+    friend sized_vector op(const sized_vector& a, const sized_vector& b, Op op)
     {
-        SV result;
+        sized_vector result;
         static_iterate<>()(result, a, b, op);
         return result;
     }
@@ -422,150 +428,152 @@ private:
 // ************** Platform-Agnostic Data Type Definitions ************** //
 
 template<>
-struct SIMDType<double, 1>
+struct simd_type<double, 1>
 {
     static constexpr int size = 1;
     using scalar_type = double;
     
-    SIMDType() {}
-    SIMDType(double a) : mVal(a) {}
-    SIMDType(const double* a) { mVal = *a; }
+    simd_type() {}
+    simd_type(double a) : m_val(a) {}
+    simd_type(const double* a) { m_val = *a; }
     
-    void store(double *a) const { *a = mVal; }
+    void store(double* a) const { *a = m_val; }
     
-    friend SIMDType operator + (const SIMDType& a, const SIMDType& b) { return a.mVal + b.mVal; }
-    friend SIMDType operator - (const SIMDType& a, const SIMDType& b) { return a.mVal - b.mVal; }
-    friend SIMDType operator * (const SIMDType& a, const SIMDType& b) { return a.mVal * b.mVal; }
-    friend SIMDType operator / (const SIMDType& a, const SIMDType& b) { return a.mVal / b.mVal; }
+    friend simd_type operator + (const simd_type& a, const simd_type& b) { return a.m_val + b.m_val; }
+    friend simd_type operator - (const simd_type& a, const simd_type& b) { return a.m_val - b.m_val; }
+    friend simd_type operator * (const simd_type& a, const simd_type& b) { return a.m_val * b.m_val; }
+    friend simd_type operator / (const simd_type& a, const simd_type& b) { return a.m_val / b.m_val; }
     
-    SIMDType& operator += (const SIMDType& b) { return (*this = *this + b); }
-    SIMDType& operator -= (const SIMDType& b) { return (*this = *this - b); }
-    SIMDType& operator *= (const SIMDType& b) { return (*this = *this * b); }
-    SIMDType& operator /= (const SIMDType& b) { return (*this = *this / b); }
+    simd_type& operator += (const simd_type& b) { return (*this = *this + b); }
+    simd_type& operator -= (const simd_type& b) { return (*this = *this - b); }
+    simd_type& operator *= (const simd_type& b) { return (*this = *this * b); }
+    simd_type& operator /= (const simd_type& b) { return (*this = *this / b); }
     
-    friend SIMDType sqrt(const SIMDType& a) { return std::sqrt(a.mVal); }
+    friend simd_type sqrt(const simd_type& a) { return std::sqrt(a.m_val); }
     
-    friend SIMDType round(const SIMDType& a) { return std::round(a.mVal); }
-    friend SIMDType trunc(const SIMDType& a) { return std::trunc(a.mVal); }
+    friend simd_type round(const simd_type& a) { return std::round(a.m_val); }
+    friend simd_type trunc(const simd_type& a) { return std::trunc(a.m_val); }
     
-    friend SIMDType min(const SIMDType& a, const SIMDType& b) { return std::min(a.mVal, b.mVal); }
-    friend SIMDType max(const SIMDType& a, const SIMDType& b) { return std::max(a.mVal, b.mVal); }
-    friend SIMDType sel(const SIMDType& a, const SIMDType& b, const SIMDType& c) { return c.mVal ? b.mVal : a.mVal; }
+    friend simd_type min(const simd_type& a, const simd_type& b) { return std::min(a.m_val, b.m_val); }
+    friend simd_type max(const simd_type& a, const simd_type& b) { return std::max(a.m_val, b.m_val); }
+    friend simd_type sel(const simd_type& a, const simd_type& b, 
+                                             const simd_type& c) { return c.m_val ? b.m_val : a.m_val; }
     
-    friend SIMDType operator == (const SIMDType& a, const SIMDType& b) { return a.mVal == b.mVal; }
-    friend SIMDType operator != (const SIMDType& a, const SIMDType& b) { return a.mVal != b.mVal; }
-    friend SIMDType operator > (const SIMDType& a, const SIMDType& b) { return a.mVal > b.mVal; }
-    friend SIMDType operator < (const SIMDType& a, const SIMDType& b) { return a.mVal < b.mVal; }
-    friend SIMDType operator >= (const SIMDType& a, const SIMDType& b) { return a.mVal >= b.mVal; }
-    friend SIMDType operator <= (const SIMDType& a, const SIMDType& b) { return a.mVal <= b.mVal; }
+    friend simd_type operator == (const simd_type& a, const simd_type& b) { return a.m_val == b.m_val; }
+    friend simd_type operator != (const simd_type& a, const simd_type& b) { return a.m_val != b.m_val; }
+    friend simd_type operator > (const simd_type& a, const simd_type& b) { return a.m_val > b.m_val; }
+    friend simd_type operator < (const simd_type& a, const simd_type& b) { return a.m_val < b.m_val; }
+    friend simd_type operator >= (const simd_type& a, const simd_type& b) { return a.m_val >= b.m_val; }
+    friend simd_type operator <= (const simd_type& a, const simd_type& b) { return a.m_val <= b.m_val; }
     
-    friend void unzip(SIMDType& out1, SIMDType& out2, const SIMDType& in1, const SIMDType& in2)
+    friend void unzip(simd_type& out1, simd_type& out2, const simd_type& in1, const simd_type& in2)
     {
         out1 = in1;
         out2 = in2;
     }
     
-    friend void zip(SIMDType& out1, SIMDType& out2, const SIMDType& in1, const SIMDType& in2)
+    friend void zip(simd_type& out1, simd_type& out2, const simd_type& in1, const simd_type& in2)
     {
         out1 = in1;
         out2 = in2;
     }
     
-    double mVal;
+    double m_val;
 };
 
 template<>
-struct SIMDType<float, 1>
+struct simd_type<float, 1>
 {
     static constexpr int size = 1;
     using scalar_type = float;
     
-    SIMDType() {}
-    SIMDType(float a) : mVal(a) {}
-    SIMDType(const float* a) { mVal = *a; }
+    simd_type() {}
+    simd_type(float a) : m_val(a) {}
+    simd_type(const float* a) { m_val = *a; }
     
-    SIMDType(const SIMDType<double, 1>& a) : mVal(static_cast<float>(a.mVal)) {}
+    simd_type(const simd_type<double, 1>& a) : m_val(static_cast<float>(a.m_val)) {}
     
-    void store(float *a) const { *a = mVal; }
+    void store(float* a) const { *a = m_val; }
     
-    friend SIMDType operator + (const SIMDType& a, const SIMDType& b) { return a.mVal + b.mVal; }
-    friend SIMDType operator - (const SIMDType& a, const SIMDType& b) { return a.mVal - b.mVal; }
-    friend SIMDType operator * (const SIMDType& a, const SIMDType& b) { return a.mVal * b.mVal; }
-    friend SIMDType operator / (const SIMDType& a, const SIMDType& b) { return a.mVal / b.mVal; }
+    friend simd_type operator + (const simd_type& a, const simd_type& b) { return a.m_val + b.m_val; }
+    friend simd_type operator - (const simd_type& a, const simd_type& b) { return a.m_val - b.m_val; }
+    friend simd_type operator * (const simd_type& a, const simd_type& b) { return a.m_val * b.m_val; }
+    friend simd_type operator / (const simd_type& a, const simd_type& b) { return a.m_val / b.m_val; }
     
-    SIMDType& operator += (const SIMDType& b) { return (*this = *this + b); }
-    SIMDType& operator -= (const SIMDType& b) { return (*this = *this - b); }
-    SIMDType& operator *= (const SIMDType& b) { return (*this = *this * b); }
-    SIMDType& operator /= (const SIMDType& b) { return (*this = *this / b); }
+    simd_type& operator += (const simd_type& b) { return (*this = *this + b); }
+    simd_type& operator -= (const simd_type& b) { return (*this = *this - b); }
+    simd_type& operator *= (const simd_type& b) { return (*this = *this * b); }
+    simd_type& operator /= (const simd_type& b) { return (*this = *this / b); }
     
-    friend SIMDType sqrt(const SIMDType& a) { return std::sqrt(a.mVal); }
+    friend simd_type sqrt(const simd_type& a) { return std::sqrt(a.m_val); }
     
-    friend SIMDType round(const SIMDType& a) { return std::round(a.mVal); }
-    friend SIMDType trunc(const SIMDType& a) { return std::trunc(a.mVal); }
+    friend simd_type round(const simd_type& a) { return std::round(a.m_val); }
+    friend simd_type trunc(const simd_type& a) { return std::trunc(a.m_val); }
     
-    friend SIMDType min(const SIMDType& a, const SIMDType& b) { return std::min(a.mVal, b.mVal); }
-    friend SIMDType max(const SIMDType& a, const SIMDType& b) { return std::max(a.mVal, b.mVal); }
-    friend SIMDType sel(const SIMDType& a, const SIMDType& b, const SIMDType& c) { return c.mVal ? b.mVal : a.mVal; }
+    friend simd_type min(const simd_type& a, const simd_type& b) { return std::min(a.m_val, b.m_val); }
+    friend simd_type max(const simd_type& a, const simd_type& b) { return std::max(a.m_val, b.m_val); }
+    friend simd_type sel(const simd_type& a, const simd_type& b, 
+                                             const simd_type& c) { return c.m_val ? b.m_val : a.m_val; }
     
-    friend SIMDType operator == (const SIMDType& a, const SIMDType& b) { return a.mVal == b.mVal; }
-    friend SIMDType operator != (const SIMDType& a, const SIMDType& b) { return a.mVal != b.mVal; }
-    friend SIMDType operator > (const SIMDType& a, const SIMDType& b) { return a.mVal > b.mVal; }
-    friend SIMDType operator < (const SIMDType& a, const SIMDType& b) { return a.mVal < b.mVal; }
-    friend SIMDType operator >= (const SIMDType& a, const SIMDType& b) { return a.mVal >= b.mVal; }
-    friend SIMDType operator <= (const SIMDType& a, const SIMDType& b) { return a.mVal <= b.mVal; }
+    friend simd_type operator == (const simd_type& a, const simd_type& b) { return a.m_val == b.m_val; }
+    friend simd_type operator != (const simd_type& a, const simd_type& b) { return a.m_val != b.m_val; }
+    friend simd_type operator > (const simd_type& a, const simd_type& b) { return a.m_val > b.m_val; }
+    friend simd_type operator < (const simd_type& a, const simd_type& b) { return a.m_val < b.m_val; }
+    friend simd_type operator >= (const simd_type& a, const simd_type& b) { return a.m_val >= b.m_val; }
+    friend simd_type operator <= (const simd_type& a, const simd_type& b) { return a.m_val <= b.m_val; }
     
-    friend void unzip(SIMDType& out1, SIMDType& out2, const SIMDType& in1, const SIMDType& in2)
+    friend void unzip(simd_type& out1, simd_type& out2, const simd_type& in1, const simd_type& in2)
     {
         out1 = in1;
         out2 = in2;
     }
     
-    friend void zip(SIMDType& out1, SIMDType& out2, const SIMDType& in1, const SIMDType& in2)
+    friend void zip(simd_type& out1, simd_type& out2, const simd_type& in1, const simd_type& in2)
     {
         out1 = in1;
         out2 = in2;
     }
     
-    operator SIMDType<double, 1>() { return static_cast<double>(mVal); }
+    operator simd_type<double, 1>() { return static_cast<double>(m_val); }
     
-    float mVal;
+    float m_val;
 };
 
 template<>
-struct SIMDType<float, 2>
+struct simd_type<float, 2>
 {
     static constexpr int size = 1;
     using scalar_type = float;
     
-    SIMDType() {}
+    simd_type() {}
     
-    SIMDType(float a)
+    simd_type(float a)
     {
-        mVals[0] = a;
-        mVals[1] = a;
+        m_vals[0] = a;
+        m_vals[1] = a;
     }
     
-    SIMDType(float a, float b)
+    simd_type(float a, float b)
     {
-        mVals[0] = a;
-        mVals[1] = b;
+        m_vals[0] = a;
+        m_vals[1] = b;
     }
     
-    SIMDType(const float* a)
+    simd_type(const float* a)
     {
-        mVals[0] = a[0];
-        mVals[1] = a[1];
+        m_vals[0] = a[0];
+        m_vals[1] = a[1];
     }
     
-    void store(float *a) const
+    void store(float* a) const
     {
-        a[0] = mVals[0];
-        a[1] = mVals[1];
+        a[0] = m_vals[0];
+        a[1] = m_vals[1];
     }
     
     // N.B. - no ops
     
-    float mVals[2];
+    float m_vals[2];
 };
 
 // ************** Platform-Specific Data Type Definitions ************** //
@@ -578,122 +586,122 @@ struct SIMDType<float, 2>
 
 #if defined(__arm64) || defined(__aarch64__)
 template<>
-struct SIMDType<double, 2> : public SIMDVector<double, float64x2_t, 2>
+struct simd_type<double, 2> : public simd_vector<double, float64x2_t, 2>
 {
 private:
     
     template <uint64x2_t Op(float64x2_t, float64x2_t)>
-    static SIMDType compare(const SIMDType& a, const SIMDType& b)
+    static simd_type compare(const simd_type& a, const simd_type& b)
     {
-        return vreinterpretq_f64_u64(Op(a.mVal, b.mVal));
+        return vreinterpretq_f64_u64(Op(a.m_val, b.m_val));
     }
     
     template <uint64x2_t Op(uint64x2_t, uint64x2_t)>
-    static SIMDType bitwise(const SIMDType& a, const SIMDType& b)
+    static simd_type bitwise(const simd_type& a, const simd_type& b)
     {
-        return vreinterpretq_f64_u64(Op(vreinterpretq_u64_f64(a.mVal), vreinterpretq_u64_f64(b.mVal)));
+        return vreinterpretq_f64_u64(Op(vreinterpretq_u64_f64(a.m_val), vreinterpretq_u64_f64(b.m_val)));
     }
     
-    static float64x2_t neq(const SIMDType& a, const SIMDType& b)
+    static float64x2_t neq(const simd_type& a, const simd_type& b)
     {
-        return vreinterpretq_f64_u32(vmvnq_u32(vreinterpretq_u32_u64(vceqq_f64(a.mVal, b.mVal))));
+        return vreinterpretq_f64_u32(vmvnq_u32(vreinterpretq_u32_u64(vceqq_f64(a.m_val, b.m_val))));
     }
     
 public:
     
-    SIMDType() {}
-    SIMDType(const double& a) { mVal = vdupq_n_f64(a); }
-    SIMDType(const double* a) { mVal = vld1q_f64(a); }
-    SIMDType(float64x2_t a) : SIMDVector(a) {}
+    simd_type() {}
+    simd_type(const double& a) { m_val = vdupq_n_f64(a); }
+    simd_type(const double* a) { m_val = vld1q_f64(a); }
+    simd_type(float64x2_t a) : simd_vector(a) {}
     
-    SIMDType(const SIMDType<float, 2> &a)
+    simd_type(const simd_type<float, 2> &a)
     {
         double vals[2];
         
-        vals[0] = a.mVals[0];
-        vals[1] = a.mVals[1];
+        vals[0] = a.m_vals[0];
+        vals[1] = a.m_vals[1];
         
-        mVal = vld1q_f64(vals);
+        m_val = vld1q_f64(vals);
     }
     
-    void store(double *a) const { vst1q_f64(a, mVal); }
+    void store(double* a) const { vst1q_f64(a, m_val); }
     
-    friend SIMDType operator + (const SIMDType& a, const SIMDType& b) { return vaddq_f64(a.mVal, b.mVal); }
-    friend SIMDType operator - (const SIMDType& a, const SIMDType& b) { return vsubq_f64(a.mVal, b.mVal); }
-    friend SIMDType operator * (const SIMDType& a, const SIMDType& b) { return vmulq_f64(a.mVal, b.mVal); }
-    friend SIMDType operator / (const SIMDType& a, const SIMDType& b) { return vdivq_f64(a.mVal, b.mVal); }
+    friend simd_type operator + (const simd_type& a, const simd_type& b) { return vaddq_f64(a.m_val, b.m_val); }
+    friend simd_type operator - (const simd_type& a, const simd_type& b) { return vsubq_f64(a.m_val, b.m_val); }
+    friend simd_type operator * (const simd_type& a, const simd_type& b) { return vmulq_f64(a.m_val, b.m_val); }
+    friend simd_type operator / (const simd_type& a, const simd_type& b) { return vdivq_f64(a.m_val, b.m_val); }
     
-    SIMDType& operator += (const SIMDType& b) { return (*this = *this + b); }
-    SIMDType& operator -= (const SIMDType& b) { return (*this = *this - b); }
-    SIMDType& operator *= (const SIMDType& b) { return (*this = *this * b); }
-    SIMDType& operator /= (const SIMDType& b) { return (*this = *this / b); }
+    simd_type& operator += (const simd_type& b) { return (*this = *this + b); }
+    simd_type& operator -= (const simd_type& b) { return (*this = *this - b); }
+    simd_type& operator *= (const simd_type& b) { return (*this = *this * b); }
+    simd_type& operator /= (const simd_type& b) { return (*this = *this / b); }
     
-    friend SIMDType sqrt(const SIMDType& a) { return vsqrtq_f64(a.mVal); }
+    friend simd_type sqrt(const simd_type& a) { return vsqrtq_f64(a.m_val); }
     
     // N.B. - ties issue (this matches intel, but not the scalar)
-    //friend SIMDType round(const SIMDType& a) { return vrndnq_f64(a.mVal, _MM_FROUND_TO_NEAREST_INT |_MM_FROUND_NO_EXC); }
-    friend SIMDType trunc(const SIMDType& a) { return vrndq_f64(a.mVal); }
+    //friend simd_type round(const simd_type& a) { return vrndnq_f64(a.m_val, _MM_FROUND_TO_NEAREST_INT |_MM_FROUND_NO_EXC); }
+    friend simd_type trunc(const simd_type& a) { return vrndq_f64(a.m_val); }
     
-    friend SIMDType min(const SIMDType& a, const SIMDType& b) { return vminq_f64(a.mVal, b.mVal); }
-    friend SIMDType max(const SIMDType& a, const SIMDType& b) { return vmaxq_f64(a.mVal, b.mVal); }
-    friend SIMDType sel(const SIMDType& a, const SIMDType& b, const SIMDType& c) { return and_not(c, a) | (b & c); }
+    friend simd_type min(const simd_type& a, const simd_type& b) { return vminq_f64(a.m_val, b.m_val); }
+    friend simd_type max(const simd_type& a, const simd_type& b) { return vmaxq_f64(a.m_val, b.m_val); }
+    friend simd_type sel(const simd_type& a, const simd_type& b, const simd_type& c) { return and_not(c, a) | (b & c); }
     
     // N.B. - operand swap for and_not
-    friend SIMDType and_not(const SIMDType& a, const SIMDType& b) { return bitwise<vbicq_u64>(b, a); }
-    friend SIMDType operator & (const SIMDType& a, const SIMDType& b) { return bitwise<vandq_u64>(a, b); }
-    friend SIMDType operator | (const SIMDType& a, const SIMDType& b) { return bitwise<vorrq_u64>(a, b); }
-    friend SIMDType operator ^ (const SIMDType& a, const SIMDType& b) { return bitwise<veorq_u64>(a, b); }
+    friend simd_type and_not(const simd_type& a, const simd_type& b) { return bitwise<vbicq_u64>(b, a); }
+    friend simd_type operator & (const simd_type& a, const simd_type& b) { return bitwise<vandq_u64>(a, b); }
+    friend simd_type operator | (const simd_type& a, const simd_type& b) { return bitwise<vorrq_u64>(a, b); }
+    friend simd_type operator ^ (const simd_type& a, const simd_type& b) { return bitwise<veorq_u64>(a, b); }
     
-    friend SIMDType operator == (const SIMDType& a, const SIMDType& b) { return compare<vceqq_f64>(a, b); }
-    friend SIMDType operator != (const SIMDType& a, const SIMDType& b) { return neq(a, b); }
-    friend SIMDType operator > (const SIMDType& a, const SIMDType& b) { return compare<vcgtq_f64>(a, b); }
-    friend SIMDType operator < (const SIMDType& a, const SIMDType& b) { return compare<vcltq_f64>(a, b); }
-    friend SIMDType operator >= (const SIMDType& a, const SIMDType& b) { return compare<vcgeq_f64>(a, b); }
-    friend SIMDType operator <= (const SIMDType& a, const SIMDType& b) { return compare<vcleq_f64>(a, b); }
+    friend simd_type operator == (const simd_type& a, const simd_type& b) { return compare<vceqq_f64>(a, b); }
+    friend simd_type operator != (const simd_type& a, const simd_type& b) { return neq(a, b); }
+    friend simd_type operator > (const simd_type& a, const simd_type& b) { return compare<vcgtq_f64>(a, b); }
+    friend simd_type operator < (const simd_type& a, const simd_type& b) { return compare<vcltq_f64>(a, b); }
+    friend simd_type operator >= (const simd_type& a, const simd_type& b) { return compare<vcgeq_f64>(a, b); }
+    friend simd_type operator <= (const simd_type& a, const simd_type& b) { return compare<vcleq_f64>(a, b); }
     
-    friend void unzip(SIMDType& out1, SIMDType& out2, const SIMDType& in1, const SIMDType& in2)
+    friend void unzip(simd_type& out1, simd_type& out2, const simd_type& in1, const simd_type& in2)
     {
-        out1 = vuzp1q_f64(in1.mVal, in2.mVal);
-        out2 = vuzp2q_f64(in1.mVal, in2.mVal);
+        out1 = vuzp1q_f64(in1.m_val, in2.m_val);
+        out2 = vuzp2q_f64(in1.m_val, in2.m_val);
     }
     
-    friend void zip(SIMDType& out1, SIMDType& out2, const SIMDType& in1, const SIMDType& in2)
+    friend void zip(simd_type& out1, simd_type& out2, const simd_type& in1, const simd_type& in2)
     {
-        out1 = vzip1q_f64(in1.mVal, in2.mVal);
-        out2 = vzip2q_f64(in1.mVal, in2.mVal);
+        out1 = vzip1q_f64(in1.m_val, in2.m_val);
+        out2 = vzip2q_f64(in1.m_val, in2.m_val);
     }
     
-    operator SIMDType<float, 2>()
+    operator simd_type<float, 2>()
     {
         double vals[2];
         
         store(vals);
         
-        return SIMDType<float, 2>(static_cast<float>(vals[0]), static_cast<float>(vals[1]));
+        return simd_type<float, 2>(static_cast<float>(vals[0]), static_cast<float>(vals[1]));
     }
 };
 #endif /* defined (__arm64) || defined(__aarch64__) */
 
 template<>
-struct SIMDType<float, 4> : public SIMDVector<float, float32x4_t, 4>
+struct simd_type<float, 4> : public simd_vector<float, float32x4_t, 4>
 {
 private:
     
     template <uint32x4_t Op(float32x4_t, float32x4_t)>
-    static SIMDType compare(const SIMDType& a, const SIMDType& b)
+    static simd_type compare(const simd_type& a, const simd_type& b)
     {
-        return vreinterpretq_f32_u32(Op(a.mVal, b.mVal));
+        return vreinterpretq_f32_u32(Op(a.m_val, b.m_val));
     }
     
     template <uint32x4_t Op(uint32x4_t, uint32x4_t)>
-    static SIMDType bitwise(const SIMDType& a, const SIMDType& b)
+    static simd_type bitwise(const simd_type& a, const simd_type& b)
     {
-        return vreinterpretq_f32_u32(Op(vreinterpretq_u32_f32(a.mVal), vreinterpretq_u32_f32(b.mVal)));
+        return vreinterpretq_f32_u32(Op(vreinterpretq_u32_f32(a.m_val), vreinterpretq_u32_f32(b.m_val)));
     }
     
-    static float32x4_t neq(const SIMDType& a, const SIMDType& b)
+    static float32x4_t neq(const simd_type& a, const simd_type& b)
     {
-        return vreinterpretq_f32_u32(vmvnq_u32(vceqq_f32(a.mVal, b.mVal)));
+        return vreinterpretq_f32_u32(vmvnq_u32(vceqq_f32(a.m_val, b.m_val)));
     }
     
 #if !defined(__arm64) && !defined(__aarch64__)
@@ -747,79 +755,80 @@ private:
     
 public:
     
-    SIMDType() {}
-    SIMDType(const float& a) { mVal = vdupq_n_f32(a); }
-    SIMDType(const float* a) { mVal = vld1q_f32(a); }
-    SIMDType(float32x4_t a) : SIMDVector(a) {}
+    simd_type() {}
+    simd_type(const float& a) { m_val = vdupq_n_f32(a); }
+    simd_type(const float* a) { m_val = vld1q_f32(a); }
+    simd_type(float32x4_t a) : simd_vector(a) {}
     
-    void store(float *a) const { vst1q_f32(a, mVal); }
+    void store(float* a) const { vst1q_f32(a, m_val); }
     
-    friend SIMDType operator + (const SIMDType& a, const SIMDType& b) { return vaddq_f32(a.mVal, b.mVal); }
-    friend SIMDType operator - (const SIMDType& a, const SIMDType& b) { return vsubq_f32(a.mVal, b.mVal); }
-    friend SIMDType operator * (const SIMDType& a, const SIMDType& b) { return vmulq_f32(a.mVal, b.mVal); }
-    friend SIMDType operator / (const SIMDType& a, const SIMDType& b) { return vdivq_f32(a.mVal, b.mVal); }
+    friend simd_type operator + (const simd_type& a, const simd_type& b) { return vaddq_f32(a.m_val, b.m_val); }
+    friend simd_type operator - (const simd_type& a, const simd_type& b) { return vsubq_f32(a.m_val, b.m_val); }
+    friend simd_type operator * (const simd_type& a, const simd_type& b) { return vmulq_f32(a.m_val, b.m_val); }
+    friend simd_type operator / (const simd_type& a, const simd_type& b) { return vdivq_f32(a.m_val, b.m_val); }
     
-    SIMDType& operator += (const SIMDType& b) { return (*this = *this + b); }
-    SIMDType& operator -= (const SIMDType& b) { return (*this = *this - b); }
-    SIMDType& operator *= (const SIMDType& b) { return (*this = *this * b); }
-    SIMDType& operator /= (const SIMDType& b) { return (*this = *this / b); }
+    simd_type& operator += (const simd_type& b) { return (*this = *this + b); }
+    simd_type& operator -= (const simd_type& b) { return (*this = *this - b); }
+    simd_type& operator *= (const simd_type& b) { return (*this = *this * b); }
+    simd_type& operator /= (const simd_type& b) { return (*this = *this / b); }
     
-    friend SIMDType sqrt(const SIMDType& a) { return vsqrtq_f32(a.mVal); }
+    friend simd_type sqrt(const simd_type& a) { return vsqrtq_f32(a.m_val); }
     
     // N.B. - ties issue (this matches intel, but not the scalar)
-    //friend SIMDType round(const SIMDType& a) { return vrndnq_f32(a.mVal); }
-    friend SIMDType trunc(const SIMDType& a) { return vrndq_f32(a.mVal); }
+    //friend simd_type round(const simd_type& a) { return vrndnq_f32(a.m_val); }
+    friend simd_type trunc(const simd_type& a) { return vrndq_f32(a.m_val); }
     
-    friend SIMDType min(const SIMDType& a, const SIMDType& b) { return vminq_f32(a.mVal, b.mVal); }
-    friend SIMDType max(const SIMDType& a, const SIMDType& b) { return vmaxq_f32(a.mVal, b.mVal); }
-    friend SIMDType sel(const SIMDType& a, const SIMDType& b, const SIMDType& c) { return and_not(c, a) | (b & c); }
+    friend simd_type min(const simd_type& a, const simd_type& b) { return vminq_f32(a.m_val, b.m_val); }
+    friend simd_type max(const simd_type& a, const simd_type& b) { return vmaxq_f32(a.m_val, b.m_val); }
+    friend simd_type sel(const simd_type& a, const simd_type& b, 
+                                             const simd_type& c) { return and_not(c, a) | (b & c); }
     
     // N.B. - operand swap for and_not
-    friend SIMDType and_not(const SIMDType& a, const SIMDType& b) { return bitwise<vbicq_u32>(b, a); }
-    friend SIMDType operator & (const SIMDType& a, const SIMDType& b) { return bitwise<vandq_u32>(a, b); }
-    friend SIMDType operator | (const SIMDType& a, const SIMDType& b) { return bitwise<vorrq_u32>(a, b); }
-    friend SIMDType operator ^ (const SIMDType& a, const SIMDType& b) { return bitwise<veorq_u32>(a, b); }
+    friend simd_type and_not(const simd_type& a, const simd_type& b) { return bitwise<vbicq_u32>(b, a); }
+    friend simd_type operator & (const simd_type& a, const simd_type& b) { return bitwise<vandq_u32>(a, b); }
+    friend simd_type operator | (const simd_type& a, const simd_type& b) { return bitwise<vorrq_u32>(a, b); }
+    friend simd_type operator ^ (const simd_type& a, const simd_type& b) { return bitwise<veorq_u32>(a, b); }
     
-    friend SIMDType operator == (const SIMDType& a, const SIMDType& b) { return compare<vceqq_f32>(a, b); }
-    friend SIMDType operator != (const SIMDType& a, const SIMDType& b) { return neq(a, b); }
-    friend SIMDType operator > (const SIMDType& a, const SIMDType& b) { return compare<vcgtq_f32>(a, b); }
-    friend SIMDType operator < (const SIMDType& a, const SIMDType& b) { return compare<vcltq_f32>(a, b); }
-    friend SIMDType operator >= (const SIMDType& a, const SIMDType& b) { return compare<vcgeq_f32>(a, b); }
-    friend SIMDType operator <= (const SIMDType& a, const SIMDType& b) { return compare<vcleq_f32>(a, b); }
+    friend simd_type operator == (const simd_type& a, const simd_type& b) { return compare<vceqq_f32>(a, b); }
+    friend simd_type operator != (const simd_type& a, const simd_type& b) { return neq(a, b); }
+    friend simd_type operator > (const simd_type& a, const simd_type& b) { return compare<vcgtq_f32>(a, b); }
+    friend simd_type operator < (const simd_type& a, const simd_type& b) { return compare<vcltq_f32>(a, b); }
+    friend simd_type operator >= (const simd_type& a, const simd_type& b) { return compare<vcgeq_f32>(a, b); }
+    friend simd_type operator <= (const simd_type& a, const simd_type& b) { return compare<vcleq_f32>(a, b); }
     
-    friend void unzip(SIMDType& out1, SIMDType& out2, const SIMDType& in1, const SIMDType& in2)
+    friend void unzip(simd_type& out1, simd_type& out2, const simd_type& in1, const simd_type& in2)
     {
-        float32x4x2_t v = vuzpq_f32(in1.mVal, in2.mVal);
+        float32x4x2_t v = vuzpq_f32(in1.m_val, in2.m_val);
         
         out1 = v.val[0];
         out2 = v.val[1];
     }
     
-    friend void zip(SIMDType& out1, SIMDType& out2, const SIMDType& in1, const SIMDType& in2)
+    friend void zip(simd_type& out1, simd_type& out2, const simd_type& in1, const simd_type& in2)
     {
-        float32x4x2_t v = vzipq_f32(in1.mVal, in2.mVal);
+        float32x4x2_t v = vzipq_f32(in1.m_val, in2.m_val);
         
         out1 = v.val[0];
         out2 = v.val[1];
     }
     
 #if defined(__arm64) || defined(__aarch64__)
-    operator SizedVector<double, 2, 4>() const
+    operator sized_vector<double, 2, 4>() const
     {
-        SizedVector<double, 2, 4> vec;
+        sized_vector<double, 2, 4> vec;
         
-        vec.mData[0] = vcvt_f64_f32(vget_low_f32(mVal));
-        vec.mData[1] = vcvt_f64_f32(vget_high_f32(mVal));
+        vec.m_data[0] = vcvt_f64_f32(vget_low_f32(m_val));
+        vec.m_data[1] = vcvt_f64_f32(vget_high_f32(m_val));
         
         return vec;
     }
 #else
-    operator SizedVector<double, 1, 4>() const
+    operator sized_vector<double, 1, 4>() const
     {
         float vals[4];
-        SizedVector<double, 1, 4> vec;
+        sized_vector<double, 1, 4> vec;
         
-        iterate<double, cast_f64_f2>(vec.mData, vals, mVal);
+        iterate<double, cast_f64_f2>(vec.m_data, vals, m_val);
         
         return vec;
     }
@@ -827,34 +836,34 @@ public:
 };
 
 template<>
-struct SIMDType<int32_t, 4> : public SIMDVector<int32_t, int32x4_t, 4>
+struct simd_type<int32_t, 4> : public simd_vector<int32_t, int32x4_t, 4>
 {
-    SIMDType() {}
-    SIMDType(const int32_t& a) { mVal = vdupq_n_s32(a); }
-    SIMDType(const int32_t* a) { mVal = vld1q_s32(a); }
-    SIMDType(int32x4_t a) : SIMDVector(a) {}
+    simd_type() {}
+    simd_type(const int32_t& a) { m_val = vdupq_n_s32(a); }
+    simd_type(const int32_t* a) { m_val = vld1q_s32(a); }
+    simd_type(int32x4_t a) : simd_vector(a) {}
     
-    void store(int32_t *a) const { vst1q_s32(a, mVal); }
+    void store(int32_t* a) const { vst1q_s32(a, m_val); }
     
-    friend SIMDType operator + (const SIMDType& a, const SIMDType& b) { return vaddq_s32(a.mVal, b.mVal); }
-    friend SIMDType operator - (const SIMDType& a, const SIMDType& b) { return vsubq_s32(a.mVal, b.mVal); }
-    friend SIMDType operator * (const SIMDType& a, const SIMDType& b) { return vmulq_s32(a.mVal, b.mVal); }
+    friend simd_type operator + (const simd_type& a, const simd_type& b) { return vaddq_s32(a.m_val, b.m_val); }
+    friend simd_type operator - (const simd_type& a, const simd_type& b) { return vsubq_s32(a.m_val, b.m_val); }
+    friend simd_type operator * (const simd_type& a, const simd_type& b) { return vmulq_s32(a.m_val, b.m_val); }
     
-    SIMDType& operator += (const SIMDType& b) { return (*this = *this + b); }
-    SIMDType& operator -= (const SIMDType& b) { return (*this = *this - b); }
-    SIMDType& operator *= (const SIMDType& b) { return (*this = *this * b); }
+    simd_type& operator += (const simd_type& b) { return (*this = *this + b); }
+    simd_type& operator -= (const simd_type& b) { return (*this = *this - b); }
+    simd_type& operator *= (const simd_type& b) { return (*this = *this * b); }
     
-    friend SIMDType min(const SIMDType& a, const SIMDType& b) { return vminq_s32(a.mVal, b.mVal); }
-    friend SIMDType max(const SIMDType& a, const SIMDType& b) { return vmaxq_s32(a.mVal, b.mVal); }
+    friend simd_type min(const simd_type& a, const simd_type& b) { return vminq_s32(a.m_val, b.m_val); }
+    friend simd_type max(const simd_type& a, const simd_type& b) { return vmaxq_s32(a.m_val, b.m_val); }
     
-    operator SIMDType<float, 4>() { return SIMDType<float, 4>( vcvtq_f32_s32(mVal)); }
+    operator simd_type<float, 4>() { return simd_type<float, 4>( vcvtq_f32_s32(m_val)); }
     /*
-    operator SizedVector<double, 2, 4>() const
+    operator sized_vector<double, 2, 4>() const
     {
-        SizedVector<double, 2, 4> vec;
+        sized_vector<double, 2, 4> vec;
         
-        vec.mData[0] = _mm_cvtepi32_pd(mVal);
-        vec.mData[1] = _mm_cvtepi32_pd(_mm_shuffle_epi32(mVal, 0xE));
+        vec.m_data[0] = _mm_cvtepi32_pd(m_val);
+        vec.m_data[1] = _mm_cvtepi32_pd(_mm_shuffle_epi32(m_val, 0xE));
         
         return vec;
     }*/
@@ -863,173 +872,173 @@ struct SIMDType<int32_t, 4> : public SIMDVector<int32_t, int32x4_t, 4>
 #else /* Intel Instrinsics */
 
 template<>
-struct SIMDType<double, 2> : public SIMDVector<double, __m128d, 2>
+struct simd_type<double, 2> : public simd_vector<double, __m128d, 2>
 {
-    SIMDType() {}
-    SIMDType(const double& a) { mVal = _mm_set1_pd(a); }
-    SIMDType(const double* a) { mVal = _mm_loadu_pd(a); }
-    SIMDType(__m128d a) : SIMDVector(a) {}
+    simd_type() {}
+    simd_type(const double& a) { m_val = _mm_set1_pd(a); }
+    simd_type(const double* a) { m_val = _mm_loadu_pd(a); }
+    simd_type(__m128d a) : simd_vector(a) {}
     
-    SIMDType(const SIMDType<float, 2> &a)
+    simd_type(const simd_type<float, 2> &a)
     {
         double vals[2];
         
-        vals[0] = a.mVals[0];
-        vals[1] = a.mVals[1];
+        vals[0] = a.m_vals[0];
+        vals[1] = a.m_vals[1];
         
-        mVal = _mm_loadu_pd(vals);
+        m_val = _mm_loadu_pd(vals);
     }
     
-    void store(double *a) const { _mm_storeu_pd(a, mVal); }
+    void store(double* a) const { _mm_storeu_pd(a, m_val); }
     
-    friend SIMDType operator + (const SIMDType& a, const SIMDType& b) { return _mm_add_pd(a.mVal, b.mVal); }
-    friend SIMDType operator - (const SIMDType& a, const SIMDType& b) { return _mm_sub_pd(a.mVal, b.mVal); }
-    friend SIMDType operator * (const SIMDType& a, const SIMDType& b) { return _mm_mul_pd(a.mVal, b.mVal); }
-    friend SIMDType operator / (const SIMDType& a, const SIMDType& b) { return _mm_div_pd(a.mVal, b.mVal); }
+    friend simd_type operator + (const simd_type& a, const simd_type& b) { return _mm_add_pd(a.m_val, b.m_val); }
+    friend simd_type operator - (const simd_type& a, const simd_type& b) { return _mm_sub_pd(a.m_val, b.m_val); }
+    friend simd_type operator * (const simd_type& a, const simd_type& b) { return _mm_mul_pd(a.m_val, b.m_val); }
+    friend simd_type operator / (const simd_type& a, const simd_type& b) { return _mm_div_pd(a.m_val, b.m_val); }
     
-    SIMDType& operator += (const SIMDType& b) { return (*this = *this + b); }
-    SIMDType& operator -= (const SIMDType& b) { return (*this = *this - b); }
-    SIMDType& operator *= (const SIMDType& b) { return (*this = *this * b); }
-    SIMDType& operator /= (const SIMDType& b) { return (*this = *this / b); }
+    simd_type& operator += (const simd_type& b) { return (*this = *this + b); }
+    simd_type& operator -= (const simd_type& b) { return (*this = *this - b); }
+    simd_type& operator *= (const simd_type& b) { return (*this = *this * b); }
+    simd_type& operator /= (const simd_type& b) { return (*this = *this / b); }
     
-    friend SIMDType sqrt(const SIMDType& a) { return _mm_sqrt_pd(a.mVal); }
+    friend simd_type sqrt(const simd_type& a) { return _mm_sqrt_pd(a.m_val); }
     
     // N.B. - ties issue
-    friend SIMDType round(const SIMDType& a) { return _mm_round_pd(a.mVal, _MM_FROUND_TO_NEAREST_INT |_MM_FROUND_NO_EXC); }
-    friend SIMDType trunc(const SIMDType& a) { return _mm_round_pd(a.mVal, _MM_FROUND_TO_ZERO |_MM_FROUND_NO_EXC); }
+    friend simd_type trunc(const simd_type& a) { return _mm_round_pd(a.m_val, _MM_FROUND_TO_ZERO |_MM_FROUND_NO_EXC); }
+    friend simd_type round(const simd_type& a) { return _mm_round_pd(a.m_val, _MM_FROUND_TO_NEAREST_INT |_MM_FROUND_NO_EXC); }
     
-    friend SIMDType min(const SIMDType& a, const SIMDType& b) { return _mm_min_pd(a.mVal, b.mVal); }
-    friend SIMDType max(const SIMDType& a, const SIMDType& b) { return _mm_max_pd(a.mVal, b.mVal); }
-    friend SIMDType sel(const SIMDType& a, const SIMDType& b, const SIMDType& c) { return and_not(c, a) | (b & c); }
+    friend simd_type min(const simd_type& a, const simd_type& b) { return _mm_min_pd(a.m_val, b.m_val); }
+    friend simd_type max(const simd_type& a, const simd_type& b) { return _mm_max_pd(a.m_val, b.m_val); }
+    friend simd_type sel(const simd_type& a, const simd_type& b, const simd_type& c) { return and_not(c, a) | (b & c); }
     
-    friend SIMDType and_not(const SIMDType& a, const SIMDType& b) { return _mm_andnot_pd(a.mVal, b.mVal); }
-    friend SIMDType operator & (const SIMDType& a, const SIMDType& b) { return _mm_and_pd(a.mVal, b.mVal); }
-    friend SIMDType operator | (const SIMDType& a, const SIMDType& b) { return _mm_or_pd(a.mVal, b.mVal); }
-    friend SIMDType operator ^ (const SIMDType& a, const SIMDType& b) { return _mm_xor_pd(a.mVal, b.mVal); }
+    friend simd_type and_not(const simd_type& a, const simd_type& b) { return _mm_andnot_pd(a.m_val, b.m_val); }
+    friend simd_type operator & (const simd_type& a, const simd_type& b) { return _mm_and_pd(a.m_val, b.m_val); }
+    friend simd_type operator | (const simd_type& a, const simd_type& b) { return _mm_or_pd(a.m_val, b.m_val); }
+    friend simd_type operator ^ (const simd_type& a, const simd_type& b) { return _mm_xor_pd(a.m_val, b.m_val); }
     
-    friend SIMDType operator == (const SIMDType& a, const SIMDType& b) { return _mm_cmpeq_pd(a.mVal, b.mVal); }
-    friend SIMDType operator != (const SIMDType& a, const SIMDType& b) { return _mm_cmpneq_pd(a.mVal, b.mVal); }
-    friend SIMDType operator > (const SIMDType& a, const SIMDType& b) { return _mm_cmplt_pd(a.mVal, b.mVal); }
-    friend SIMDType operator < (const SIMDType& a, const SIMDType& b) { return _mm_cmpgt_pd(a.mVal, b.mVal); }
-    friend SIMDType operator >= (const SIMDType& a, const SIMDType& b) { return _mm_cmple_pd(a.mVal, b.mVal); }
-    friend SIMDType operator <= (const SIMDType& a, const SIMDType& b) { return _mm_cmpge_pd(a.mVal, b.mVal); }
+    friend simd_type operator == (const simd_type& a, const simd_type& b) { return _mm_cmpeq_pd(a.m_val, b.m_val); }
+    friend simd_type operator != (const simd_type& a, const simd_type& b) { return _mm_cmpneq_pd(a.m_val, b.m_val); }
+    friend simd_type operator > (const simd_type& a, const simd_type& b) { return _mm_cmplt_pd(a.m_val, b.m_val); }
+    friend simd_type operator < (const simd_type& a, const simd_type& b) { return _mm_cmpgt_pd(a.m_val, b.m_val); }
+    friend simd_type operator >= (const simd_type& a, const simd_type& b) { return _mm_cmple_pd(a.m_val, b.m_val); }
+    friend simd_type operator <= (const simd_type& a, const simd_type& b) { return _mm_cmpge_pd(a.m_val, b.m_val); }
     
-    friend void unzip(SIMDType& out1, SIMDType& out2, const SIMDType& in1, const SIMDType& in2)
+    friend void unzip(simd_type& out1, simd_type& out2, const simd_type& in1, const simd_type& in2)
     {
-        out1 = _mm_unpacklo_pd(in1.mVal, in2.mVal);
-        out2 = _mm_unpackhi_pd(in1.mVal, in2.mVal);
+        out1 = _mm_unpacklo_pd(in1.m_val, in2.m_val);
+        out2 = _mm_unpackhi_pd(in1.m_val, in2.m_val);
     }
     
-    friend void zip(SIMDType& out1, SIMDType& out2, const SIMDType& in1, const SIMDType& in2)
+    friend void zip(simd_type& out1, simd_type& out2, const simd_type& in1, const simd_type& in2)
     {
-        out1 = _mm_unpacklo_pd(in1.mVal, in2.mVal);
-        out2 = _mm_unpackhi_pd(in1.mVal, in2.mVal);
+        out1 = _mm_unpacklo_pd(in1.m_val, in2.m_val);
+        out2 = _mm_unpackhi_pd(in1.m_val, in2.m_val);
     }
     
-    operator SIMDType<float, 2>()
+    operator simd_type<float, 2>()
     {
         double vals[2];
         
         store(vals);
         
-        return SIMDType<float, 2>(static_cast<float>(vals[0]), static_cast<float>(vals[1]));
+        return simd_type<float, 2>(static_cast<float>(vals[0]), static_cast<float>(vals[1]));
     }
 };
 
 template<>
-struct SIMDType<float, 4> : public SIMDVector<float, __m128, 4>
+struct simd_type<float, 4> : public simd_vector<float, __m128, 4>
 {
-    SIMDType() {}
-    SIMDType(const float& a) { mVal = _mm_set1_ps(a); }
-    SIMDType(const float* a) { mVal = _mm_loadu_ps(a); }
-    SIMDType(__m128 a) : SIMDVector(a) {}
+    simd_type() {}
+    simd_type(const float& a) { m_val = _mm_set1_ps(a); }
+    simd_type(const float* a) { m_val = _mm_loadu_ps(a); }
+    simd_type(__m128 a) : simd_vector(a) {}
     
-    void store(float *a) const { _mm_storeu_ps(a, mVal); }
+    void store(float* a) const { _mm_storeu_ps(a, m_val); }
     
-    friend SIMDType operator + (const SIMDType& a, const SIMDType& b) { return _mm_add_ps(a.mVal, b.mVal); }
-    friend SIMDType operator - (const SIMDType& a, const SIMDType& b) { return _mm_sub_ps(a.mVal, b.mVal); }
-    friend SIMDType operator * (const SIMDType& a, const SIMDType& b) { return _mm_mul_ps(a.mVal, b.mVal); }
-    friend SIMDType operator / (const SIMDType& a, const SIMDType& b) { return _mm_div_ps(a.mVal, b.mVal); }
+    friend simd_type operator + (const simd_type& a, const simd_type& b) { return _mm_add_ps(a.m_val, b.m_val); }
+    friend simd_type operator - (const simd_type& a, const simd_type& b) { return _mm_sub_ps(a.m_val, b.m_val); }
+    friend simd_type operator * (const simd_type& a, const simd_type& b) { return _mm_mul_ps(a.m_val, b.m_val); }
+    friend simd_type operator / (const simd_type& a, const simd_type& b) { return _mm_div_ps(a.m_val, b.m_val); }
     
-    SIMDType& operator += (const SIMDType& b) { return (*this = *this + b); }
-    SIMDType& operator -= (const SIMDType& b) { return (*this = *this - b); }
-    SIMDType& operator *= (const SIMDType& b) { return (*this = *this * b); }
-    SIMDType& operator /= (const SIMDType& b) { return (*this = *this / b); }
+    simd_type& operator += (const simd_type& b) { return (*this = *this + b); }
+    simd_type& operator -= (const simd_type& b) { return (*this = *this - b); }
+    simd_type& operator *= (const simd_type& b) { return (*this = *this * b); }
+    simd_type& operator /= (const simd_type& b) { return (*this = *this / b); }
     
-    friend SIMDType sqrt(const SIMDType& a) { return _mm_sqrt_ps(a.mVal); }
+    friend simd_type sqrt(const simd_type& a) { return _mm_sqrt_ps(a.m_val); }
     
     // N.B. - ties issue
-    friend SIMDType round(const SIMDType& a) { return _mm_round_ps(a.mVal, _MM_FROUND_TO_NEAREST_INT |_MM_FROUND_NO_EXC); }
-    friend SIMDType trunc(const SIMDType& a) { return _mm_round_ps(a.mVal, _MM_FROUND_TO_ZERO |_MM_FROUND_NO_EXC); }
+    friend simd_type round(const simd_type& a) { return _mm_round_ps(a.m_val, _MM_FROUND_TO_NEAREST_INT |_MM_FROUND_NO_EXC); }
+    friend simd_type trunc(const simd_type& a) { return _mm_round_ps(a.m_val, _MM_FROUND_TO_ZERO |_MM_FROUND_NO_EXC); }
     
-    friend SIMDType min(const SIMDType& a, const SIMDType& b) { return _mm_min_ps(a.mVal, b.mVal); }
-    friend SIMDType max(const SIMDType& a, const SIMDType& b) { return _mm_max_ps(a.mVal, b.mVal); }
-    friend SIMDType sel(const SIMDType& a, const SIMDType& b, const SIMDType& c) { return and_not(c, a) | (b & c); }
+    friend simd_type min(const simd_type& a, const simd_type& b) { return _mm_min_ps(a.m_val, b.m_val); }
+    friend simd_type max(const simd_type& a, const simd_type& b) { return _mm_max_ps(a.m_val, b.m_val); }
+    friend simd_type sel(const simd_type& a, const simd_type& b, const simd_type& c) { return and_not(c, a) | (b & c); }
     
-    friend SIMDType and_not(const SIMDType& a, const SIMDType& b) { return _mm_andnot_ps(a.mVal, b.mVal); }
-    friend SIMDType operator & (const SIMDType& a, const SIMDType& b) { return _mm_and_ps(a.mVal, b.mVal); }
-    friend SIMDType operator | (const SIMDType& a, const SIMDType& b) { return _mm_or_ps(a.mVal, b.mVal); }
-    friend SIMDType operator ^ (const SIMDType& a, const SIMDType& b) { return _mm_xor_ps(a.mVal, b.mVal); }
+    friend simd_type and_not(const simd_type& a, const simd_type& b) { return _mm_andnot_ps(a.m_val, b.m_val); }
+    friend simd_type operator & (const simd_type& a, const simd_type& b) { return _mm_and_ps(a.m_val, b.m_val); }
+    friend simd_type operator | (const simd_type& a, const simd_type& b) { return _mm_or_ps(a.m_val, b.m_val); }
+    friend simd_type operator ^ (const simd_type& a, const simd_type& b) { return _mm_xor_ps(a.m_val, b.m_val); }
     
-    friend SIMDType operator == (const SIMDType& a, const SIMDType& b) { return _mm_cmpeq_ps(a.mVal, b.mVal); }
-    friend SIMDType operator != (const SIMDType& a, const SIMDType& b) { return _mm_cmpneq_ps(a.mVal, b.mVal); }
-    friend SIMDType operator > (const SIMDType& a, const SIMDType& b) { return _mm_cmplt_ps(a.mVal, b.mVal); }
-    friend SIMDType operator < (const SIMDType& a, const SIMDType& b) { return _mm_cmpgt_ps(a.mVal, b.mVal); }
-    friend SIMDType operator >= (const SIMDType& a, const SIMDType& b) { return _mm_cmple_ps(a.mVal, b.mVal); }
-    friend SIMDType operator <= (const SIMDType& a, const SIMDType& b) { return _mm_cmpge_ps(a.mVal, b.mVal); }
+    friend simd_type operator == (const simd_type& a, const simd_type& b) { return _mm_cmpeq_ps(a.m_val, b.m_val); }
+    friend simd_type operator != (const simd_type& a, const simd_type& b) { return _mm_cmpneq_ps(a.m_val, b.m_val); }
+    friend simd_type operator > (const simd_type& a, const simd_type& b) { return _mm_cmplt_ps(a.m_val, b.m_val); }
+    friend simd_type operator < (const simd_type& a, const simd_type& b) { return _mm_cmpgt_ps(a.m_val, b.m_val); }
+    friend simd_type operator >= (const simd_type& a, const simd_type& b) { return _mm_cmple_ps(a.m_val, b.m_val); }
+    friend simd_type operator <= (const simd_type& a, const simd_type& b) { return _mm_cmpge_ps(a.m_val, b.m_val); }
     
-    friend void unzip(SIMDType& out1, SIMDType& out2, const SIMDType& in1, const SIMDType& in2)
+    friend void unzip(simd_type& out1, simd_type& out2, const simd_type& in1, const simd_type& in2)
     {
-        out1 = _mm_shuffle_ps(in1.mVal, in2.mVal, 0x88);
-        out2 = _mm_shuffle_ps(in1.mVal, in2.mVal, 0xDD);
+        out1 = _mm_shuffle_ps(in1.m_val, in2.m_val, 0x88);
+        out2 = _mm_shuffle_ps(in1.m_val, in2.m_val, 0xDD);
     }
     
-    friend void zip(SIMDType& out1, SIMDType& out2, const SIMDType& in1, const SIMDType& in2)
+    friend void zip(simd_type& out1, simd_type& out2, const simd_type& in1, const simd_type& in2)
     {
-        out1 = _mm_unpacklo_ps(in1.mVal, in2.mVal);
-        out2 = _mm_unpackhi_ps(in1.mVal, in2.mVal);
+        out1 = _mm_unpacklo_ps(in1.m_val, in2.m_val);
+        out2 = _mm_unpackhi_ps(in1.m_val, in2.m_val);
     }
     
-    operator SizedVector<double, 2, 4>() const
+    operator sized_vector<double, 2, 4>() const
     {
-        SizedVector<double, 2, 4> vec;
+        sized_vector<double, 2, 4> vec;
         
-        vec.mData[0] = _mm_cvtps_pd(mVal);
-        vec.mData[1] = _mm_cvtps_pd(_mm_movehl_ps(mVal, mVal));
+        vec.m_data[0] = _mm_cvtps_pd(m_val);
+        vec.m_data[1] = _mm_cvtps_pd(_mm_movehl_ps(m_val, m_val));
         
         return vec;
     }
 };
 
 template<>
-struct SIMDType<int32_t, 4> : public SIMDVector<int32_t, __m128i, 4>
+struct simd_type<int32_t, 4> : public simd_vector<int32_t, __m128i, 4>
 {
-    SIMDType() {}
-    SIMDType(const int32_t& a) { mVal = _mm_set1_epi32(a); }
-    SIMDType(const int32_t* a) { mVal = _mm_loadu_si128(reinterpret_cast<const __m128i *>(a)); }
-    SIMDType(__m128i a) : SIMDVector(a) {}
+    simd_type() {}
+    simd_type(const int32_t& a) { m_val = _mm_set1_epi32(a); }
+    simd_type(const int32_t* a) { m_val = _mm_loadu_si128(reinterpret_cast<const __m128i*>(a)); }
+    simd_type(__m128i a) : simd_vector(a) {}
     
-    void store(int32_t *a) const { _mm_storeu_si128(reinterpret_cast<__m128i *>(a), mVal); }
+    void store(int32_t* a) const { _mm_storeu_si128(reinterpret_cast<__m128i*>(a), m_val); }
     
-    friend SIMDType operator + (const SIMDType& a, const SIMDType& b) { return _mm_add_epi32(a.mVal, b.mVal); }
-    friend SIMDType operator - (const SIMDType& a, const SIMDType& b) { return _mm_sub_epi32(a.mVal, b.mVal); }
-    friend SIMDType operator * (const SIMDType& a, const SIMDType& b) { return _mm_mul_epi32(a.mVal, b.mVal); }
+    friend simd_type operator + (const simd_type& a, const simd_type& b) { return _mm_add_epi32(a.m_val, b.m_val); }
+    friend simd_type operator - (const simd_type& a, const simd_type& b) { return _mm_sub_epi32(a.m_val, b.m_val); }
+    friend simd_type operator * (const simd_type& a, const simd_type& b) { return _mm_mul_epi32(a.m_val, b.m_val); }
     
-    SIMDType& operator += (const SIMDType& b) { return (*this = *this + b); }
-    SIMDType& operator -= (const SIMDType& b) { return (*this = *this - b); }
-    SIMDType& operator *= (const SIMDType& b) { return (*this = *this * b); }
+    simd_type& operator += (const simd_type& b) { return (*this = *this + b); }
+    simd_type& operator -= (const simd_type& b) { return (*this = *this - b); }
+    simd_type& operator *= (const simd_type& b) { return (*this = *this * b); }
     
-    friend SIMDType min(const SIMDType& a, const SIMDType& b) { return _mm_min_epi32(a.mVal, b.mVal); }
-    friend SIMDType max(const SIMDType& a, const SIMDType& b) { return _mm_max_epi32(a.mVal, b.mVal); }
+    friend simd_type min(const simd_type& a, const simd_type& b) { return _mm_min_epi32(a.m_val, b.m_val); }
+    friend simd_type max(const simd_type& a, const simd_type& b) { return _mm_max_epi32(a.m_val, b.m_val); }
     
-    operator SIMDType<float, 4>() { return SIMDType<float, 4>( _mm_cvtepi32_ps(mVal)); }
+    operator simd_type<float, 4>() { return simd_type<float, 4>( _mm_cvtepi32_ps(m_val)); }
     
-    operator SizedVector<double, 2, 4>() const
+    operator sized_vector<double, 2, 4>() const
     {
-        SizedVector<double, 2, 4> vec;
+        sized_vector<double, 2, 4> vec;
         
-        vec.mData[0] = _mm_cvtepi32_pd(mVal);
-        vec.mData[1] = _mm_cvtepi32_pd(_mm_shuffle_epi32(mVal, 0xE));
+        vec.m_data[0] = _mm_cvtepi32_pd(m_val);
+        vec.m_data[1] = _mm_cvtepi32_pd(_mm_shuffle_epi32(m_val, 0xE));
         
         return vec;
     }
@@ -1044,138 +1053,138 @@ struct SIMDType<int32_t, 4> : public SIMDVector<int32_t, __m128i, 4>
 #if (SIMD_COMPILER_SUPPORT_LEVEL >= SIMD_COMPILER_SUPPORT_VEC256)
 
 template<>
-struct SIMDType<double, 4> : public SIMDVector<double, __m256d, 4>
+struct simd_type<double, 4> : public simd_vector<double, __m256d, 4>
 {
-    SIMDType() {}
-    SIMDType(const double& a) { mVal = _mm256_set1_pd(a); }
-    SIMDType(const double* a) { mVal = _mm256_loadu_pd(a); }
-    SIMDType(__m256d a) : SIMDVector(a) {}
+    simd_type() {}
+    simd_type(const double& a) { m_val = _mm256_set1_pd(a); }
+    simd_type(const double* a) { m_val = _mm256_loadu_pd(a); }
+    simd_type(__m256d a) : simd_vector(a) {}
     
-    SIMDType(const SIMDType<float, 4> &a) { mVal = _mm256_cvtps_pd(a.mVal); }
-    SIMDType(const SIMDType<int32_t, 4> &a) { mVal = _mm256_cvtepi32_pd(a.mVal); }
+    simd_type(const simd_type<float, 4> &a) { m_val = _mm256_cvtps_pd(a.m_val); }
+    simd_type(const simd_type<int32_t, 4> &a) { m_val = _mm256_cvtepi32_pd(a.m_val); }
     
-    void store(double *a) const { _mm256_storeu_pd(a, mVal); }
+    void store(double* a) const { _mm256_storeu_pd(a, m_val); }
     
-    friend SIMDType operator + (const SIMDType& a, const SIMDType& b) { return _mm256_add_pd(a.mVal, b.mVal); }
-    friend SIMDType operator - (const SIMDType& a, const SIMDType& b) { return _mm256_sub_pd(a.mVal, b.mVal); }
-    friend SIMDType operator * (const SIMDType& a, const SIMDType& b) { return _mm256_mul_pd(a.mVal, b.mVal); }
-    friend SIMDType operator / (const SIMDType& a, const SIMDType& b) { return _mm256_div_pd(a.mVal, b.mVal); }
+    friend simd_type operator + (const simd_type& a, const simd_type& b) { return _mm256_add_pd(a.m_val, b.m_val); }
+    friend simd_type operator - (const simd_type& a, const simd_type& b) { return _mm256_sub_pd(a.m_val, b.m_val); }
+    friend simd_type operator * (const simd_type& a, const simd_type& b) { return _mm256_mul_pd(a.m_val, b.m_val); }
+    friend simd_type operator / (const simd_type& a, const simd_type& b) { return _mm256_div_pd(a.m_val, b.m_val); }
     
-    SIMDType& operator += (const SIMDType& b) { return (*this = *this + b); }
-    SIMDType& operator -= (const SIMDType& b) { return (*this = *this - b); }
-    SIMDType& operator *= (const SIMDType& b) { return (*this = *this * b); }
-    SIMDType& operator /= (const SIMDType& b) { return (*this = *this / b); }
+    simd_type& operator += (const simd_type& b) { return (*this = *this + b); }
+    simd_type& operator -= (const simd_type& b) { return (*this = *this - b); }
+    simd_type& operator *= (const simd_type& b) { return (*this = *this * b); }
+    simd_type& operator /= (const simd_type& b) { return (*this = *this / b); }
     
-    friend SIMDType sqrt(const SIMDType& a) { return _mm256_sqrt_pd(a.mVal); }
+    friend simd_type sqrt(const simd_type& a) { return _mm256_sqrt_pd(a.m_val); }
     
     // N.B. - ties issue
-    friend SIMDType round(const SIMDType& a) { return _mm256_round_pd(a.mVal, _MM_FROUND_TO_NEAREST_INT |_MM_FROUND_NO_EXC); }
-    friend SIMDType trunc(const SIMDType& a) { return _mm256_round_pd(a.mVal, _MM_FROUND_TO_ZERO |_MM_FROUND_NO_EXC); }
+    friend simd_type round(const simd_type& a) { return _mm256_round_pd(a.m_val, _MM_FROUND_TO_NEAREST_INT |_MM_FROUND_NO_EXC); }
+    friend simd_type trunc(const simd_type& a) { return _mm256_round_pd(a.m_val, _MM_FROUND_TO_ZERO |_MM_FROUND_NO_EXC); }
     
-    friend SIMDType min(const SIMDType& a, const SIMDType& b) { return _mm256_min_pd(a.mVal, b.mVal); }
-    friend SIMDType max(const SIMDType& a, const SIMDType& b) { return _mm256_max_pd(a.mVal, b.mVal); }
-    friend SIMDType sel(const SIMDType& a, const SIMDType& b, const SIMDType& c) { return and_not(c, a) | (b & c); }
+    friend simd_type min(const simd_type& a, const simd_type& b) { return _mm256_min_pd(a.m_val, b.m_val); }
+    friend simd_type max(const simd_type& a, const simd_type& b) { return _mm256_max_pd(a.m_val, b.m_val); }
+    friend simd_type sel(const simd_type& a, const simd_type& b, const simd_type& c) { return and_not(c, a) | (b & c); }
     
-    friend SIMDType and_not(const SIMDType& a, const SIMDType& b) { return _mm256_andnot_pd(a.mVal, b.mVal); }
-    friend SIMDType operator & (const SIMDType& a, const SIMDType& b) { return _mm256_and_pd(a.mVal, b.mVal); }
-    friend SIMDType operator | (const SIMDType& a, const SIMDType& b) { return _mm256_or_pd(a.mVal, b.mVal); }
-    friend SIMDType operator ^ (const SIMDType& a, const SIMDType& b) { return _mm256_xor_pd(a.mVal, b.mVal); }
+    friend simd_type and_not(const simd_type& a, const simd_type& b) { return _mm256_andnot_pd(a.m_val, b.m_val); }
+    friend simd_type operator & (const simd_type& a, const simd_type& b) { return _mm256_and_pd(a.m_val, b.m_val); }
+    friend simd_type operator | (const simd_type& a, const simd_type& b) { return _mm256_or_pd(a.m_val, b.m_val); }
+    friend simd_type operator ^ (const simd_type& a, const simd_type& b) { return _mm256_xor_pd(a.m_val, b.m_val); }
     
-    friend SIMDType operator == (const SIMDType& a, const SIMDType& b) { return _mm256_cmp_pd(a.mVal, b.mVal, _CMP_EQ_OQ); }
-    friend SIMDType operator != (const SIMDType& a, const SIMDType& b) { return _mm256_cmp_pd(a.mVal, b.mVal, _CMP_NEQ_UQ); }
-    friend SIMDType operator > (const SIMDType& a, const SIMDType& b) { return _mm256_cmp_pd(a.mVal, b.mVal, _CMP_GT_OQ); }
-    friend SIMDType operator < (const SIMDType& a, const SIMDType& b) { return _mm256_cmp_pd(a.mVal, b.mVal, _CMP_LT_OQ); }
-    friend SIMDType operator >= (const SIMDType& a, const SIMDType& b) { return _mm256_cmp_pd(a.mVal, b.mVal, _CMP_GE_OQ); }
-    friend SIMDType operator <= (const SIMDType& a, const SIMDType& b) { return _mm256_cmp_pd(a.mVal, b.mVal, _CMP_LE_OQ); }
+    friend simd_type operator == (const simd_type& a, const simd_type& b) { return _mm256_cmp_pd(a.m_val, b.m_val, _CMP_EQ_OQ); }
+    friend simd_type operator != (const simd_type& a, const simd_type& b) { return _mm256_cmp_pd(a.m_val, b.m_val, _CMP_NEQ_UQ); }
+    friend simd_type operator > (const simd_type& a, const simd_type& b) { return _mm256_cmp_pd(a.m_val, b.m_val, _CMP_GT_OQ); }
+    friend simd_type operator < (const simd_type& a, const simd_type& b) { return _mm256_cmp_pd(a.m_val, b.m_val, _CMP_LT_OQ); }
+    friend simd_type operator >= (const simd_type& a, const simd_type& b) { return _mm256_cmp_pd(a.m_val, b.m_val, _CMP_GE_OQ); }
+    friend simd_type operator <= (const simd_type& a, const simd_type& b) { return _mm256_cmp_pd(a.m_val, b.m_val, _CMP_LE_OQ); }
     
-    friend void unzip(SIMDType& out1, SIMDType& out2, const SIMDType& in1, const SIMDType& in2)
+    friend void unzip(simd_type& out1, simd_type& out2, const simd_type& in1, const simd_type& in2)
     {
-        const __m256d v1 = _mm256_permute2f128_pd(in1.mVal, in2.mVal, 0x20);
-        const __m256d v2 = _mm256_permute2f128_pd(in1.mVal, in2.mVal, 0x31);
+        const __m256d v1 = _mm256_permute2f128_pd(in1.m_val, in2.m_val, 0x20);
+        const __m256d v2 = _mm256_permute2f128_pd(in1.m_val, in2.m_val, 0x31);
         
         out1 = _mm256_unpacklo_pd(v1, v2);
         out2 = _mm256_unpackhi_pd(v1, v2);
     }
     
-    friend void zip(SIMDType& out1, SIMDType& out2, const SIMDType& in1, const SIMDType& in2)
+    friend void zip(simd_type& out1, simd_type& out2, const simd_type& in1, const simd_type& in2)
     {
-        const __m256d v1 = _mm256_unpacklo_pd(in1.mVal, in2.mVal);
-        const __m256d v2 = _mm256_unpackhi_pd(in1.mVal, in2.mVal);
+        const __m256d v1 = _mm256_unpacklo_pd(in1.m_val, in2.m_val);
+        const __m256d v2 = _mm256_unpackhi_pd(in1.m_val, in2.m_val);
         
         out1 = _mm256_permute2f128_pd(v1, v2, 0x20);
         out2 = _mm256_permute2f128_pd(v1, v2, 0x31);
     }
     
-    operator SIMDType<float, 4>() { return _mm256_cvtpd_ps(mVal); }
-    operator SIMDType<int32_t, 4>() { return _mm256_cvtpd_epi32(mVal); }
+    operator simd_type<float, 4>() { return _mm256_cvtpd_ps(m_val); }
+    operator simd_type<int32_t, 4>() { return _mm256_cvtpd_epi32(m_val); }
 };
 
 template<>
-struct SIMDType<float, 8> : public SIMDVector<float, __m256, 8>
+struct simd_type<float, 8> : public simd_vector<float, __m256, 8>
 {
-    SIMDType() {}
-    SIMDType(const float& a) { mVal = _mm256_set1_ps(a); }
-    SIMDType(const float* a) { mVal = _mm256_loadu_ps(a); }
-    SIMDType(__m256 a) : SIMDVector(a) {}
+    simd_type() {}
+    simd_type(const float& a) { m_val = _mm256_set1_ps(a); }
+    simd_type(const float* a) { m_val = _mm256_loadu_ps(a); }
+    simd_type(__m256 a) : simd_vector(a) {}
     
-    void store(float *a) const { _mm256_storeu_ps(a, mVal); }
+    void store(float* a) const { _mm256_storeu_ps(a, m_val); }
     
-    friend SIMDType operator + (const SIMDType& a, const SIMDType& b) { return _mm256_add_ps(a.mVal, b.mVal); }
-    friend SIMDType operator - (const SIMDType& a, const SIMDType& b) { return _mm256_sub_ps(a.mVal, b.mVal); }
-    friend SIMDType operator * (const SIMDType& a, const SIMDType& b) { return _mm256_mul_ps(a.mVal, b.mVal); }
-    friend SIMDType operator / (const SIMDType& a, const SIMDType& b) { return _mm256_div_ps(a.mVal, b.mVal); }
+    friend simd_type operator + (const simd_type& a, const simd_type& b) { return _mm256_add_ps(a.m_val, b.m_val); }
+    friend simd_type operator - (const simd_type& a, const simd_type& b) { return _mm256_sub_ps(a.m_val, b.m_val); }
+    friend simd_type operator * (const simd_type& a, const simd_type& b) { return _mm256_mul_ps(a.m_val, b.m_val); }
+    friend simd_type operator / (const simd_type& a, const simd_type& b) { return _mm256_div_ps(a.m_val, b.m_val); }
     
-    SIMDType& operator += (const SIMDType& b) { return (*this = *this + b); }
-    SIMDType& operator -= (const SIMDType& b) { return (*this = *this - b); }
-    SIMDType& operator *= (const SIMDType& b) { return (*this = *this * b); }
-    SIMDType& operator /= (const SIMDType& b) { return (*this = *this / b); }
+    simd_type& operator += (const simd_type& b) { return (*this = *this + b); }
+    simd_type& operator -= (const simd_type& b) { return (*this = *this - b); }
+    simd_type& operator *= (const simd_type& b) { return (*this = *this * b); }
+    simd_type& operator /= (const simd_type& b) { return (*this = *this / b); }
     
-    friend SIMDType sqrt(const SIMDType& a) { return _mm256_sqrt_ps(a.mVal); }
+    friend simd_type sqrt(const simd_type& a) { return _mm256_sqrt_ps(a.m_val); }
     
     // N.B. - ties issue
-    friend SIMDType round(const SIMDType& a) { return _mm256_round_ps(a.mVal, _MM_FROUND_TO_NEAREST_INT |_MM_FROUND_NO_EXC); }
-    friend SIMDType trunc(const SIMDType& a) { return _mm256_round_ps(a.mVal, _MM_FROUND_TO_ZERO |_MM_FROUND_NO_EXC); }
+    friend simd_type round(const simd_type& a) { return _mm256_round_ps(a.m_val, _MM_FROUND_TO_NEAREST_INT |_MM_FROUND_NO_EXC); }
+    friend simd_type trunc(const simd_type& a) { return _mm256_round_ps(a.m_val, _MM_FROUND_TO_ZERO |_MM_FROUND_NO_EXC); }
     
-    friend SIMDType min(const SIMDType& a, const SIMDType& b) { return _mm256_min_ps(a.mVal, b.mVal); }
-    friend SIMDType max(const SIMDType& a, const SIMDType& b) { return _mm256_max_ps(a.mVal, b.mVal); }
-    friend SIMDType sel(const SIMDType& a, const SIMDType& b, const SIMDType& c) { return and_not(c, a) | (b & c); }
+    friend simd_type min(const simd_type& a, const simd_type& b) { return _mm256_min_ps(a.m_val, b.m_val); }
+    friend simd_type max(const simd_type& a, const simd_type& b) { return _mm256_max_ps(a.m_val, b.m_val); }
+    friend simd_type sel(const simd_type& a, const simd_type& b, const simd_type& c) { return and_not(c, a) | (b & c); }
     
-    friend SIMDType and_not(const SIMDType& a, const SIMDType& b) { return _mm256_andnot_ps(a.mVal, b.mVal); }
-    friend SIMDType operator & (const SIMDType& a, const SIMDType& b) { return _mm256_and_ps(a.mVal, b.mVal); }
-    friend SIMDType operator | (const SIMDType& a, const SIMDType& b) { return _mm256_or_ps(a.mVal, b.mVal); }
-    friend SIMDType operator ^ (const SIMDType& a, const SIMDType& b) { return _mm256_xor_ps(a.mVal, b.mVal); }
+    friend simd_type and_not(const simd_type& a, const simd_type& b) { return _mm256_andnot_ps(a.m_val, b.m_val); }
+    friend simd_type operator & (const simd_type& a, const simd_type& b) { return _mm256_and_ps(a.m_val, b.m_val); }
+    friend simd_type operator | (const simd_type& a, const simd_type& b) { return _mm256_or_ps(a.m_val, b.m_val); }
+    friend simd_type operator ^ (const simd_type& a, const simd_type& b) { return _mm256_xor_ps(a.m_val, b.m_val); }
     
-    friend SIMDType operator == (const SIMDType& a, const SIMDType& b) { return _mm256_cmp_ps(a.mVal, b.mVal, _CMP_EQ_OQ); }
-    friend SIMDType operator != (const SIMDType& a, const SIMDType& b) { return _mm256_cmp_ps(a.mVal, b.mVal, _CMP_NEQ_UQ); }
-    friend SIMDType operator > (const SIMDType& a, const SIMDType& b) { return _mm256_cmp_ps(a.mVal, b.mVal, _CMP_GT_OQ); }
-    friend SIMDType operator < (const SIMDType& a, const SIMDType& b) { return _mm256_cmp_ps(a.mVal, b.mVal, _CMP_LT_OQ); }
-    friend SIMDType operator >= (const SIMDType& a, const SIMDType& b) { return _mm256_cmp_ps(a.mVal, b.mVal, _CMP_GE_OQ); }
-    friend SIMDType operator <= (const SIMDType& a, const SIMDType& b) { return _mm256_cmp_ps(a.mVal, b.mVal, _CMP_LE_OQ); }
+    friend simd_type operator == (const simd_type& a, const simd_type& b) { return _mm256_cmp_ps(a.m_val, b.m_val, _CMP_EQ_OQ); }
+    friend simd_type operator != (const simd_type& a, const simd_type& b) { return _mm256_cmp_ps(a.m_val, b.m_val, _CMP_NEQ_UQ); }
+    friend simd_type operator > (const simd_type& a, const simd_type& b) { return _mm256_cmp_ps(a.m_val, b.m_val, _CMP_GT_OQ); }
+    friend simd_type operator < (const simd_type& a, const simd_type& b) { return _mm256_cmp_ps(a.m_val, b.m_val, _CMP_LT_OQ); }
+    friend simd_type operator >= (const simd_type& a, const simd_type& b) { return _mm256_cmp_ps(a.m_val, b.m_val, _CMP_GE_OQ); }
+    friend simd_type operator <= (const simd_type& a, const simd_type& b) { return _mm256_cmp_ps(a.m_val, b.m_val, _CMP_LE_OQ); }
     
-    friend void unzip(SIMDType& out1, SIMDType& out2, const SIMDType& in1, const SIMDType& in2)
+    friend void unzip(simd_type& out1, simd_type& out2, const simd_type& in1, const simd_type& in2)
     {
-        const __m256 v1 = _mm256_permute2f128_ps(in1.mVal, in2.mVal, 0x20);
-        const __m256 v2 = _mm256_permute2f128_ps(in1.mVal, in2.mVal, 0x31);
+        const __m256 v1 = _mm256_permute2f128_ps(in1.m_val, in2.m_val, 0x20);
+        const __m256 v2 = _mm256_permute2f128_ps(in1.m_val, in2.m_val, 0x31);
         
         out1 = _mm256_shuffle_ps(v1, v2, 0x88);
         out2 = _mm256_shuffle_ps(v1, v2, 0xDD);
     }
     
-    friend void zip(SIMDType& out1, SIMDType& out2, const SIMDType& in1, const SIMDType& in2)
+    friend void zip(simd_type& out1, simd_type& out2, const simd_type& in1, const simd_type& in2)
     {
-        const __m256 v1 = _mm256_unpacklo_ps(in1.mVal, in2.mVal);
-        const __m256 v2 = _mm256_unpackhi_ps(in1.mVal, in2.mVal);
+        const __m256 v1 = _mm256_unpacklo_ps(in1.m_val, in2.m_val);
+        const __m256 v2 = _mm256_unpackhi_ps(in1.m_val, in2.m_val);
         
         out1 = _mm256_permute2f128_ps(v1, v2, 0x20);
         out2 = _mm256_permute2f128_ps(v1, v2, 0x31);
     }
     
-    operator SizedVector<double, 4, 8>() const
+    operator sized_vector<double, 4, 8>() const
     {
-        SizedVector<double, 4, 8> vec;
+        sized_vector<double, 4, 8> vec;
         
-        vec.mData[0] = _mm256_cvtps_pd(_mm256_extractf128_ps(mVal, 0));
-        vec.mData[1] = _mm256_cvtps_pd(_mm256_extractf128_ps(mVal, 1));
+        vec.m_data[0] = _mm256_cvtps_pd(_mm256_extractf128_ps(m_val, 0));
+        vec.m_data[1] = _mm256_cvtps_pd(_mm256_extractf128_ps(m_val, 1));
         
         return vec;
     }
@@ -1188,85 +1197,85 @@ struct SIMDType<float, 8> : public SIMDVector<float, __m256, 8>
 #if (SIMD_COMPILER_SUPPORT_LEVEL >= SIMD_COMPILER_SUPPORT_VEC512)
 
 template<>
-struct SIMDType<double, 8> : public SIMDVector<double, __m512d, 8>
+struct simd_type<double, 8> : public simd_vector<double, __m512d, 8>
 {
-    SIMDType() {}
-    SIMDType(const double& a) { mVal = _mm512_set1_pd(a); }
-    SIMDType(const double* a) { mVal = _mm512_loadu_pd(a); }
-    SIMDType(__m512d a) : SIMDVector(a) {}
+    simd_type() {}
+    simd_type(const double& a) { m_val = _mm512_set1_pd(a); }
+    simd_type(const double* a) { m_val = _mm512_loadu_pd(a); }
+    simd_type(__m512d a) : simd_vector(a) {}
     
-    SIMDType(const SIMDType<float, 8> &a) { mVal = _mm512_cvtps_pd(a.mVal); }
+    simd_type(const simd_type<float, 8> &a) { m_val = _mm512_cvtps_pd(a.m_val); }
     
-    void store(double *a) const { _mm512_storeu_pd(a, mVal); }
+    void store(double* a) const { _mm512_storeu_pd(a, m_val); }
     
-    friend SIMDType operator + (const SIMDType& a, const SIMDType& b) { return _mm512_add_pd(a.mVal, b.mVal); }
-    friend SIMDType operator - (const SIMDType& a, const SIMDType& b) { return _mm512_sub_pd(a.mVal, b.mVal); }
-    friend SIMDType operator * (const SIMDType& a, const SIMDType& b) { return _mm512_mul_pd(a.mVal, b.mVal); }
-    friend SIMDType operator / (const SIMDType& a, const SIMDType& b) { return _mm512_div_pd(a.mVal, b.mVal); }
+    friend simd_type operator + (const simd_type& a, const simd_type& b) { return _mm512_add_pd(a.m_val, b.m_val); }
+    friend simd_type operator - (const simd_type& a, const simd_type& b) { return _mm512_sub_pd(a.m_val, b.m_val); }
+    friend simd_type operator * (const simd_type& a, const simd_type& b) { return _mm512_mul_pd(a.m_val, b.m_val); }
+    friend simd_type operator / (const simd_type& a, const simd_type& b) { return _mm512_div_pd(a.m_val, b.m_val); }
     
-    SIMDType& operator += (const SIMDType& b) { return (*this = *this + b); }
-    SIMDType& operator -= (const SIMDType& b) { return (*this = *this - b); }
-    SIMDType& operator *= (const SIMDType& b) { return (*this = *this * b); }
-    SIMDType& operator /= (const SIMDType& b) { return (*this = *this / b); }
+    simd_type& operator += (const simd_type& b) { return (*this = *this + b); }
+    simd_type& operator -= (const simd_type& b) { return (*this = *this - b); }
+    simd_type& operator *= (const simd_type& b) { return (*this = *this * b); }
+    simd_type& operator /= (const simd_type& b) { return (*this = *this / b); }
     
-    friend SIMDType sqrt(const SIMDType& a) { return _mm512_sqrt_pd(a.mVal); }
+    friend simd_type sqrt(const simd_type& a) { return _mm512_sqrt_pd(a.m_val); }
     
-    friend SIMDType min(const SIMDType& a, const SIMDType& b) { return _mm512_min_pd(a.mVal, b.mVal); }
-    friend SIMDType max(const SIMDType& a, const SIMDType& b) { return _mm512_max_pd(a.mVal, b.mVal); }
-    friend SIMDType sel(const SIMDType& a, const SIMDType& b, const SIMDType& c) { return and_not(c, a) | (b & c); }
+    friend simd_type min(const simd_type& a, const simd_type& b) { return _mm512_min_pd(a.m_val, b.m_val); }
+    friend simd_type max(const simd_type& a, const simd_type& b) { return _mm512_max_pd(a.m_val, b.m_val); }
+    friend simd_type sel(const simd_type& a, const simd_type& b, const simd_type& c) { return and_not(c, a) | (b & c); }
     
-    friend SIMDType and_not(const SIMDType& a, const SIMDType& b) { return _mm512_andnot_pd(a.mVal, b.mVal); }
-    friend SIMDType operator & (const SIMDType& a, const SIMDType& b) { return _mm512_and_pd(a.mVal, b.mVal); }
-    friend SIMDType operator | (const SIMDType& a, const SIMDType& b) { return _mm512_or_pd(a.mVal, b.mVal); }
-    friend SIMDType operator ^ (const SIMDType& a, const SIMDType& b) { return _mm512_xor_pd(a.mVal, b.mVal); }
+    friend simd_type and_not(const simd_type& a, const simd_type& b) { return _mm512_andnot_pd(a.m_val, b.m_val); }
+    friend simd_type operator & (const simd_type& a, const simd_type& b) { return _mm512_and_pd(a.m_val, b.m_val); }
+    friend simd_type operator | (const simd_type& a, const simd_type& b) { return _mm512_or_pd(a.m_val, b.m_val); }
+    friend simd_type operator ^ (const simd_type& a, const simd_type& b) { return _mm512_xor_pd(a.m_val, b.m_val); }
     
-    friend SIMDType operator == (const SIMDType& a, const SIMDType& b) { return _mm512_cmp_pd_mask(a.mVal, b.mVal, _CMP_EQ_OQ); }
-    friend SIMDType operator != (const SIMDType& a, const SIMDType& b) { return _mm512_cmp_pd_mask(a.mVal, b.mVal, _CMP_NEQ_UQ); }
-    friend SIMDType operator > (const SIMDType& a, const SIMDType& b) { return _mm512_cmp_pd_mask(a.mVal, b.mVal, _CMP_GT_OQ); }
-    friend SIMDType operator < (const SIMDType& a, const SIMDType& b) { return _mm512_cmp_pd_mask(a.mVal, b.mVal, _CMP_LT_OQ); }
-    friend SIMDType operator >= (const SIMDType& a, const SIMDType& b) { return _mm512_cmp_pd_mask(a.mVal, b.mVal, _CMP_GE_OQ); }
-    friend SIMDType operator <= (const SIMDType& a, const SIMDType& b) { return _mm512_cmp_pd_mask(a.mVal, b.mVal, _CMP_LE_OQ); }
+    friend simd_type operator == (const simd_type& a, const simd_type& b) { return _mm512_cmp_pd_mask(a.m_val, b.m_val, _CMP_EQ_OQ); }
+    friend simd_type operator != (const simd_type& a, const simd_type& b) { return _mm512_cmp_pd_mask(a.m_val, b.m_val, _CMP_NEQ_UQ); }
+    friend simd_type operator > (const simd_type& a, const simd_type& b) { return _mm512_cmp_pd_mask(a.m_val, b.m_val, _CMP_GT_OQ); }
+    friend simd_type operator < (const simd_type& a, const simd_type& b) { return _mm512_cmp_pd_mask(a.m_val, b.m_val, _CMP_LT_OQ); }
+    friend simd_type operator >= (const simd_type& a, const simd_type& b) { return _mm512_cmp_pd_mask(a.m_val, b.m_val, _CMP_GE_OQ); }
+    friend simd_type operator <= (const simd_type& a, const simd_type& b) { return _mm512_cmp_pd_mask(a.m_val, b.m_val, _CMP_LE_OQ); }
     
-    operator SIMDType<float, 8>() { return _mm512_cvtpd_ps(mVal); }
+    operator simd_type<float, 8>() { return _mm512_cvtpd_ps(m_val); }
 };
 
 template<>
-struct SIMDType<float, 16> : public SIMDVector<float, __m512, 16>
+struct simd_type<float, 16> : public simd_vector<float, __m512, 16>
 {
-    SIMDType() {}
-    SIMDType(const float& a) { mVal = _mm512_set1_ps(a); }
-    SIMDType(const float* a) { mVal = _mm512_loadu_ps(a); }
-    SIMDType(__m512 a) : SIMDVector(a) {}
+    simd_type() {}
+    simd_type(const float& a) { m_val = _mm512_set1_ps(a); }
+    simd_type(const float* a) { m_val = _mm512_loadu_ps(a); }
+    simd_type(__m512 a) : simd_vector(a) {}
     
-    void store(float *a) const { _mm512_storeu_ps(a, mVal); }
+    void store(float* a) const { _mm512_storeu_ps(a, m_val); }
     
-    friend SIMDType operator + (const SIMDType& a, const SIMDType& b) { return _mm512_add_ps(a.mVal, b.mVal); }
-    friend SIMDType operator - (const SIMDType& a, const SIMDType& b) { return _mm512_sub_ps(a.mVal, b.mVal); }
-    friend SIMDType operator * (const SIMDType& a, const SIMDType& b) { return _mm512_mul_ps(a.mVal, b.mVal); }
-    friend SIMDType operator / (const SIMDType& a, const SIMDType& b) { return _mm512_div_ps(a.mVal, b.mVal); }
+    friend simd_type operator + (const simd_type& a, const simd_type& b) { return _mm512_add_ps(a.m_val, b.m_val); }
+    friend simd_type operator - (const simd_type& a, const simd_type& b) { return _mm512_sub_ps(a.m_val, b.m_val); }
+    friend simd_type operator * (const simd_type& a, const simd_type& b) { return _mm512_mul_ps(a.m_val, b.m_val); }
+    friend simd_type operator / (const simd_type& a, const simd_type& b) { return _mm512_div_ps(a.m_val, b.m_val); }
     
-    SIMDType& operator += (const SIMDType& b) { return (*this = *this + b); }
-    SIMDType& operator -= (const SIMDType& b) { return (*this = *this - b); }
-    SIMDType& operator *= (const SIMDType& b) { return (*this = *this * b); }
-    SIMDType& operator /= (const SIMDType& b) { return (*this = *this / b); }
+    simd_type& operator += (const simd_type& b) { return (*this = *this + b); }
+    simd_type& operator -= (const simd_type& b) { return (*this = *this - b); }
+    simd_type& operator *= (const simd_type& b) { return (*this = *this * b); }
+    simd_type& operator /= (const simd_type& b) { return (*this = *this / b); }
     
-    friend SIMDType sqrt(const SIMDType& a) { return _mm512_sqrt_ps(a.mVal); }
+    friend simd_type sqrt(const simd_type& a) { return _mm512_sqrt_ps(a.m_val); }
     
-    friend SIMDType min(const SIMDType& a, const SIMDType& b) { return _mm512_min_ps(a.mVal, b.mVal); }
-    friend SIMDType max(const SIMDType& a, const SIMDType& b) { return _mm512_max_ps(a.mVal, b.mVal); }
-    friend SIMDType sel(const SIMDType& a, const SIMDType& b, const SIMDType& c) { return and_not(c, a) | (b & c); }
+    friend simd_type min(const simd_type& a, const simd_type& b) { return _mm512_min_ps(a.m_val, b.m_val); }
+    friend simd_type max(const simd_type& a, const simd_type& b) { return _mm512_max_ps(a.m_val, b.m_val); }
+    friend simd_type sel(const simd_type& a, const simd_type& b, const simd_type& c) { return and_not(c, a) | (b & c); }
     
-    friend SIMDType and_not(const SIMDType& a, const SIMDType& b) { return _mm512_andnot_ps(a.mVal, b.mVal); }
-    friend SIMDType operator & (const SIMDType& a, const SIMDType& b) { return _mm512_and_ps(a.mVal, b.mVal); }
-    friend SIMDType operator | (const SIMDType& a, const SIMDType& b) { return _mm512_or_ps(a.mVal, b.mVal); }
-    friend SIMDType operator ^ (const SIMDType& a, const SIMDType& b) { return _mm512_xor_ps(a.mVal, b.mVal); }
+    friend simd_type and_not(const simd_type& a, const simd_type& b) { return _mm512_andnot_ps(a.m_val, b.m_val); }
+    friend simd_type operator & (const simd_type& a, const simd_type& b) { return _mm512_and_ps(a.m_val, b.m_val); }
+    friend simd_type operator | (const simd_type& a, const simd_type& b) { return _mm512_or_ps(a.m_val, b.m_val); }
+    friend simd_type operator ^ (const simd_type& a, const simd_type& b) { return _mm512_xor_ps(a.m_val, b.m_val); }
     
-    friend SIMDType operator == (const SIMDType& a, const SIMDType& b) { return _mm512_cmp_ps_mask(a.mVal, b.mVal, _CMP_EQ_OQ); }
-    friend SIMDType operator != (const SIMDType& a, const SIMDType& b) { return _mm512_cmp_ps_mask(a.mVal, b.mVal, _CMP_NEQ_UQ); }
-    friend SIMDType operator > (const SIMDType& a, const SIMDType& b) { return _mm512_cmp_ps_mask(a.mVal, b.mVal, _CMP_GT_OQ); }
-    friend SIMDType operator < (const SIMDType& a, const SIMDType& b) { return _mm512_cmp_ps_mask(a.mVal, b.mVal, _CMP_LT_OQ); }
-    friend SIMDType operator >= (const SIMDType& a, const SIMDType& b) { return _mm512_cmp_ps_mask(a.mVal, b.mVal, _CMP_GE_OQ); }
-    friend SIMDType operator <= (const SIMDType& a, const SIMDType& b) { return _mm512_cmp_ps_mask(a.mVal, b.mVal, _CMP_LE_OQ); }
+    friend simd_type operator == (const simd_type& a, const simd_type& b) { return _mm512_cmp_ps_mask(a.m_val, b.m_val, _CMP_EQ_OQ); }
+    friend simd_type operator != (const simd_type& a, const simd_type& b) { return _mm512_cmp_ps_mask(a.m_val, b.m_val, _CMP_NEQ_UQ); }
+    friend simd_type operator > (const simd_type& a, const simd_type& b) { return _mm512_cmp_ps_mask(a.m_val, b.m_val, _CMP_GT_OQ); }
+    friend simd_type operator < (const simd_type& a, const simd_type& b) { return _mm512_cmp_ps_mask(a.m_val, b.m_val, _CMP_LT_OQ); }
+    friend simd_type operator >= (const simd_type& a, const simd_type& b) { return _mm512_cmp_ps_mask(a.m_val, b.m_val, _CMP_GE_OQ); }
+    friend simd_type operator <= (const simd_type& a, const simd_type& b) { return _mm512_cmp_ps_mask(a.m_val, b.m_val, _CMP_LE_OQ); }
 };
 
 #endif
@@ -1303,57 +1312,59 @@ namespace impl
 }
 
 template <class T, int  N>
-T sum(const SIMDType<T,  N>& vec)
+T sum(const simd_type<T,  N>& vec)
 {
     T values[N];
     
     vec.store(values);
     
-    return impl::partial_sum<SIMDType<T,  N>, N, 0>()(values);
+    return impl::partial_sum<simd_type<T,  N>, N, 0>()(values);
 }
 
 // Select Functionality for all types
 
 template <class T, int N>
-T select(const SIMDType<T, N>& a, const SIMDType<T, N>& b, const SIMDType<T, N>& mask)
+T select(const simd_type<T, N>& a, const simd_type<T, N>& b, const simd_type<T, N>& mask)
 {
     return (b & mask) | and_not(mask, a);
 }
 
 // Abs functionality
 
-static inline SIMDType<double, 1> abs(const SIMDType<double, 1> a)
+static inline simd_type<double, 1> abs(const simd_type<double, 1> a)
 {
     constexpr uint64_t bit_mask_64 = 0x7FFFFFFFFFFFFFFFU;
     
-    uint64_t temp = *(reinterpret_cast<const uint64_t *>(&a)) & bit_mask_64;
-    return *(reinterpret_cast<double *>(&temp));
+    uint64_t temp = *(reinterpret_cast<const uint64_t*>(&a)) & bit_mask_64;
+    return *(reinterpret_cast<double*>(&temp));
 }
 
-static inline SIMDType<float, 1> abs(const SIMDType<float, 1> a)
+static inline simd_type<float, 1> abs(const simd_type<float, 1> a)
 {
     constexpr uint32_t bit_mask_32 = 0x7FFFFFFFU;
     
-    uint32_t temp = *(reinterpret_cast<const uint32_t *>(&a)) & bit_mask_32;
-    return *(reinterpret_cast<float *>(&temp));
+    uint32_t temp = *(reinterpret_cast<const uint32_t*>(&a)) & bit_mask_32;
+    return *(reinterpret_cast<float*>(&temp));
 }
 
 template <int N>
-SIMDType<double, N> abs(const SIMDType<double, N> a)
+simd_type<double, N> abs(const simd_type<double, N> a)
 {
     constexpr uint64_t bit_mask_64 = 0x7FFFFFFFFFFFFFFFU;
-    const double bit_mask_64d = *(reinterpret_cast<const double *>(&bit_mask_64));
+    const double bit_mask_64d = *(reinterpret_cast<const double*>(&bit_mask_64));
     
-    return a & SIMDType<double, N>(bit_mask_64d);
+    return a & simd_type<double, N>(bit_mask_64d);
 }
 
 template <int N>
-SIMDType<float, N> abs(const SIMDType<float, N> a)
+simd_type<float, N> abs(const simd_type<float, N> a)
 {
     constexpr uint32_t bit_mask_32 = 0x7FFFFFFFU;
-    const float bit_mask_32f = *(reinterpret_cast<const float *>(&bit_mask_32));
+    const float bit_mask_32f = *(reinterpret_cast<const float*>(&bit_mask_32));
     
-    return a & SIMDType<float, N>(bit_mask_32f);
+    return a & simd_type<float, N>(bit_mask_32f);
 }
 
-#endif /* SIMD_SUPPORT_HPP */
+HISSTOOLS_NAMESPACE_END()
+
+#endif /* HISSTOOLS_SIMD_SUPPORT_HPP */

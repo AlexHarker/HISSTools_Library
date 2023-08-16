@@ -101,7 +101,7 @@ std::vector<T> random_vector(int length)
 }
 
 template <template <class, class> class Convolver, class T, class IO>
-void test_time_domain(int block_size, int num_blocks, int ir_length, const char *str)
+void test_time_domain(int block_size, int num_blocks, int ir_length, const char* str)
 {
     Convolver<T, IO> convolver;
     

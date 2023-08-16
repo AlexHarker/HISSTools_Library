@@ -1,11 +1,15 @@
 
-#ifndef THREADLOCKS_HPP
-#define THREADLOCKS_HPP
+#ifndef HISSTOOLS_THREAD_LOCKS_HPP
+#define HISSTOOLS_THREAD_LOCKS_HPP
 
 #include <atomic>
 #include <algorithm>
 #include <chrono>
 #include <thread>
+
+#include "namespace.hpp"
+
+HISSTOOLS_NAMESPACE_START()
 
 #ifdef __linux__
 
@@ -50,7 +54,7 @@ namespace os_specific
 
 class thread_lock
 {
-    using Clock = std::chrono::steady_clock;
+    using clock = std::chrono::steady_clock;
     
 public:
     
@@ -68,9 +72,9 @@ public:
             if (attempt())
                 return;
         
-        auto timeOut = Clock::now() + std::chrono::nanoseconds(10000);
+        auto time_out = clock::now() + std::chrono::nanoseconds(10000);
         
-        while (Clock::now() < timeOut)
+        while (clock::now() < time_out)
             if (attempt())
                 return;
         
@@ -95,7 +99,7 @@ class lock_hold
 public:
     
     lock_hold() : m_lock(nullptr) {}
-    lock_hold(thread_lock *lock) : m_lock(lock) { if (m_lock) m_lock->*acquire_method(); }
+    lock_hold(thread_lock* lock) : m_lock(lock) { if (m_lock) m_lock->*acquire_method(); }
     ~lock_hold() { if (m_lock) m_lock->release(); }
     
     // Non-copyable
@@ -114,7 +118,9 @@ public:
     
 private:
     
-    thread_lock *m_lock;
+    thread_lock* m_lock;
 };
 
-#endif /* THREADLOCKS_HPP */
+HISSTOOLS_NAMESPACE_END()
+
+#endif /* HISSTOOLS_THREAD_LOCKS_HPP */

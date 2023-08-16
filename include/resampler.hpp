@@ -1,9 +1,6 @@
 
-#pragma once
-
-#include "simd_support.hpp"
-
-#include "window_functions.hpp"
+#ifndef HISSTOOLS_RESAMPLER_HPP
+#define HISSTOOLS_RESAMPLER_HPP
 
 #include <algorithm>
 #include <cassert>
@@ -11,7 +8,13 @@
 #include <cstdint>
 #include <vector>
 
+#include "simd_support.hpp"
+#include "window_functions.hpp"
+#include "namespace.hpp"
+
 // N.B. - clean up for other usage (different phases / consider other windows etc.)
+
+HISSTOOLS_NAMESPACE_START()
 
 template <class T = double, class IO = float, bool Approx = true>
 class resampler
@@ -25,7 +28,7 @@ public:
     }
     
     template <bool B = Approx, typename std::enable_if<B, int>::type = 0>
-    std::vector<IO> process(IO *input, uintptr_t in_length, double in_sr, double out_sr, double transpose_ratio = 1.0)
+    std::vector<IO> process(IO* input, uintptr_t in_length, double in_sr, double out_sr, double transpose_ratio = 1.0)
     {
         // Calculate overall rate change
         
@@ -49,7 +52,7 @@ public:
     }
     
     template <bool B = Approx, typename std::enable_if<!B, int>::type = 0>
-    std::vector<IO> process(IO *input, uintptr_t in_length, double in_sr, double out_sr, double transpose_ratio = 1.0)
+    std::vector<IO> process(IO* input, uintptr_t in_length, double in_sr, double out_sr, double transpose_ratio = 1.0)
     {
         // Calculate overall rate change
         
@@ -116,21 +119,22 @@ public:
 private:
 
     template <bool B = Approx, typename std::enable_if<B, int>::type = 0>
-    void resample_ratio(std::vector<IO>& output, IO *input, uintptr_t in_length, uintptr_t nsamps, uint32_t num, uint32_t denom)
+    void resample_ratio(std::vector<IO>& output, IO* input, uintptr_t in_length, uintptr_t nsamps, uint32_t num, 
+                                                                                                   uint32_t denom)
     {
         uint32_t filter_offset;
         uint32_t filter_length;
         
         // Create relevant tempories for resampling
         
-        double *filter_set = create_filter_set(num, denom, filter_length, filter_offset);
+        double* filter_set = create_filter_set(num, denom, filter_length, filter_offset);
         auto padded_input = copy_input_padded(input, in_length, filter_offset, filter_length - filter_offset);
         
         // Resample
         
         for (uintptr_t i = 0, offset = 0; i < nsamps; offset += num)
         {
-            const double *filter = filter_set;
+            const double* filter = filter_set;
             
             for (uint32_t j = 0; i < nsamps && j < denom; i++, j++, filter += filter_length)
             {
@@ -145,7 +149,7 @@ private:
     }
     
     template <bool B = Approx, typename std::enable_if<!B, int>::type = 0>
-    void resample_rate(std::vector<IO>& output, IO *input, uintptr_t in_length, uintptr_t nsamps, double rate)
+    void resample_rate(std::vector<IO>& output, IO* input, uintptr_t in_length, uintptr_t nsamps, double rate)
     {
         const double per_sample_recip = rate > 1.0 ? m_num_zeros * rate : m_num_zeros;
         const double mul = rate < 1.0 ? rate : 1.0;
@@ -162,7 +166,7 @@ private:
     }
     
     template <bool B = Approx, typename std::enable_if<B, int>::type = 0>
-    double *create_filter_set(uint32_t numerator, uint32_t denominator, uint32_t& length, uint32_t& offset)
+    double* create_filter_set(uint32_t numerator, uint32_t denominator, uint32_t& length, uint32_t& offset)
     {
         const double per_sample = numerator > denominator ? divide(denominator, numerator) : 1.0;
         const double mul = 1.0 / per_sample;
@@ -171,11 +175,11 @@ private:
         offset = length >> 1;
         length += (4 - (length % 4));
         
-        double *filter_set = allocate_aligned<double>(denominator * length);
+        double* filter_set = allocate_aligned<double>(denominator * length);
         
         for (uint32_t i = 0, n = 0; i < denominator; i++, n += numerator)
         {
-            double *filter = filter_set + i * length;
+            double* filter = filter_set + i * length;
 
             while (n >= denominator) n -= denominator;
             
@@ -190,25 +194,25 @@ private:
     }
     
     template <bool B = Approx, typename std::enable_if<B, int>::type = 0>
-    static inline double apply_filter(const T *a, IO *b, uintptr_t N)
+    static inline double apply_filter(const T* a, IO* b, uintptr_t N)
     {
-        constexpr int vec_size_o = (SIMDLimits<T>::max_size > 4) ? 4 : SIMDLimits<T>::max_size;
-        constexpr int vec_size_i = (SIMDLimits<IO>::max_size >= 4) ? 4 : 1;
+        constexpr int vec_size_o = (simd_limits<T>::max_size > 4) ? 4 : simd_limits<T>::max_size;
+        constexpr int vec_size_i = (simd_limits<IO>::max_size >= 4) ? 4 : 1;
         
-        using VecTypeO = SizedVector<T , vec_size_o, 4>;
-        using VecTypeI = SizedVector<IO, vec_size_i, 4>;
+        using out_vector_type = sized_vector<T , vec_size_o, 4>;
+        using in_vector_type = sized_vector<IO, vec_size_i, 4>;
         
-        VecTypeO sum(0.0);
+        out_vector_type sum(0.0);
         T results[4];
         uintptr_t i;
         
         for (i = 0; i + 7 < N; i += 8)
         {
-            sum += VecTypeO(a + i + 0) * VecTypeO(VecTypeI(b + i + 0));
-            sum += VecTypeO(a + i + 4) * VecTypeO(VecTypeI(b + i + 4));
+            sum += out_vector_type(a + i + 0) * out_vector_type(in_vector_type(b + i + 0));
+            sum += out_vector_type(a + i + 4) * out_vector_type(in_vector_type(b + i + 4));
         }
         for (; i + 3 < N; i += 4)
-            sum += VecTypeO(a + i + 0) * VecTypeO(VecTypeI(b + i + 0));
+            sum += out_vector_type(a + i + 0) * out_vector_type(in_vector_type(b + i + 0));
         
         sum.store(results);
         
@@ -218,7 +222,7 @@ private:
     /*
         N.B. - The code above is equivalent to the following scalar code
      
-        double apply_filter(T *a, IO *b, uintptr_t N)
+        double apply_filter(T* a, IO* b, uintptr_t N)
         {
             T sum = 0.0;
      
@@ -268,13 +272,13 @@ private:
     // Calculate one sample 
 
     template <bool B = Approx, typename std::enable_if<!B, int>::type = 0>
-    double calculate_sample(const IO *input, double offset, double per_sample_recip)
+    double calculate_sample(const IO* input, double offset, double per_sample_recip)
     {
         double per_sample = 1.0 / per_sample_recip;
         
         uint32_t i_offset = std::floor(offset);
         
-        const IO *samples = input + i_offset;
+        const IO* samples = input + i_offset;
                 
         double position = (offset - i_offset) * per_sample;
         double sum = 0.0;
@@ -339,3 +343,7 @@ private:
     uint32_t m_num_zeros;
     uint32_t m_num_points;
 };
+
+HISSTOOLS_NAMESPACE_END()
+
+#endif /* HISSTOOLS_RESAMPLER_HPP */

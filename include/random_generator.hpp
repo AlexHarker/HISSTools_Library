@@ -1,28 +1,31 @@
 
-#ifndef RANDOM_GENERATOR_HPP
-#define RANDOM_GENERATOR_HPP
+#ifndef HISSTOOLS_RANDOM_GENERATOR_HPP
+#define HISSTOOLS_RANDOM_GENERATOR_HPP
 
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <random>
 
-namespace random_generators
-{
-    // Basic CMWC Generator
+#include "namespace.hpp"
 
-    // A complementary modulo with carry algorithm (proposed by George Marsaglia)
-    // Details can be found in:
-    // Marsaglia, G. (2003). "Random number generators". Journal of Modern Applied Statistical Methods 2
-    // See - http://digitalcommons.wayne.edu/cgi/viewcontent.cgi?article=1725&context=jmasm
+HISSTOOLS_NAMESPACE_START()
 
-    // The memory requirement is 34 unsigned 32 bit integers (can be altered using cmwc_lag_size)
-    // The period length is currently circa 2^1054 - 1 which shold be more than adequate for most purposes
+// Basic CMWC Generator
 
-    // N.B. cmwc_lag_size must be a power of two
-    // N.B. cmwc_a_value should be a suitable value according to cmwc_lag_size
+// A complementary modulo with carry algorithm (proposed by George Marsaglia)
+// Details can be found in:
+// Marsaglia, G. (2003). "Random number generators". Journal of Modern Applied Statistical Methods 2
+// See - http://digitalcommons.wayne.edu/cgi/viewcontent.cgi?article=1725&context=jmasm
 
-    class cmwc
+// The memory requirement is 34 unsigned 32 bit integers (can be altered using cmwc_lag_size)
+// The period length is currently circa 2^1054 - 1 which shold be more than adequate for most purposes
+
+// N.B. cmwc_lag_size must be a power of two
+// N.B. cmwc_a_value should be a suitable value according to cmwc_lag_size
+
+namespace impl {
+    class cmwc_generator
     {
         static constexpr uint32_t cmwc_lag_size = 32;
         static constexpr uint64_t cmwc_a_value = 987655670LL;
@@ -57,7 +60,7 @@ namespace random_generators
         
         // Seeding (specific / OS-specific random values)
         
-        void seed(uint32_t *init)
+        void seed(uint32_t* init)
         {
             m_increment = (cmwc_lag_size - 1);
             m_carry = 123;
@@ -86,7 +89,7 @@ namespace random_generators
     };
 }
 
-template <typename Generator = random_generators::cmwc>
+template <typename Generator = impl::cmwc_generator>
 class random_generator
 {
 public:
@@ -125,11 +128,11 @@ public:
     };
     
     random_generator()                  { m_generator.rand_seed(); }
-    random_generator(uint32_t *init)    { m_generator.seed(init); }
+    random_generator(uint32_t* init)    { m_generator.seed(init); }
 
     // Seeding (specific / random values)
     
-    void seed(uint32_t *init)   { m_generator.seed(init); }
+    void seed(uint32_t* init)   { m_generator.seed(init); }
     void rand_seed()            { m_generator.rand_seed(); }
     
     // Generate a Single Pseudo-random Unsigned Integer (full range /  in the range [0, n] / in the range [lo, hi])
@@ -338,4 +341,6 @@ private:
     Generator m_generator;
 };
 
-#endif /* RANDOM_GENERATOR_HPP */
+HISSTOOLS_NAMESPACE_END()
+
+#endif /* HISSTOOLS_RANDOM_GENERATOR_HPP */

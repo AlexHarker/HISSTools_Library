@@ -1,24 +1,27 @@
 
-#ifndef CONVOLVE_N_TO_MONO_HPP
-#define CONVOLVE_N_TO_MONO_HPP
-
-#include "utilities.hpp"
-#include "mono.hpp"
+#ifndef HISSTOOLS_CONVOLUTION_N_TO_MONO_HPP
+#define HISSTOOLS_CONVOLUTION_N_TO_MONO_HPP
 
 #include <algorithm>
 #include <cstdint>
 #include <vector>
 
+#include "../namespace.hpp"
+#include "utilities.hpp"
+#include "mono.hpp"
+
+HISSTOOLS_NAMESPACE_START()
+
 template <class T, class IO = T>
 class convolve_n_to_mono
 {
-    using CN = convolve_n_to_mono;
+    using cn = convolve_n_to_mono;
 
 public:
     
     // Constructor
     
-    convolve_n_to_mono(uint32_t in_chans, uintptr_t max_length, LatencyMode latency)
+    convolve_n_to_mono(uint32_t in_chans, uintptr_t max_length, latency_mode latency)
     {
         for (uint32_t i = 0; i < in_chans; i++)
             m_convolvers.emplace_back(max_length, latency);
@@ -32,7 +35,7 @@ public:
     
     void clear(bool resize)
     {
-        for_all(static_cast<void (CN::*)(uint32_t, uint32_t, bool)>(&CN::clear), resize);
+        for_all(static_cast<void (cn::*)(uint32_t, uint32_t, bool)>(&cn::clear), resize);
     }
     
     void clear(uint32_t in_chan, bool resize)
@@ -44,23 +47,23 @@ public:
     
     void reset()
     {
-        for_all(static_cast<void (CN::*)(uint32_t, uint32_t, bool)>(&CN::clear));
+        for_all(static_cast<void (cn::*)(uint32_t, uint32_t, bool)>(&cn::clear));
     }
     
-    ConvolveError reset(uint32_t in_chan)
+    convolve_error reset(uint32_t in_chan)
     {
         return do_channel(&convolve_mono<T, IO>::reset, in_chan);
     }
     
     // Resize and set IR
     
-    ConvolveError resize(uint32_t in_chan, uintptr_t length)
+    convolve_error resize(uint32_t in_chan, uintptr_t length)
     {
         return do_channel(&convolve_mono<T, IO>::resize, in_chan, length);
     }
     
     template <class U>
-    ConvolveError set(uint32_t in_chan, const U *input, uintptr_t length, bool resize)
+    convolve_error set(uint32_t in_chan, const U* input, uintptr_t length, bool resize)
     {
         conformed_input<T, U> typed_input(input, length);
 
@@ -69,7 +72,7 @@ public:
 
     // Process
     
-    void process(const IO * const* ins, IO *out, uintptr_t num_samples, uint32_t num_ins, bool accumulate = false)
+    void process(const IO * const* ins, IO* out, uintptr_t num_samples, uint32_t num_ins, bool accumulate = false)
     {
         num_ins = std::min(num_ins, get_num_ins());
 
@@ -82,12 +85,12 @@ private:
     // Utility to apply an operation to a channel
     
     template <typename Method, typename... Args>
-    ConvolveError do_channel(Method method, uint32_t in_chan, Args...args)
+    convolve_error do_channel(Method method, uint32_t in_chan, Args...args)
     {
         if (in_chan < get_num_ins())
             return (m_convolvers[in_chan].*method)(args...);
         else
-            return ConvolveError::InChanOutOfRange;
+            return convolve_error::in_channel_outside_range;
     }
     
     // Utility to apply an operation to all convolvers
@@ -102,4 +105,6 @@ private:
     std::vector<convolve_mono<T, IO>> m_convolvers;
 };
 
-#endif /* CONVOLVE_N_TO_MONO_HPP */
+HISSTOOLS_NAMESPACE_END()
+
+#endif /* HISSTOOLS_CONVOLUTION_N_TO_MONO_HPP */
