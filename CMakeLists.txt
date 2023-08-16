@@ -51,6 +51,13 @@ if(BUILD_TESTS)
             )
         endif()
 
+        target_compile_definitions(
+            ${TEST_NAME} 
+            PRIVATE 
+                NO_NATIVE_FFT
+                NO_APPLE_ACCELERATE
+        )
+
         target_link_libraries(${TEST_NAME} ${PROJECT_NAME})
 
         add_test(
