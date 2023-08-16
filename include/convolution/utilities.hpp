@@ -37,8 +37,32 @@ namespace impl
         loop_cast_n<U, copy_to_result<U>>(first, count, result);
     }
 
+    template<int x, int c, int _x>
+    struct ilog2_impl
+    {
+        constexpr int operator()() const
+        {
+            return ilog2_impl<(x >> 1), c + 1, _x>()();
+        };
+    };
+
+    template<int c, int _x>
+    struct ilog2_impl<0, c, _x>
+    {
+        constexpr int operator()() const
+        {
+            return _x == 1 << (c - 1) ? c - 1 : c;
+        };
+    };
+
+    template<int x>
+    static constexpr int ilog2()
+    {
+        return ilog2_impl<x, 0, x>()();
+    }
+
     template <class T>
-    static constexpr T ilog2(T x)
+    static T ilog2(T x)
     {
         T count = 0;
     

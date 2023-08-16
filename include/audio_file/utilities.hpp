@@ -22,12 +22,12 @@ struct byte_getter
 {
     T operator()(const unsigned char* bytes)
     {
-        return (T(bytes[M]) << byte_shift<N, M, E>()) | byte_getter<T, N, M + 1, E>()(bytes);
+        return (T(bytes[M - 1]) << byte_shift<N, M - 1, E>()) | byte_getter<T, N, M + 1, E>()(bytes);
     }
 };
 
 template <class T, int N, audio_file_format::endianness E>
-struct byte_getter<T, N, N - 1, E>
+struct byte_getter<T, N, N, E>
 {
     T operator()(const unsigned char* bytes)
     {
@@ -39,9 +39,9 @@ template <class T, int N>
 T get_bytes(const unsigned char* bytes, audio_file_format::endianness endianness)
 {
     if (endianness == audio_file_format::endianness::big)
-        return byte_getter<T, N, 0, audio_file_format::endianness::big>()(bytes);
+        return byte_getter<T, N, 1, audio_file_format::endianness::big>()(bytes);
     else
-        return byte_getter<T, N, 0, audio_file_format::endianness::little>()(bytes);
+        return byte_getter<T, N, 1, audio_file_format::endianness::little>()(bytes);
 }
 
 template <class T, int N>

@@ -3,8 +3,8 @@
 #define HISSTOOLS_WINDOW_FUNCTIONS_HPP
 
 #include <algorithm>
-#include <cstdint>
 #include <cmath>
+#include <cstdint>
 #include <limits>
 #include <vector>
 

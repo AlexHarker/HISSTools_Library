@@ -22,9 +22,9 @@ class convolve_time_domain
     using vector_type = simd_type<T, simd_limits<T>::max_size>;
 
     static constexpr int loop_unroll_size = 4;
-    static constexpr int vec_size_shift = impl::ilog2(vector_type::size);
+    static constexpr int vec_size_shift = impl::ilog2<vector_type::size>();
     static constexpr int padding_resolution = loop_unroll_size * vector_type::size;
-    static constexpr int padding_shift = impl::ilog2(padding_resolution);
+    static constexpr int padding_shift = impl::ilog2<padding_resolution>();
     static constexpr int max_impulse_length = 2048;
     static constexpr int max_buffer_length = 4096;
     static constexpr int allocation_length = max_buffer_length * 2;

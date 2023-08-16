@@ -2,7 +2,7 @@
 #ifndef HISSTOOLS_FFT_HPP
 #define HISSTOOLS_FFT_HPP
 
-#include <stdint.h>
+#include <cstdint>
 
 #include "../namespace.hpp"
 #include "fft_types.hpp"
@@ -54,7 +54,11 @@ struct setup_type;
 
 // N.B. Include once basic types are defined
 
+HISSTOOLS_NAMESPACE_END()
+
 #include "fft_core.hpp"
+
+HISSTOOLS_NAMESPACE_START()
 
 /**
     hisstools_create_setup() creates an FFT setup suitable for FFTs and iFFTs up to a maximum specified size.

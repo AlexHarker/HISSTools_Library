@@ -22,7 +22,7 @@ class convolve_partitioned
     using vector_type = simd_type<T, simd_limits<T>::max_size>;
     
     static constexpr int loop_unroll_size = 4;
-    static constexpr int fixed_min_fft_size_log2 = impl::ilog2(vector_type::size * loop_unroll_size);
+    static constexpr int fixed_min_fft_size_log2 = impl::ilog2<vector_type::size * loop_unroll_size>();
     static constexpr int fixed_max_fft_size_log2 = 20;
     
 public:
@@ -170,7 +170,7 @@ public:
         uintptr_t buffer_position = m_offset;
 
         T* buffer_temp_1 = m_partition_temp.realp;
-        split_type buffer_temp_2 = m_impulse_buffer;
+        split_type<T> buffer_temp_2 = m_impulse_buffer;
 
         for (; length > 0; buffer_position += fft_size_halved, num_partitions++)
         {

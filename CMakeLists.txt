@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.13)
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native --std=c++11")
+
 # library
 project(
     hisstools 
@@ -19,7 +21,7 @@ set_target_properties(
 target_compile_features(
     ${PROJECT_NAME} 
     INTERFACE 
-        cxx_std_14
+        cxx_std_11
 )
 
 #tests
@@ -42,7 +44,23 @@ if(BUILD_TESTS)
             ${TEST}
         )
 
-        target_link_libraries(${TEST_NAME}  ${PROJECT_NAME})
+        if (WIN32)
+            target_compile_definitions(
+                ${TEST_NAME} 
+                PRIVATE 
+                    NOMINMAX 
+                    _USE_MATH_DEFINES
+            )
+        endif()
+
+        target_compile_definitions(
+            ${TEST_NAME} 
+            PRIVATE 
+                NO_NATIVE_FFT
+                NO_APPLE_ACCELERATE
+        )
+
+        target_link_libraries(${TEST_NAME} ${PROJECT_NAME})
 
         add_test(
             NAME ${TEST_NAME} 
@@ -102,7 +120,6 @@ install(
 install(
     EXPORT ${PROJECT_NAME}_Targets
     FILE ${PROJECT_NAME}Targets.cmake
-    NAMESPACE htl::
     DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${PROJECT_NAME}/cmake
 )
 
