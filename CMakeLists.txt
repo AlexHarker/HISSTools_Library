@@ -42,7 +42,16 @@ if(BUILD_TESTS)
             ${TEST}
         )
 
-        target_link_libraries(${TEST_NAME}  ${PROJECT_NAME})
+        if (WIN32)
+            target_compile_definitions(
+                ${TEST_NAME} 
+                PRIVATE 
+                    NOMINMAX 
+                    _USE_MATH_DEFINES
+            )
+        endif()
+
+        target_link_libraries(${TEST_NAME} ${PROJECT_NAME})
 
         add_test(
             NAME ${TEST_NAME} 

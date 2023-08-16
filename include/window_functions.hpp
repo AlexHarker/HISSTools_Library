@@ -2,10 +2,6 @@
 #ifndef HISSTOOLS_WINDOW_FUNCTIONS_HPP
 #define HISSTOOLS_WINDOW_FUNCTIONS_HPP
 
-// thanks windows
-#define _USE_MATH_DEFINES
-#include <math.h>
-
 #include <algorithm>
 #include <cmath>
 #include <cstdint>

@@ -39,8 +39,6 @@ namespace os_specific
 
 // Windows OS specific definitions
 
-#define NOMINMAX
-
 #include <windows.h>
 
 namespace os_specific

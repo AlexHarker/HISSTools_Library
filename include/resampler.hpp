@@ -2,10 +2,6 @@
 #ifndef HISSTOOLS_RESAMPLER_HPP
 #define HISSTOOLS_RESAMPLER_HPP
 
-// thanks windows
-#define _USE_MATH_DEFINES
-#include <math.h>
-
 #include <algorithm>
 #include <cassert>
 #include <cmath>
