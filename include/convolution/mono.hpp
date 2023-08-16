@@ -260,8 +260,8 @@ private:
     
     // Utilities
     
-    template <typename T, typename P, typename ...Args>
-    void for_all(T time_method, P part_method, partition_pointer& part_4, Args... args)
+    template <typename U, typename V, typename ...Args>
+    void for_all(U time_method, V part_method, partition_pointer& part_4, Args... args)
     {
         if (m_time) (m_time.get()->*time_method)(args...);
         if (m_part_1) (m_part_1.get()->*part_method)(args...);
