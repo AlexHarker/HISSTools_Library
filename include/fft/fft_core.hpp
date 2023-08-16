@@ -83,21 +83,6 @@ struct fft_impl
         uintptr_t m_max_fft_log2;
         split_type<T> m_tables[28];
     };
-    
-// Aligned Allocation
-/*
- #if defined(__APPLE__) || defined (__linux__) || defined(__EMSCRIPTEN__)
- 
- template <class T>
- T* allocate_aligned(size_t size)
- {
- void* mem = nullptr;
- if (!posix_memalign(&mem, alignment_size, size * sizeof(T)))
- return static_cast<T*>(mem);
- else
- return nullptr;
- }
- */
 
     // ******************** Basic Definitions ******************** //
 
