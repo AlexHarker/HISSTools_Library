@@ -40,7 +40,7 @@ namespace impl
     template<int x, int c, int _x>
     struct ilog2_impl
     {
-        constexpr int operator()()
+        constexpr int operator()() const
         {
             return ilog2_impl<(x >> 1), c + 1, _x>()();
         };
@@ -49,7 +49,7 @@ namespace impl
     template<int c, int _x>
     struct ilog2_impl<0, c, _x>
     {
-        constexpr int operator()()
+        constexpr int operator()() const
         {
             return _x == 1 << (c - 1) ? c - 1 : c;
         };
