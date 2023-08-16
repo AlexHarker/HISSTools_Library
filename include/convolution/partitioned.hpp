@@ -170,7 +170,7 @@ public:
         uintptr_t buffer_position = m_offset;
 
         T* buffer_temp_1 = m_partition_temp.realp;
-        split_type buffer_temp_2 = m_impulse_buffer;
+        split_type<> buffer_temp_2 = m_impulse_buffer;
 
         for (; length > 0; buffer_position += fft_size_halved, num_partitions++)
         {
