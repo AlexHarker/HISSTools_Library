@@ -1011,7 +1011,7 @@ struct fft_impl
     // A Complex FFT
     
     template <class T>
-    static void hisstools_fft(split_type<T>* input, fft_setup_type<T>* setup, uintptr_t fft_log2)
+    static void fft(split_type<T>* input, fft_setup_type<T>* setup, uintptr_t fft_log2)
     {
         if (fft_log2 >= 4)
         {
@@ -1027,20 +1027,20 @@ struct fft_impl
     // A Complex iFFT
     
     template <class T>
-    static void hisstools_ifft(split_type<T>* input, fft_setup_type<T>* setup, uintptr_t fft_log2)
+    static void ifft(split_type<T>* input, fft_setup_type<T>* setup, uintptr_t fft_log2)
     {
         split_type<T> swap(input->imagp, input->realp);
-        hisstools_fft(&swap, setup, fft_log2);
+        fft(&swap, setup, fft_log2);
     }
     
     // A Real FFT
     
     template <class T>
-    static void hisstools_rfft(split_type<T>* input, fft_setup_type<T>* setup, uintptr_t fft_log2)
+    static void rfft(split_type<T>* input, fft_setup_type<T>* setup, uintptr_t fft_log2)
     {
         if (fft_log2 >= 3)
         {
-            hisstools_fft(input, setup, fft_log2 - 1);
+            fft(input, setup, fft_log2 - 1);
             pass_real_trig_table<false>(input, setup, fft_log2);
         }
         else
@@ -1050,12 +1050,12 @@ struct fft_impl
     // A Real iFFT
     
     template <class T>
-    static void hisstools_rifft(split_type<T>* input, fft_setup_type<T>* setup, uintptr_t fft_log2)
+    static void rifft(split_type<T>* input, fft_setup_type<T>* setup, uintptr_t fft_log2)
     {
         if (fft_log2 >= 3)
         {
             pass_real_trig_table<true>(input, setup, fft_log2);
-            hisstools_ifft(input, setup, fft_log2 - 1);
+            ifft(input, setup, fft_log2 - 1);
         }
         else
             small_real_fft<true>(input, fft_log2);
@@ -1091,42 +1091,42 @@ struct fft_impl
     
     // FFT and iFFT Routines
     
-    static void hisstools_fft(split_type<double>* input, setup_type<double> setup, uintptr_t log2n)
+    static void fft(split_type<double>* input, setup_type<double> setup, uintptr_t log2n)
     {
         vDSP_fft_zipD(setup, input, 1, log2n, FFT_FORWARD);
     }
     
-    static void hisstools_fft(split_type<float>* input, setup_type<float> setup, uintptr_t log2n)
+    static void fft(split_type<float>* input, setup_type<float> setup, uintptr_t log2n)
     {
         vDSP_fft_zip(setup, input, 1, log2n, FFT_FORWARD);
     }
     
-    static void hisstools_rfft(split_type<double>* input, setup_type<double> setup, uintptr_t log2n)
+    static void rfft(split_type<double>* input, setup_type<double> setup, uintptr_t log2n)
     {
         vDSP_fft_zripD(setup, input, 1, log2n, FFT_FORWARD);
     }
     
-    static void hisstools_rfft(split_type<float>* input, setup_type<float> setup, uintptr_t log2n)
+    static void rfft(split_type<float>* input, setup_type<float> setup, uintptr_t log2n)
     {
         vDSP_fft_zrip(setup, input, 1, log2n, FFT_FORWARD);
     }
     
-    static void hisstools_ifft(split_type<double>* input, setup_type<double> setup, uintptr_t log2n)
+    static void ifft(split_type<double>* input, setup_type<double> setup, uintptr_t log2n)
     {
         vDSP_fft_zipD(setup, input, 1, log2n, FFT_INVERSE);
     }
     
-    static void hisstools_ifft(split_type<float>* input, setup_type<float> setup, uintptr_t log2n)
+    static void ifft(split_type<float>* input, setup_type<float> setup, uintptr_t log2n)
     {
         vDSP_fft_zip(setup, input, 1, log2n, FFT_INVERSE);
     }
     
-    static void hisstools_rifft(split_type<double>* input, setup_type<double> setup, uintptr_t log2n)
+    static void rifft(split_type<double>* input, setup_type<double> setup, uintptr_t log2n)
     {
         vDSP_fft_zripD(setup, input, 1, log2n, FFT_INVERSE);
     }
     
-    static void hisstools_rifft(split_type<float>* input, setup_type<float> setup, uintptr_t log2n)
+    static void rifft(split_type<float>* input, setup_type<float> setup, uintptr_t log2n)
     {
         vDSP_fft_zrip(setup, input, 1, log2n, FFT_INVERSE);
     }

@@ -104,7 +104,7 @@ uint64_t timing_test(std::string test, uintptr_t fft_log2, double phase, bool ze
     split.realp = (T*) malloc(sizeof(T) * fft_size);
     split.imagp = (T*) malloc(sizeof(T) * fft_size);
     
-    hisstools_create_setup(&setup, fft_log2);
+    create_fft_setup(&setup, fft_log2);
     
     Timer timer;
     
@@ -120,7 +120,7 @@ uint64_t timing_test(std::string test, uintptr_t fft_log2, double phase, bool ze
     
     free(split.realp);
     free(split.imagp);
-    hisstools_destroy_setup(setup);
+    destroy_fft_setup(setup);
     
     return time;
 }

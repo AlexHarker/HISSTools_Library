@@ -93,7 +93,7 @@ uint64_t crash_test(int min_log2, int max_log2)
     split.realp = (T*) malloc(sizeof(T) * 1 << max_log2);
     split.imagp = (T*) malloc(sizeof(T) * 1 << max_log2);
     
-    htl::hisstools_create_setup(&setup, max_log2);
+    htl::create_fft_setup(&setup, max_log2);
 
     Timer timer;
 
@@ -101,7 +101,7 @@ uint64_t crash_test(int min_log2, int max_log2)
     {
         fillSplit(split, i);
         timer.start();
-        htl::hisstools_fft(setup, &split, i);
+        htl::fft(setup, &split, i);
         timer.stop();
     }
     
@@ -109,7 +109,7 @@ uint64_t crash_test(int min_log2, int max_log2)
     {
         fillSplit(split, i);
         timer.start();
-        htl::hisstools_ifft(setup, &split, i);
+        htl::ifft(setup, &split, i);
         timer.stop();
     }
     
@@ -117,7 +117,7 @@ uint64_t crash_test(int min_log2, int max_log2)
     {
         fillSplit(split, i);
         timer.start();
-        htl::hisstools_rfft(setup, &split, i);
+        htl::rfft(setup, &split, i);
         timer.stop();
     }
     
@@ -125,7 +125,7 @@ uint64_t crash_test(int min_log2, int max_log2)
     {
         fillSplit(split, i);
         timer.start();
-        htl::hisstools_rifft(setup, &split, i);
+        htl::rifft(setup, &split, i);
         timer.stop();
     }
     
@@ -133,7 +133,7 @@ uint64_t crash_test(int min_log2, int max_log2)
 
     free(split.realp);
     free(split.imagp);
-    htl::hisstools_destroy_setup(setup);
+    htl::destroy_fft_setup(setup);
     
     return time;
 }
@@ -147,7 +147,7 @@ uint64_t single_test(int size, void (*Fn)(htl::setup_type<T>, htl::split_type<T>
     split.realp = (T*) malloc(sizeof(T) * 1 << size);
     split.imagp = (T*) malloc(sizeof(T) * 1 << size);
 
-    htl::hisstools_create_setup(&setup, size);
+    htl::create_fft_setup(&setup, size);
     
     Timer timer;
     
@@ -164,7 +164,7 @@ uint64_t single_test(int size, void (*Fn)(htl::setup_type<T>, htl::split_type<T>
 
     free(split.realp);
     free(split.imagp);
-    htl::hisstools_destroy_setup(setup);
+    htl::destroy_fft_setup(setup);
     
     return time;
 }
@@ -177,22 +177,22 @@ uint64_t matched_size_test(int min_log2, int max_log2)
     std::cout << "---FFT---\n";
     
     for (int i = min_log2; i < max_log2; i++)
-        time += single_test<T>(i, &htl::hisstools_fft);
+        time += single_test<T>(i, &htl::fft);
     
     std::cout << "---iFFT---\n";
 
     for (int i = min_log2; i < max_log2; i++)
-        time += single_test<T>(i, &htl::hisstools_ifft);
+        time += single_test<T>(i, &htl::ifft);
     
     std::cout << "---Real FFT---\n";
 
     for (int i = min_log2; i < max_log2; i++)
-        time += single_test<T>(i, &htl::hisstools_rfft);
+        time += single_test<T>(i, &htl::rfft);
     
     std::cout << "---Real iFFT---\n";
 
     for (int i = min_log2; i < max_log2; i++)
-        time += single_test<T>(i, &htl::hisstools_rifft);
+        time += single_test<T>(i, &htl::rifft);
     
     return time;
 }
@@ -211,7 +211,7 @@ bool zip_correctness_test(int min_log2, int max_log2)
         for (int j = 0; j < (1 << i); j++)
             ptr[j] = j;
         
-        hisstools_unzip(ptr, &split, i);
+        unzip(ptr, &split, i);
         
         for (int j = 0 ; j < (1 << (i - 1)); j++)
         {
@@ -227,7 +227,7 @@ bool zip_correctness_test(int min_log2, int max_log2)
             }
         }
         
-        htl::hisstools_zip(&split, ptr, i);
+        htl::zip(&split, ptr, i);
         
         for (int j = 0 ; j < (1 << (i - 1)); j++)
         {
@@ -261,13 +261,13 @@ uint64_t zip_test(int min_log2, int max_log2)
     timer.start();
     
     for (int i = min_log2; i < max_log2; i++)
-        htl::hisstools_unzip(ptr, &split, i);
+        htl::unzip(ptr, &split, i);
     
     for (int i = min_log2; i < max_log2; i++)
-        htl::hisstools_unzip_zero(ptr, &split, 1 << i, i);
+        htl::unzip_zero(ptr, &split, 1 << i, i);
     
     for (int i = min_log2; i < max_log2; i++)
-        htl::hisstools_zip(&split, ptr, i);
+        htl::zip(&split, ptr, i);
     
     timer.stop();
     uint64_t time = timer.finish("Zip Tests");
