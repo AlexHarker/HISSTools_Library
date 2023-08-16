@@ -111,7 +111,7 @@ double convertIEEEExtended(double x)
 
 int main(int argc, const char * argv[])
 {
-    random_generator<> gen;
+    htl::random_generator<> gen;
     
     auto r = gen.rand_double();
     auto rh = gen.rand_double() * 65536.0;

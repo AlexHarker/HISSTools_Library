@@ -98,6 +98,7 @@ bool check_symmetry()
     double window1[size];
     double window2[size];
 
+    using namespace htl;
     using namespace window_functions;
 
     triangle(window1, size, 0, size, params());
@@ -117,7 +118,7 @@ bool check_symmetry()
     return true;
 }
 
-void check_window(const char* wind, window_functions::window_generator<double> f, const window_functions::params &p)
+void check_window(const char* wind, htl::window_functions::window_generator<double> f, const htl::window_functions::params &p)
 {
     constexpr int size = 32768;
     double window[size];
@@ -153,6 +154,7 @@ int main(int argc, const char * argv[])
 
     rand_engine.seed(std::random_device()());
     
+    using namespace htl;
     using namespace window_functions;
     
     params ep;

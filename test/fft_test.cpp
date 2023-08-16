@@ -75,7 +75,7 @@ private:
 };
 
 template <class T>
-void fillSplit(split_type<T> split, int max_log2)
+void fillSplit(htl::split_type<T> split, int max_log2)
 {
     for (long i = 0; i < (1 << max_log2); i++)
     {
@@ -87,13 +87,13 @@ void fillSplit(split_type<T> split, int max_log2)
 template <class T>
 uint64_t crash_test(int min_log2, int max_log2)
 {
-    setup_type<T> setup;
-    split_type<T> split;
+    htl::setup_type<T> setup;
+    htl::split_type<T> split;
     
     split.realp = (T*) malloc(sizeof(T) * 1 << max_log2);
     split.imagp = (T*) malloc(sizeof(T) * 1 << max_log2);
     
-    hisstools_create_setup(&setup, max_log2);
+    htl::hisstools_create_setup(&setup, max_log2);
 
     Timer timer;
 
@@ -101,7 +101,7 @@ uint64_t crash_test(int min_log2, int max_log2)
     {
         fillSplit(split, i);
         timer.start();
-        hisstools_fft(setup, &split, i);
+        htl::hisstools_fft(setup, &split, i);
         timer.stop();
     }
     
@@ -109,7 +109,7 @@ uint64_t crash_test(int min_log2, int max_log2)
     {
         fillSplit(split, i);
         timer.start();
-        hisstools_ifft(setup, &split, i);
+        htl::hisstools_ifft(setup, &split, i);
         timer.stop();
     }
     
@@ -117,7 +117,7 @@ uint64_t crash_test(int min_log2, int max_log2)
     {
         fillSplit(split, i);
         timer.start();
-        hisstools_rfft(setup, &split, i);
+        htl::hisstools_rfft(setup, &split, i);
         timer.stop();
     }
     
@@ -125,7 +125,7 @@ uint64_t crash_test(int min_log2, int max_log2)
     {
         fillSplit(split, i);
         timer.start();
-        hisstools_rifft(setup, &split, i);
+        htl::hisstools_rifft(setup, &split, i);
         timer.stop();
     }
     
@@ -133,21 +133,21 @@ uint64_t crash_test(int min_log2, int max_log2)
 
     free(split.realp);
     free(split.imagp);
-    hisstools_destroy_setup(setup);
+    htl::hisstools_destroy_setup(setup);
     
     return time;
 }
 
 template <class T>
-uint64_t single_test(int size, void (*Fn)(setup_type<T>, split_type<T>* , uintptr_t))
+uint64_t single_test(int size, void (*Fn)(htl::setup_type<T>, htl::split_type<T>* , uintptr_t))
 {
-    setup_type<T> setup;
-    split_type<T> split;
+    htl::setup_type<T> setup;
+    htl::split_type<T> split;
     
     split.realp = (T*) malloc(sizeof(T) * 1 << size);
     split.imagp = (T*) malloc(sizeof(T) * 1 << size);
 
-    hisstools_create_setup(&setup, size);
+    htl::hisstools_create_setup(&setup, size);
     
     Timer timer;
     
@@ -164,7 +164,7 @@ uint64_t single_test(int size, void (*Fn)(setup_type<T>, split_type<T>* , uintpt
 
     free(split.realp);
     free(split.imagp);
-    hisstools_destroy_setup(setup);
+    htl::hisstools_destroy_setup(setup);
     
     return time;
 }
@@ -177,22 +177,22 @@ uint64_t matched_size_test(int min_log2, int max_log2)
     std::cout << "---FFT---\n";
     
     for (int i = min_log2; i < max_log2; i++)
-        time += single_test<T>(i, &hisstools_fft);
+        time += single_test<T>(i, &htl::hisstools_fft);
     
     std::cout << "---iFFT---\n";
 
     for (int i = min_log2; i < max_log2; i++)
-        time += single_test<T>(i, &hisstools_ifft);
+        time += single_test<T>(i, &htl::hisstools_ifft);
     
     std::cout << "---Real FFT---\n";
 
     for (int i = min_log2; i < max_log2; i++)
-        time += single_test<T>(i, &hisstools_rfft);
+        time += single_test<T>(i, &htl::hisstools_rfft);
     
     std::cout << "---Real iFFT---\n";
 
     for (int i = min_log2; i < max_log2; i++)
-        time += single_test<T>(i, &hisstools_rifft);
+        time += single_test<T>(i, &htl::hisstools_rifft);
     
     return time;
 }
@@ -200,7 +200,7 @@ uint64_t matched_size_test(int min_log2, int max_log2)
 template <class T, class U>
 bool zip_correctness_test(int min_log2, int max_log2)
 {
-    split_type<T> split;
+    htl::split_type<T> split;
     
     U* ptr = (U*) malloc(sizeof(U) * 1 << max_log2);
     split.realp = (T*) malloc(sizeof(T) * 1 << (max_log2 - 1));
@@ -227,7 +227,7 @@ bool zip_correctness_test(int min_log2, int max_log2)
             }
         }
         
-        hisstools_zip(&split, ptr, i);
+        htl::hisstools_zip(&split, ptr, i);
         
         for (int j = 0 ; j < (1 << (i - 1)); j++)
         {
@@ -251,7 +251,7 @@ bool zip_correctness_test(int min_log2, int max_log2)
 template <class T, class U>
 uint64_t zip_test(int min_log2, int max_log2)
 {
-    split_type<T> split;
+    htl::split_type<T> split;
     
     U* ptr = (U*) malloc(sizeof(U) * 1 << max_log2);
     split.realp = (T*) malloc(sizeof(T) * 1 << (max_log2 - 1));
@@ -261,13 +261,13 @@ uint64_t zip_test(int min_log2, int max_log2)
     timer.start();
     
     for (int i = min_log2; i < max_log2; i++)
-        hisstools_unzip(ptr, &split, i);
+        htl::hisstools_unzip(ptr, &split, i);
     
     for (int i = min_log2; i < max_log2; i++)
-        hisstools_unzip_zero(ptr, &split, 1 << i, i);
+        htl::hisstools_unzip_zero(ptr, &split, 1 << i, i);
     
     for (int i = min_log2; i < max_log2; i++)
-        hisstools_zip(&split, ptr, i);
+        htl::hisstools_zip(&split, ptr, i);
     
     timer.stop();
     uint64_t time = timer.finish("Zip Tests");
