@@ -4,6 +4,8 @@ A C++ Library for DSP
 
 ## cmake system
 
+Windows programs using this library should define the `NOMINMAX` and `_USE_MATH_DEFINES` macros in their build system
+
 ```sh
 mkdir build && cd build
 # build library
