@@ -282,7 +282,7 @@ namespace impl
         
         // Do Real iFFT
         
-        hisstools_rifft(setup, out, fft_size_log2);
+        rifft(setup, out, fft_size_log2);
         
         // Double Causal Values / Zero Non-Casual Values / Scale All Remaining
         
@@ -311,7 +311,7 @@ namespace impl
         
         // Forward Real FFT (here there is a scaling issue to consider that is compensated above)
         
-        hisstools_rfft(setup, out, fft_size_log2);
+        rfft(setup, out, fft_size_log2);
     }
 }
 

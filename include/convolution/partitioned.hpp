@@ -79,12 +79,12 @@ public:
         m_partition_temp.realp = m_accum_buffer.imagp + (max_fft_size >> 1);
         m_partition_temp.imagp = m_partition_temp.realp + (max_fft_size >> 1);
         
-        hisstools_create_setup(&m_fft_setup, m_max_fft_size_log2);
+        create_fft_setup(&m_fft_setup, m_max_fft_size_log2);
     }
     
     ~convolve_partitioned()
     {
-        hisstools_destroy_setup(m_fft_setup);
+        destroy_fft_setup(m_fft_setup);
                 
         deallocate_aligned(m_impulse_buffer.realp);
         deallocate_aligned(m_fft_buffers[0]);
@@ -186,7 +186,7 @@ public:
             
             // Do fft straight into position
             
-            hisstools_rfft(m_fft_setup, buffer_temp_1, &buffer_temp_2, fft_size, m_fft_size_log2);
+            rfft(m_fft_setup, buffer_temp_1, &buffer_temp_2, fft_size, m_fft_size_log2);
             offset_split_pointer(buffer_temp_2, buffer_temp_2, fft_size_halved);
         }
         
@@ -325,9 +325,9 @@ public:
                 T* fft_input = m_fft_buffers[(rw_counter == fft_size) ? 1 : 0];
                 
                 offset_split_pointer(in_temp, m_input_buffer, (m_input_position * fft_size_halved));
-                hisstools_rfft(m_fft_setup, fft_input, &in_temp, fft_size, m_fft_size_log2);
+                rfft(m_fft_setup, fft_input, &in_temp, fft_size, m_fft_size_log2);
                 process_partition(in_temp, m_impulse_buffer, m_accum_buffer, fft_size_halved);
-                hisstools_rifft(m_fft_setup, &m_accum_buffer, m_fft_buffers[2], m_fft_size_log2);
+                rifft(m_fft_setup, &m_accum_buffer, m_fft_buffers[2], m_fft_size_log2);
                 scale_store<vector_type>(m_fft_buffers[3], m_fft_buffers[2], fft_size, (rw_counter != fft_size));
                 
                 // Clear accumulation buffer
