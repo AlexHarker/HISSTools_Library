@@ -15,7 +15,7 @@ HISSTOOLS_NAMESPACE_START()
 
 // Linux specific definitions
 
-namespace os_specific
+namespace impl
 {
     inline void thread_nano_sleep()
     {
@@ -27,7 +27,7 @@ namespace os_specific
 
 // OSX specific definitions
 
-namespace os_specific
+namespace impl
 {
     inline void thread_nano_sleep()
     {
@@ -41,7 +41,7 @@ namespace os_specific
 
 #include <windows.h>
 
-namespace os_specific
+namespace impl
 {
     inline void thread_nano_sleep()
     {
@@ -79,7 +79,7 @@ public:
                 return;
         
         while (!attempt())
-            os_specific::thread_nano_sleep();
+            impl::thread_nano_sleep();
     }
     
     bool attempt() { return !m_atomic_lock.test_and_set(); }
