@@ -24,7 +24,8 @@ HISSTOOLS_NAMESPACE_START()
 // N.B. cmwc_lag_size must be a power of two
 // N.B. cmwc_a_value should be a suitable value according to cmwc_lag_size
 
-namespace impl {
+namespace impl
+{
     class cmwc_generator
     {
         static constexpr uint32_t cmwc_lag_size = 32;
