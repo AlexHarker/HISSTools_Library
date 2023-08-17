@@ -132,7 +132,7 @@ T* allocate_aligned(size_t size)
     void* mem = nullptr;
     
     if (posix_memalign(&mem, simd_limits<T>::byte_width, size * sizeof(T)))
-    	return nullptr;
+        return nullptr;
 
     return static_cast<T*>(mem);
 }
