@@ -9,19 +9,19 @@
 
 using namespace htl_test_utils;
 
-bool compareNans(double x, double y)
+bool compare_nans(double x, double y)
 {
     return std::isnan(x) && std::isnan(y);
 }
 
-double convertIEEEExtended(double x)
+double convert_extended_double(double x)
 {
     char bytes[10];
     
     htl::extended_double_convertor()(reinterpret_cast<unsigned char*>(bytes), x);
     auto y = htl::extended_double_convertor()(bytes);
     
-    if (x != y && !(compareNans(x, y)))
+    if (x != y && !(compare_nans(x, y)))
         throw;
         
     return y;
@@ -40,31 +40,31 @@ int main(int argc, const char * argv[])
     tabbed_out("random", to_string_with_precision(r));
     tabbed_out("random_hi", to_string_with_precision(rh));
 
-    tabbed_out("+0", to_string_with_precision(convertIEEEExtended(0.0)));
-    tabbed_out("-0",  to_string_with_precision(convertIEEEExtended(-0.0)));
+    tabbed_out("+0", to_string_with_precision(convert_extended_double(0.0)));
+    tabbed_out("-0",  to_string_with_precision(convert_extended_double(-0.0)));
 
-    tabbed_out("+2",  to_string_with_precision(convertIEEEExtended(2)));
-    tabbed_out("+0.5",  to_string_with_precision(convertIEEEExtended(0.5)));
-    tabbed_out("-0.5",  to_string_with_precision(convertIEEEExtended(-0.5)));
-    tabbed_out("+1.5",  to_string_with_precision(convertIEEEExtended(1.5)));
-    tabbed_out("-1.5",  to_string_with_precision(convertIEEEExtended(-1.5)));
-    tabbed_out("+2",  to_string_with_precision(convertIEEEExtended(2)));
-    tabbed_out("-2",  to_string_with_precision(convertIEEEExtended(-2)));
-    tabbed_out("+3.5",  to_string_with_precision(convertIEEEExtended(3.5)));
-    tabbed_out("-3.5",  to_string_with_precision(convertIEEEExtended(-3.5)));
-    tabbed_out("+16384",  to_string_with_precision(convertIEEEExtended(16384)));
-    tabbed_out("-16384",  to_string_with_precision(convertIEEEExtended(-16384)));
-    tabbed_out("+random",  to_string_with_precision(convertIEEEExtended(r)));
-    tabbed_out("-random",  to_string_with_precision(convertIEEEExtended(-r)));
-    tabbed_out("+random",  to_string_with_precision(convertIEEEExtended(rh)));
-    tabbed_out("-random",  to_string_with_precision(convertIEEEExtended(-rh)));
-    tabbed_out("+inf",  to_string_with_precision(convertIEEEExtended(inf)));
-    tabbed_out("-inf",  to_string_with_precision(convertIEEEExtended(-inf)));
-    tabbed_out("nan (signalling)",  to_string_with_precision(convertIEEEExtended(nanS)));
-    tabbed_out("nan (quiet)",  to_string_with_precision(convertIEEEExtended(nanN)));
+    tabbed_out("+2",  to_string_with_precision(convert_extended_double(2)));
+    tabbed_out("+0.5",  to_string_with_precision(convert_extended_double(0.5)));
+    tabbed_out("-0.5",  to_string_with_precision(convert_extended_double(-0.5)));
+    tabbed_out("+1.5",  to_string_with_precision(convert_extended_double(1.5)));
+    tabbed_out("-1.5",  to_string_with_precision(convert_extended_double(-1.5)));
+    tabbed_out("+2",  to_string_with_precision(convert_extended_double(2)));
+    tabbed_out("-2",  to_string_with_precision(convert_extended_double(-2)));
+    tabbed_out("+3.5",  to_string_with_precision(convert_extended_double(3.5)));
+    tabbed_out("-3.5",  to_string_with_precision(convert_extended_double(-3.5)));
+    tabbed_out("+16384",  to_string_with_precision(convert_extended_double(16384)));
+    tabbed_out("-16384",  to_string_with_precision(convert_extended_double(-16384)));
+    tabbed_out("+random",  to_string_with_precision(convert_extended_double(r)));
+    tabbed_out("-random",  to_string_with_precision(convert_extended_double(-r)));
+    tabbed_out("+random",  to_string_with_precision(convert_extended_double(rh)));
+    tabbed_out("-random",  to_string_with_precision(convert_extended_double(-rh)));
+    tabbed_out("+inf",  to_string_with_precision(convert_extended_double(inf)));
+    tabbed_out("-inf",  to_string_with_precision(convert_extended_double(-inf)));
+    tabbed_out("nan (signalling)",  to_string_with_precision(convert_extended_double(nanS)));
+    tabbed_out("nan (quiet)",  to_string_with_precision(convert_extended_double(nanN)));
     
     for (size_t i = 0; i < 5000000; i++)
-        convertIEEEExtended(gen.rand_double(-65536.0, 65536.0));
+        convert_extended_double(gen.rand_double(-65536.0, 65536.0));
     
     return 0;
 }

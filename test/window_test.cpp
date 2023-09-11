@@ -24,8 +24,8 @@ bool check_symmetry()
     int begin = random_integer(0, size / 2 + 2);
     int end = random_integer(size / 2 - 2, size);
     
-    double* window1 = new double[size];
-    double* window2 = new double[size];
+    double* window1 = (double*) malloc(sizeof(double) * size);
+    double* window2 = (double*) malloc(sizeof(double) * size);
 
     using namespace htl;
     using namespace window_functions;
@@ -49,13 +49,15 @@ bool check_symmetry()
         }
     }
 
-    delete[] window1;
-    delete[] window2;
+    free(window1);
+    free(window2);
     
     return true;
 }
 
-void check_window(const char* wind, htl::window_functions::window_generator<double> f, const htl::window_functions::params &p)
+void check_window(const char* wind, 
+                  htl::window_functions::window_generator<double> f, 
+                  const htl::window_functions::params &p)
 {
     constexpr int size = 32768;
     double window[size];

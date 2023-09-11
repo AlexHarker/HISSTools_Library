@@ -7,7 +7,7 @@
 using namespace htl_test_utils;
 
 template <class T>
-void fillSplit(htl::split_type<T> split, int max_log2) {
+void fill_split(htl::split_type<T> split, int max_log2) {
   for (long i = 0; i < (1 << max_log2); i++) {
     split.realp[i] = 1.0 - 2.0 * std::rand() / RAND_MAX;
     split.imagp[i] = 1.0 - 2.0 * std::rand() / RAND_MAX;
@@ -19,36 +19,36 @@ uint64_t crash_test(int min_log2, int max_log2) {
   htl::setup_type<T> setup;
   htl::split_type<T> split;
 
-  split.realp = (T*)malloc(sizeof(T) * 1 << max_log2);
-  split.imagp = (T*)malloc(sizeof(T) * 1 << max_log2);
+  split.realp = (T*) malloc(sizeof(T) * 1 << max_log2);
+  split.imagp = (T*) malloc(sizeof(T) * 1 << max_log2);
 
   htl::create_fft_setup(&setup, max_log2);
 
   steady_timer timer;
 
   for (int i = min_log2; i < max_log2; i++) {
-    fillSplit(split, i);
+    fill_split(split, i);
     timer.start();
     htl::fft(setup, &split, i);
     timer.stop();
   }
 
   for (int i = min_log2; i < max_log2; i++) {
-    fillSplit(split, i);
+    fill_split(split, i);
     timer.start();
     htl::ifft(setup, &split, i);
     timer.stop();
   }
 
   for (int i = min_log2; i < max_log2; i++) {
-    fillSplit(split, i);
+    fill_split(split, i);
     timer.start();
     htl::rfft(setup, &split, i);
     timer.stop();
   }
 
   for (int i = min_log2; i < max_log2; i++) {
-    fillSplit(split, i);
+    fill_split(split, i);
     timer.start();
     htl::rifft(setup, &split, i);
     timer.stop();
@@ -58,29 +58,30 @@ uint64_t crash_test(int min_log2, int max_log2) {
 
   free(split.realp);
   free(split.imagp);
+
   htl::destroy_fft_setup(setup);
 
   return time;
 }
 
 template <class T>
-uint64_t single_test(int size, void (*Fn)(htl::setup_type<T>,
+uint64_t single_test(int size, void (*fn)(htl::setup_type<T>,
                                           htl::split_type<T>*, uintptr_t)) {
   htl::setup_type<T> setup;
   htl::split_type<T> split;
 
-  split.realp = (T*)malloc(sizeof(T) * 1 << size);
-  split.imagp = (T*)malloc(sizeof(T) * 1 << size);
+  split.realp = (T*) malloc(sizeof(T) * 1 << size);
+  split.imagp = (T*) malloc(sizeof(T) * 1 << size);
 
   htl::create_fft_setup(&setup, size);
 
   steady_timer timer;
 
   for (int i = 0; i < 10000; i++) {
-    fillSplit(split, size);
+    fill_split(split, size);
 
     timer.start();
-    Fn(setup, &split, size);
+    fn(setup, &split, size);
     timer.stop();
   }
 
@@ -124,9 +125,9 @@ template <class T, class U>
 bool zip_correctness_test(int min_log2, int max_log2) {
   htl::split_type<T> split;
 
-  U* ptr = (U*)malloc(sizeof(U) * 1 << max_log2);
-  split.realp = (T*)malloc(sizeof(T) * 1 << (max_log2 - 1));
-  split.imagp = (T*)malloc(sizeof(T) * 1 << (max_log2 - 1));
+  U* ptr = (U*) malloc(sizeof(U) * 1 << max_log2);
+  split.realp = (T*) malloc(sizeof(T) * 1 << (max_log2 - 1));
+  split.imagp = (T*) malloc(sizeof(T) * 1 << (max_log2 - 1));
 
   for (int i = min_log2; i < max_log2; i++) {
     for (int j = 0; j < (1 << i); j++) ptr[j] = j;
@@ -167,9 +168,9 @@ template <class T, class U>
 uint64_t zip_test(int min_log2, int max_log2) {
   htl::split_type<T> split;
 
-  U* ptr = (U*)malloc(sizeof(U) * 1 << max_log2);
-  split.realp = (T*)malloc(sizeof(T) * 1 << (max_log2 - 1));
-  split.imagp = (T*)malloc(sizeof(T) * 1 << (max_log2 - 1));
+  U* ptr = (U*) malloc(sizeof(U) * 1 << max_log2);
+  split.realp = (T*) malloc(sizeof(T) * 1 << (max_log2 - 1));
+  split.imagp = (T*) malloc(sizeof(T) * 1 << (max_log2 - 1));
 
   steady_timer timer;
   timer.start();
