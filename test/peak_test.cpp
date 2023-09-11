@@ -1,18 +1,11 @@
-//
-//  main.cpp
-//  Peak_Tester
-//
-//  Created by Alex Harker on 19/06/2021.
-//  Copyright © 2021 AHarker. All rights reserved.
-//
 
 #include <iostream>
 
 #include "../include/partial_tracker.hpp"
 
-using Tracker = htl::partial_tracker<double>;
+using tracker_type = htl::partial_tracker<double>;
 
-void post_tracks(Tracker& tracker, int N)
+void post_tracks(tracker_type& tracker, int N)
 {
     for (int i = 0; i < N; i++)
     {
@@ -28,7 +21,7 @@ void post_tracks(Tracker& tracker, int N)
         
 int main(int argc, const char * argv[])
 {
-    Tracker tracker(12, 12);
+    tracker_type tracker(12, 12);
     htl::peak<double> peaks[10];
     
     for (int i = 0; i < 10; i++)
