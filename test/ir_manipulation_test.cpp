@@ -1,87 +1,10 @@
 
-#include <mach/mach.h>
-#include <mach/mach_time.h>
-#include <sstream>
-#include <iostream>
-#include <iomanip>
+#include "test_utils/timer.hpp"
+#include "test_utils/tabbed_out.hpp"
 
 #include "../include/spectral_functions.hpp"
 
-// Output
-
-void tabbedOut(const std::string& name, const std::string& text, int tab = 25)
-{
-    std::cout << std::setw(tab) << std::setfill(' ');
-    std::cout.setf(std::ios::left);
-    std::cout.unsetf(std::ios::right);
-    std::cout << name;
-    std::cout.unsetf(std::ios::left);
-    std::cout << text << "\n";
-}
-
-template <typename T>
-std::string to_string_with_precision(const T a_value, const int n = 4, bool fixed = true)
-{
-    std::ostringstream out;
-    if (fixed)
-        out << std::setprecision(n) << std::fixed << a_value;
-    else
-        out << std::setprecision(n) << a_value;
-    
-    return out.str();
-}
-
-// Timing
-
-class Timer
-{
-    
-public:
-    
-    Timer() : mStart(0), mStore1(0), mStore2(0) {}
-    
-    void start()
-    {
-        mStart = mach_absolute_time();
-    };
-    
-    void stop()
-    {
-        uint64_t end = mach_absolute_time();
-        
-        mach_timebase_info_data_t info;
-        mach_timebase_info(&info);
-        
-        uint64_t elapsed = ((end - mStart) * info.numer) / info.denom;
-        
-        mStore2 = mStore1;
-        mStore1 += elapsed;
-    }
-    
-    uint64_t finish(const std::string& msg)
-    {
-        tabbedOut(msg + " Elapsed ", to_string_with_precision(mStore1 / 1000000.0, 2), 35);
-        
-        uint64_t elapsed = mStore1;
-        
-        mStore2 = 0;
-        mStore1 = 0;
-        
-        return elapsed;
-    };
-    
-    void relative(const std::string& msg)
-    {
-        tabbedOut(msg + " Comparison ", to_string_with_precision(((double) mStore1 / (double) mStore2), 2), 35);
-    }
-    
-private:
-    
-    uint64_t        mStart;
-    uint64_t        mStore1;
-    uint64_t        mStore2;
-};
-
+using namespace htl_test_utils;
 
 template <class SPLIT>
 void fillSplit(SPLIT split, uintptr_t fft_log2)
@@ -106,7 +29,7 @@ uint64_t timing_test(std::string test, uintptr_t fft_log2, double phase, bool ze
     
     create_fft_setup(&setup, fft_log2);
     
-    Timer timer;
+    steady_timer timer;
     
     for (int i = 0; i < testSize; i++)
     {
