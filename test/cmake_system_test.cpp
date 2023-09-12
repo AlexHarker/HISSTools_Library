@@ -38,8 +38,7 @@
 #include "../include/convolution/time_domain.hpp"
 #include "../include/convolution/utilities.hpp"
 
-
-int main(int argc, const char * argv[])
+int main(int argc, const char *argv[])
 {
     std::cout << "testing ctest" << std::endl;
 

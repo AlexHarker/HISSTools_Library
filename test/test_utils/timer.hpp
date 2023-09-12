@@ -8,59 +8,55 @@
 
 #include "tabbed_out.hpp"
 
-namespace htl_test_utils {
-
-class steady_timer
+namespace htl_test_utils
 {
-    using clock = std::chrono::steady_clock;
-
-    double ms(clock::duration duration) 
+    class steady_timer
     {
-        using namespace std::chrono;
-        return duration_cast<microseconds>(duration).count() / 1000.0;
-    }
+        using clock = std::chrono::steady_clock;
 
-public:
-    steady_timer() : 
-        m_start {clock::duration::zero()}, 
-        m_store1{clock::duration::zero()}, 
-        m_store2{clock::duration::zero()} 
-    {};
+        double ms(clock::duration duration)
+        {
+            using namespace std::chrono;
+            return duration_cast<microseconds>(duration).count() / 1000.0;
+        }
 
-    void start() { m_start = clock::now(); };
+    public:
+        steady_timer() : m_start{clock::duration::zero()},
+                         m_store1{clock::duration::zero()},
+                         m_store2{clock::duration::zero()} {};
 
-    void stop() 
-    {
-        auto elapsed = clock::now() - m_start;
+        void start() { m_start = clock::now(); };
 
-        m_store2 = m_store1;
-        m_store1 += elapsed;
-    }
+        void stop()
+        {
+            auto elapsed = clock::now() - m_start;
 
-    uint64_t finish(const std::string& msg) 
-    {
-        tabbed_out(msg + " Elapsed ", to_string_with_precision(ms(m_store1), 2), 35);
+            m_store2 = m_store1;
+            m_store1 += elapsed;
+        }
 
-        auto elapsed = m_store1;
+        uint64_t finish(const std::string &msg)
+        {
+            tabbed_out(msg + " Elapsed ", to_string_with_precision(ms(m_store1), 2), 35);
 
-        m_store2 = clock::duration::zero();
-        m_store1 = clock::duration::zero();
+            auto elapsed = m_store1;
 
-        return ms(elapsed);
+            m_store2 = clock::duration::zero();
+            m_store1 = clock::duration::zero();
+
+            return ms(elapsed);
+        };
+
+        void relative(const std::string &msg)
+        {
+            tabbed_out(msg + " Comparison ",
+                       to_string_with_precision(ms(m_store1) / ms(m_store2), 2), 35);
+        }
+
+    private:
+        clock::time_point m_start;
+        clock::duration m_store1, m_store2;
     };
-
-    void relative(const std::string& msg) 
-    {
-        tabbed_out(msg + " Comparison ",
-                to_string_with_precision(ms(m_store1) / ms(m_store2), 2), 35);
-    }
-
-private:
-    
-    clock::time_point m_start;
-    clock::duration m_store1, m_store2;
-};
-
 } // namespace htl_test_utils
 
 #endif
