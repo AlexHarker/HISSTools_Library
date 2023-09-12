@@ -17,7 +17,7 @@
 #include "../include/statistics.hpp"
 #include "../include/table_reader.hpp"
 #include "../include/thread_locks.hpp"
-#include "../include/window_functions.hpp"
+#include "../include/window.hpp"
 
 #include "../include/audio_file/aifc_compression.hpp"
 #include "../include/audio_file/base.hpp"

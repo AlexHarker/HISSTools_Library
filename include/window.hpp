@@ -1,6 +1,6 @@
 
-#ifndef HISSTOOLS_WINDOW_FUNCTIONS_HPP
-#define HISSTOOLS_WINDOW_FUNCTIONS_HPP
+#ifndef HISSTOOLS_WINDOW_HPP
+#define HISSTOOLS_WINDOW_HPP
 
 #include <algorithm>
 #include <cmath>
@@ -668,4 +668,4 @@ private:
 
 HISSTOOLS_NAMESPACE_END()
 
-#endif /* HISSTOOLS_WINDOW_FUNCTIONS_HPP */
+#endif /* HISSTOOLS_WINDOW_HPP */

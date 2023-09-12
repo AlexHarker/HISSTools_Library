@@ -6,7 +6,7 @@
 #include "test_utils/timer.hpp"
 #include "test_utils/tabbed_out.hpp"
 
-#include "../include/window_functions.hpp"
+#include "../include/window.hpp"
 #include "../include/audio_file/out_file.hpp"
 
 using namespace htl_test_utils;
