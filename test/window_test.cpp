@@ -24,14 +24,13 @@ bool check_symmetry()
     int begin = random_integer(0, size / 2 + 2);
     int end = random_integer(size / 2 - 2, size);
 
-    double *window1 = (double *)malloc(sizeof(double) * size);
-    double *window2 = (double *)malloc(sizeof(double) * size);
+    std::vector<double> window1(size), window2(size);
 
     using namespace htl;
     using namespace window_functions;
 
-    triangle(window1, size, 0, size, params());
-    triangle(window2, size, begin, end, params());
+    triangle(window1.data(), window1.size(), 0, window1.size(), params());
+    triangle(window2.data(), window2.size(), begin, end, params());
 
     for (int i = begin; i < end; i++)
     {
@@ -40,17 +39,9 @@ bool check_symmetry()
             double relative_error = exp(fabs(log(window1[i] / window2[i - begin])));
 
             if (relative_error > 1.000000000001 || isnan(relative_error))
-            {
-                delete[] window1;
-                delete[] window2;
-
                 return false;
-            }
         }
     }
-
-    free(window1);
-    free(window2);
 
     return true;
 }
