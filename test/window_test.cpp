@@ -27,10 +27,9 @@ bool check_symmetry()
     std::vector<double> window1(size), window2(size);
 
     using namespace htl;
-    using namespace window_functions;
 
-    triangle(window1.data(), window1.size(), 0, window1.size(), params());
-    triangle(window2.data(), window2.size(), begin, end, params());
+    window::triangle(window1.data(), window1.size(), 0, window1.size(), window::params());
+    window::triangle(window2.data(), window2.size(), begin, end, window::params());
 
     for (int i = begin; i < end; i++)
     {
@@ -47,8 +46,8 @@ bool check_symmetry()
 }
 
 void check_window(const char *wind,
-                  htl::window_functions::window_generator<double> f,
-                  const htl::window_functions::params &p)
+                  htl::window::window_generator<double> f,
+                  const htl::window::params &p)
 {
     constexpr int size = 32768;
     double window[size];
@@ -85,35 +84,34 @@ int main(int argc, const char *argv[])
     rand_engine.seed(std::random_device()());
 
     using namespace htl;
-    using namespace window_functions;
 
-    params ep;
-    params tp(0.1, 0.9);
-    params typ(0.1);
-    params p(0.5, 0.5);
+    window::params ep;
+    window::params tp(0.1, 0.9);
+    window::params typ(0.1);
+    window::params p(0.5, 0.5);
 
-    check_window("parzen", &parzen<double>, ep);
-    check_window("welch", &welch<double>, ep);
-    check_window("sine", &sine<double>, ep);
-    check_window("hann", &hann<double>, ep);
-    check_window("triangle", &triangle<double>, ep);
-    check_window("trapezoid", &trapezoid<double>, tp);
-    check_window("tukey", &tukey<double>, typ);
+    check_window("parzen", &window::parzen<double>, ep);
+    check_window("welch", &window::welch<double>, ep);
+    check_window("sine", &window::sine<double>, ep);
+    check_window("hann", &window::hann<double>, ep);
+    check_window("triangle", &window::triangle<double>, ep);
+    check_window("trapezoid", &window::trapezoid<double>, tp);
+    check_window("tukey", &window::tukey<double>, typ);
 
     for (int i = 0; i < iter; i++)
-        sine(window, size, 0, size, params());
+        window::sine(window, size, 0, size, window::params());
 
     steady_timer timer;
 
     timer.start();
     for (int i = 0; i < iter; i++)
-        cosine_2_term(window, size, 0, size, p);
+        window::cosine_2_term(window, size, 0, size, p);
     timer.stop();
     timer.finish("Branch Speed Test");
 
     timer.start();
     for (int i = 0; i < iter; i++)
-        hann(window, size, 0, size, params(0.2, 0.3));
+        window::hann(window, size, 0, size, window::params(0.2, 0.3));
     timer.stop();
     timer.finish("Non-branch Speed Test");
 
@@ -131,9 +129,8 @@ int main(int argc, const char *argv[])
             std::cout << "Symmetry copying succeeded!\n";
     }
 
-    indexed_generator<double, sine_taper<double>, hann<double>> gen;
-
-    gen(0, window, size, 0, size, params(4));
+    window::indexed_generator<double, window::sine_taper<double>, window::hann<double>> gen;
+    gen(0, window, size, 0, size, window::params(4));
 
     if (argc > 1)
     {
