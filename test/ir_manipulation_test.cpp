@@ -1,92 +1,15 @@
 
-#include <mach/mach.h>
-#include <mach/mach_time.h>
-#include <sstream>
-#include <iostream>
-#include <iomanip>
+#include "test_utils/timer.hpp"
+#include "test_utils/tabbed_out.hpp"
 
 #include "../include/spectral_functions.hpp"
 
-// Output
-
-void tabbedOut(const std::string& name, const std::string& text, int tab = 25)
-{
-    std::cout << std::setw(tab) << std::setfill(' ');
-    std::cout.setf(std::ios::left);
-    std::cout.unsetf(std::ios::right);
-    std::cout << name;
-    std::cout.unsetf(std::ios::left);
-    std::cout << text << "\n";
-}
-
-template <typename T>
-std::string to_string_with_precision(const T a_value, const int n = 4, bool fixed = true)
-{
-    std::ostringstream out;
-    if (fixed)
-        out << std::setprecision(n) << std::fixed << a_value;
-    else
-        out << std::setprecision(n) << a_value;
-    
-    return out.str();
-}
-
-// Timing
-
-class Timer
-{
-    
-public:
-    
-    Timer() : mStart(0), mStore1(0), mStore2(0) {}
-    
-    void start()
-    {
-        mStart = mach_absolute_time();
-    };
-    
-    void stop()
-    {
-        uint64_t end = mach_absolute_time();
-        
-        mach_timebase_info_data_t info;
-        mach_timebase_info(&info);
-        
-        uint64_t elapsed = ((end - mStart) * info.numer) / info.denom;
-        
-        mStore2 = mStore1;
-        mStore1 += elapsed;
-    }
-    
-    uint64_t finish(const std::string& msg)
-    {
-        tabbedOut(msg + " Elapsed ", to_string_with_precision(mStore1 / 1000000.0, 2), 35);
-        
-        uint64_t elapsed = mStore1;
-        
-        mStore2 = 0;
-        mStore1 = 0;
-        
-        return elapsed;
-    };
-    
-    void relative(const std::string& msg)
-    {
-        tabbedOut(msg + " Comparison ", to_string_with_precision(((double) mStore1 / (double) mStore2), 2), 35);
-    }
-    
-private:
-    
-    uint64_t        mStart;
-    uint64_t        mStore1;
-    uint64_t        mStore2;
-};
-
+using namespace htl_test_utils;
 
 template <class SPLIT>
 void fillSplit(SPLIT split, uintptr_t fft_log2)
 {
-    for (uintptr_t i =0; i < (1 << fft_log2); i++)
+    for (uintptr_t i = 0; i < (1 << fft_log2); i++)
     {
         split.realp[i] = 1.0 - 2.0 * std::rand() / RAND_MAX;
         split.imagp[i] = 1.0 - 2.0 * std::rand() / RAND_MAX;
@@ -98,16 +21,16 @@ uint64_t timing_test(std::string test, uintptr_t fft_log2, double phase, bool ze
 {
     htl::setup_type<T> setup;
     htl::split_type<T> split;
-    
+
     uintptr_t fft_size = 1 << fft_log2;
-    
-    split.realp = (T*) malloc(sizeof(T) * fft_size);
-    split.imagp = (T*) malloc(sizeof(T) * fft_size);
-    
+
+    split.realp = (T *)malloc(sizeof(T) * fft_size);
+    split.imagp = (T *)malloc(sizeof(T) * fft_size);
+
     create_fft_setup(&setup, fft_log2);
-    
-    Timer timer;
-    
+
+    steady_timer timer;
+
     for (int i = 0; i < testSize; i++)
     {
         fillSplit(split, fft_log2);
@@ -115,24 +38,24 @@ uint64_t timing_test(std::string test, uintptr_t fft_log2, double phase, bool ze
         ir_phase(setup, &split, &split, fft_size, phase, zero);
         timer.stop();
     }
-    
+
     uint64_t time = timer.finish(test);
-    
+
     free(split.realp);
     free(split.imagp);
     destroy_fft_setup(setup);
-    
+
     return time;
 }
 
-int main(int argc, const char * argv[])
+int main(int argc, const char *argv[])
 {
     // insert code here...
     std::cout << "Double vector size is " << htl::simd_limits<double>::max_size << "\n";
-    
+
     int fft_log2 = 14;
     int iter = 100;
-    
+
     timing_test<double>("Zero Mix", fft_log2, 0.1, true, iter);
     timing_test<double>("Center Mix", fft_log2, 0.9, false, iter);
     timing_test<double>("Zero Min", fft_log2, 0.0, true, iter);
@@ -141,9 +64,9 @@ int main(int argc, const char * argv[])
     timing_test<double>("Center Max", fft_log2, 1.0, false, iter);
     timing_test<double>("Zero Lin", fft_log2, 0.5, true, iter);
     timing_test<double>("Center Lin", fft_log2, 0.5, false, iter);
-    
+
     std::cout << "Float vector size is " << htl::simd_limits<float>::max_size << "\n";
-    
+
     timing_test<float>("Zero Mix", fft_log2, 0.1, true, iter);
     timing_test<float>("Center Mix", fft_log2, 0.9, false, iter);
     timing_test<float>("Zero Min", fft_log2, 0.0, true, iter);

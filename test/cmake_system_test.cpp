@@ -1,4 +1,6 @@
-#include <iostream>
+
+#include "test_utils/timer.hpp"
+#include "test_utils/tabbed_out.hpp"
 
 #include "../include/allocator.hpp"
 #include "../include/interpolation.hpp"
@@ -15,7 +17,7 @@
 #include "../include/statistics.hpp"
 #include "../include/table_reader.hpp"
 #include "../include/thread_locks.hpp"
-#include "../include/window_functions.hpp"
+#include "../include/window.hpp"
 
 #include "../include/audio_file/aifc_compression.hpp"
 #include "../include/audio_file/base.hpp"
@@ -36,8 +38,7 @@
 #include "../include/convolution/time_domain.hpp"
 #include "../include/convolution/utilities.hpp"
 
-
-int main(int argc, const char * argv[])
+int main(int argc, const char *argv[])
 {
     std::cout << "testing ctest" << std::endl;
 
