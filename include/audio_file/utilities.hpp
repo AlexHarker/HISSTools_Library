@@ -12,7 +12,10 @@ HISSTOOLS_NAMESPACE_START()
 template <int N, int M, audio_file_format::endianness E>
 static constexpr int byte_shift()
 {
-    return E == audio_file_format::endianness::big ? (N - (M + 1)) * 8 : M * 8;
+    if (E == audio_file_format::endianness::big)
+        return (N - (M + 1)) * 8;
+    else
+        return M * 8;
 }
 
 // Byte Getter
