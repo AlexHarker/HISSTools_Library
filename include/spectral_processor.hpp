@@ -163,7 +163,7 @@ public:
     
     void convolve(T* r_out, T* i_out, in_ptr r_in1, in_ptr i_in1, in_ptr r_in2, in_ptr i_in2, edge_mode mode)
     {
-        binary_op<ir_convolve_complex, arrange_convolve<split_type>>(r_out, i_out, r_in1, i_in1, r_in2, i_in2, mode);
+        binary_op<ir_convolve_complex, arrange_convolve<split_type<T>>>(r_out, i_out, r_in1, i_in1, r_in2, i_in2, mode);
     }
     
     void convolve(T* output, in_ptr in1, in_ptr in2, edge_mode mode)
@@ -175,7 +175,7 @@ public:
     
     void correlate(T* r_out, T* i_out, in_ptr r_in1, in_ptr i_in1, in_ptr r_in2, in_ptr i_in2, edge_mode mode)
     {
-        binary_op<ir_correlate_complex, arrange_correlate<split_type>>(r_out, i_out, r_in1, i_in1, r_in2, i_in2, mode);
+        binary_op<ir_correlate_complex, arrange_correlate<split_type<T>>>(r_out, i_out, r_in1, i_in1, r_in2, i_in2, mode);
     }
     
     void correlate(T* output, in_ptr in1, in_ptr in2, edge_mode mode)
