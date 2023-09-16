@@ -521,7 +521,7 @@ private:
         // Calculate sizes
         
         const uint16_t num_channels = (channel < 0) ? channels() : 1;
-        const uintptr_t byte_step = byte_depth() * ((channel < 0) ? 1 : num_channels);
+        const uintptr_t byte_step = byte_depth() * ((channel < 0) ? 1 : channels());
         const uintptr_t j = std::max(channel, 0) * byte_depth();
         
         while (num_frames)

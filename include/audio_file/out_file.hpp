@@ -450,7 +450,7 @@ private:
         bool success = true;
         
         const uint16_t num_channels = (channel < 0) ? channels() : 1;
-        const uintptr_t byte_step = byte_depth() * ((channel < 0) ? 1 : num_channels);
+        const uintptr_t byte_step = byte_depth() * ((channel < 0) ? 1 : channels());
         const uintptr_t end_frame = position() + num_frames;
         const uintptr_t j = channel * byte_depth();
         
