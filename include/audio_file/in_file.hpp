@@ -381,12 +381,14 @@ private:
                     
                 case aiff_tag::audio:
                 {
+                    uintptr_t offset = position_internal() + 8;
+                    
                     if (!read_chunk(chunk, 4, chunk_size))
                         return error_type::fmt_bad;
                     
-                    // Audio data starts after a 32-bit block size value (ignored) plus an offset readh here
+                    // Audio data starts after a 32-bit block size value (ignored) plus an offset read here
                     
-                    m_pcm_offset = position_internal() + 4 + get_u32(chunk, header_endianness());
+                    m_pcm_offset = offset + get_u32(chunk, header_endianness());
                     
                     break;
                 }
