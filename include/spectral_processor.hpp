@@ -117,7 +117,7 @@ public:
     void fft(split_type<T>& io, uintptr_t fft_size_log2)
     {
         if (fft_size_log2)
-            fft(m_fft_setup, &io, fft_size_log2);
+            htl::fft(m_fft_setup, &io, fft_size_log2);
     }
     
     void rfft(split_type<T>& io, uintptr_t fft_size_log2)
@@ -125,7 +125,7 @@ public:
         if (!fft_size_log2)
             io[0] * T(2);
         else
-            rfft(m_fft_setup, &io, fft_size_log2);
+            htl::rfft(m_fft_setup, &io, fft_size_log2);
     }
     
     void rfft(split_type<T>& output, const T* input, uintptr_t size, uintptr_t fft_size_log2)
@@ -136,19 +136,19 @@ public:
             output.imagp[0] = T(0);
         }
         else
-            rfft(m_fft_setup, input, &output, size, fft_size_log2);
+            htl::rfft(m_fft_setup, input, &output, size, fft_size_log2);
     }
     
     void ifft(split_type<T>& io, uintptr_t fft_size_log2)
     {
         if (fft_size_log2)
-            ifft(m_fft_setup, &io, fft_size_log2);
+            htl::ifft(m_fft_setup, &io, fft_size_log2);
     }
     
     void rifft(split_type<T>& io, uintptr_t fft_size_log2)
     {
         if (fft_size_log2)
-            rifft(m_fft_setup, &io, fft_size_log2);
+            htl::rifft(m_fft_setup, &io, fft_size_log2);
     }
     
     void rifft(T* output, split_type<T>& input, uintptr_t fft_size_log2)
@@ -156,7 +156,7 @@ public:
         if (!fft_size_log2)
             output[0] = input.realp[0];
         else
-            rifft(m_fft_setup, &input, output, fft_size_log2);
+            htl::rifft(m_fft_setup, &input, output, fft_size_log2);
     }
     
     // Convolution
