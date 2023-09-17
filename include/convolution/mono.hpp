@@ -20,9 +20,9 @@ HISSTOOLS_LIBRARY_NAMESPACE_START()
 
 enum class latency_mode
 {
-    zero_latency,
-    short_latency,
-    medium_latency,
+    zero,
+    small,
+    medium
 };
 
 template <class T, class IO = T>
@@ -47,9 +47,9 @@ public:
     {
         switch (latency)
         {
-            case latency_mode::zero_latency:     set_partitions(max_length, true, 256, 1024, 4096, 16384);     break;
-            case latency_mode::short_latency:    set_partitions(max_length, false, 256, 1024, 4096, 16384);    break;
-            case latency_mode::medium_latency:   set_partitions(max_length, false, 1024, 4096, 16384);         break;
+            case latency_mode::zero:        set_partitions(max_length, true, 256, 1024, 4096, 16384);     break;
+            case latency_mode::small:       set_partitions(max_length, false, 256, 1024, 4096, 16384);    break;
+            case latency_mode::medium:      set_partitions(max_length, false, 1024, 4096, 16384);         break;
         }
     }
     
