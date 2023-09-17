@@ -7,8 +7,8 @@
 
 #include "../memory_swap.hpp"
 #include "../simd_support.hpp"
-#include "utilities.hpp"
 #include "n_to_mono.hpp"
+#include "utilities.hpp"
 
 HISSTOOLS_LIBRARY_NAMESPACE_START()
 

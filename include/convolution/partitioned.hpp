@@ -8,8 +8,8 @@
 
 #include "../simd_support.hpp"
 #include "../namespace.hpp"
-#include "utilities.hpp"
 #include "../fft/fft.hpp"
+#include "utilities.hpp"
 
 HISSTOOLS_LIBRARY_NAMESPACE_START()
 

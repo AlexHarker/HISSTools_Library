@@ -4,8 +4,8 @@
 
 #include <algorithm>
 
-#include "simd_support.hpp"
 #include "interpolation.hpp"
+#include "simd_support.hpp"
 #include "namespace.hpp"
 
 HISSTOOLS_LIBRARY_NAMESPACE_START()

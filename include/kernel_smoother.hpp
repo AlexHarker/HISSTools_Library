@@ -11,7 +11,6 @@
 
 #include "allocator.hpp"
 #include "simd_support.hpp"
-
 #include "spectral_processor.hpp"
 #include "table_reader.hpp"
 #include "namespace.hpp"

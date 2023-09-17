@@ -3,9 +3,9 @@
 #define HISSTOOLS_LIBRARY_STATISTICS_HPP
 
 #include <algorithm>
+#include <cmath>
 #include <limits>
 #include <numeric>
-#include <cmath>
 
 #include "namespace.hpp"
 

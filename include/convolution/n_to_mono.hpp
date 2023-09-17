@@ -7,8 +7,8 @@
 #include <vector>
 
 #include "../namespace.hpp"
-#include "utilities.hpp"
 #include "mono.hpp"
+#include "utilities.hpp"
 
 HISSTOOLS_LIBRARY_NAMESPACE_START()
 

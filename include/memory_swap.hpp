@@ -2,9 +2,9 @@
 #ifndef HISSTOOLS_LIBRARY_MEMORY_SWAP_HPP
 #define HISSTOOLS_LIBRARY_MEMORY_SWAP_HPP
 
+#include <atomic>
 #include <cstdint>
 #include <cstdlib>
-#include <atomic>
 #include <functional>
 
 #include "thread_locks.hpp"

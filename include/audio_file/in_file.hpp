@@ -8,9 +8,9 @@
 #include <vector>
 
 #include "../namespace.hpp"
-#include "utilities.hpp"
 #include "extended_double.hpp"
 #include "base.hpp"
+#include "utilities.hpp"
 
 // FIX - check types, errors and returns
 

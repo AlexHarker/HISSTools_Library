@@ -7,9 +7,9 @@
 #include <string>
 
 #include "../namespace.hpp"
-#include "utilities.hpp"
 #include "extended_double.hpp"
 #include "base.hpp"
+#include "utilities.hpp"
 
 HISSTOOLS_LIBRARY_NAMESPACE_START()
 
