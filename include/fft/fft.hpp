@@ -5,7 +5,7 @@
 #include <cstdint>
 
 #include "../namespace.hpp"
-#include "fft_types.hpp"
+#include "types.hpp"
 
 /** @file fft.hpp @brief The interface for the HISSTools FFT.
  
@@ -52,7 +52,7 @@ struct setup_type;
 
 HISSTOOLS_LIBRARY_NAMESPACE_END()
 
-#include "fft_core.hpp"
+#include "core.hpp"
 
 HISSTOOLS_LIBRARY_NAMESPACE_START()
 
