@@ -59,4 +59,4 @@ namespace htl_test_utils
     };
 } // namespace htl_test_utils
 
-#endif
+#endif /* HISSTOOLS_LIBRARY_TESTS_TIMER_HPP */
