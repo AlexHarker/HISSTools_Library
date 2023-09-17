@@ -9,7 +9,7 @@
 #include <vector>
 
 #include "simd_support.hpp"
-#include "window_functions.hpp"
+#include "window.hpp"
 #include "namespace.hpp"
 
 // N.B. - clean up for other usage (different phases / consider other windows etc.)
@@ -78,7 +78,7 @@ public:
     {
         auto izero = [](double x)
         {
-            return window_functions::impl::izero(x);
+            return window::izero(x);
         };
         
         assert(num_zeros != 0 && "resampler: number of zeros cannot be zero");

@@ -25,9 +25,14 @@ HISSTOOLS_NAMESPACE_START()
 
 class window
 {
+    // Allow the rasampler class access
+    
+    template <class, class, bool> friend class resampler;
+    
 public:
 
     // Parameter struct
+    
     struct params
     {
         constexpr params(double A0 = 0, double A1 = 0, double A2 = 0, double A3 = 0, double A4 = 0, double exp = 1)
@@ -284,6 +289,7 @@ public:
     };
 
 private:
+    
     // Constexpr functions for convenience
     
     static constexpr double pi()   { return M_PI; }
