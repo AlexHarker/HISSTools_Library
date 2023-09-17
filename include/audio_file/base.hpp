@@ -1,6 +1,6 @@
 
-#ifndef HISSTOOLS_AUDIO_FILE_BASE_HPP
-#define HISSTOOLS_AUDIO_FILE_BASE_HPP
+#ifndef HISSTOOLS_LIBRARY_AUDIO_FILE_BASE_HPP
+#define HISSTOOLS_LIBRARY_AUDIO_FILE_BASE_HPP
 
 #include <cstdint>
 #include <fstream>
@@ -13,7 +13,7 @@
 
 // FIX - frames type
 
-HISSTOOLS_NAMESPACE_START()
+HISSTOOLS_LIBRARY_NAMESPACE_START()
 
 class base_audio_file
 {
@@ -158,6 +158,6 @@ private:
     int m_error_flags;
 };
 
-HISSTOOLS_NAMESPACE_END()
+HISSTOOLS_LIBRARY_NAMESPACE_END()
 
-#endif /* HISSTOOLS_AUDIO_FILE_BASE_HPP */
+#endif /* HISSTOOLS_LIBRARY_AUDIO_FILE_BASE_HPP */

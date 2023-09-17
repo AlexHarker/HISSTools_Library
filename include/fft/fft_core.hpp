@@ -1,6 +1,6 @@
 
-#ifndef HISSTOOLS_FFT_CORE_HPP
-#define HISSTOOLS_FFT_CORE_HPP
+#ifndef HISSTOOLS_LIBRARY_FFT_CORE_HPP
+#define HISSTOOLS_LIBRARY_FFT_CORE_HPP
 
 #include <algorithm>
 #include <cmath>
@@ -19,7 +19,7 @@
 
 #endif
 
-HISSTOOLS_NAMESPACE_START()
+HISSTOOLS_LIBRARY_NAMESPACE_START()
 
 #if defined (USE_APPLE_FFT)
 // Type specialisations for use with the Apple FFT
@@ -1172,6 +1172,6 @@ struct setup_type : impl::setup_base<T, fft_impl::fft_setup_type<T>*>
 
 #endif
 
-HISSTOOLS_NAMESPACE_END()
+HISSTOOLS_LIBRARY_NAMESPACE_END()
 
-#endif /* HISSTOOLS_FFT_CORE_HPP */
+#endif /* HISSTOOLS_LIBRARY_FFT_CORE_HPP */

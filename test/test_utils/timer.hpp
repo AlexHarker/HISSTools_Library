@@ -1,6 +1,6 @@
 
-#ifndef HISSTOOLS_TESTS_TIMER_HPP
-#define HISSTOOLS_TESTS_TIMER_HPP
+#ifndef HISSTOOLS_LIBRARY_TESTS_TIMER_HPP
+#define HISSTOOLS_LIBRARY_TESTS_TIMER_HPP
 
 #include <array>
 #include <chrono>

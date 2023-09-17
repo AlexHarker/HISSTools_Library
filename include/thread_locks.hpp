@@ -1,6 +1,6 @@
 
-#ifndef HISSTOOLS_THREAD_LOCKS_HPP
-#define HISSTOOLS_THREAD_LOCKS_HPP
+#ifndef HISSTOOLS_LIBRARY_THREAD_LOCKS_HPP
+#define HISSTOOLS_LIBRARY_THREAD_LOCKS_HPP
 
 #include <atomic>
 #include <algorithm>
@@ -9,7 +9,7 @@
 
 #include "namespace.hpp"
 
-HISSTOOLS_NAMESPACE_START()
+HISSTOOLS_LIBRARY_NAMESPACE_START()
 
 #ifdef __linux__
 
@@ -121,6 +121,6 @@ private:
     thread_lock* m_lock;
 };
 
-HISSTOOLS_NAMESPACE_END()
+HISSTOOLS_LIBRARY_NAMESPACE_END()
 
-#endif /* HISSTOOLS_THREAD_LOCKS_HPP */
+#endif /* HISSTOOLS_LIBRARY_THREAD_LOCKS_HPP */

@@ -1,6 +1,6 @@
 
-#ifndef HISSTOOLS_SPECTRAL_FUNCTIONS_HPP
-#define HISSTOOLS_SPECTRAL_FUNCTIONS_HPP
+#ifndef HISSTOOLS_LIBRARY_SPECTRAL_FUNCTIONS_HPP
+#define HISSTOOLS_LIBRARY_SPECTRAL_FUNCTIONS_HPP
 
 #include <algorithm>
 #include <cmath>
@@ -10,7 +10,7 @@
 #include "namespace.hpp"
 #include "fft/fft.hpp"
 
-HISSTOOLS_NAMESPACE_START()
+HISSTOOLS_LIBRARY_NAMESPACE_START()
 
 namespace impl
 {
@@ -392,6 +392,6 @@ void ir_correlate_real(split_type<T>* out, split_type<T>* in1, split_type<T>* in
     impl::real_operation(out, in1, in2, fft_size, scale, impl::correlate());
 }
 
-HISSTOOLS_NAMESPACE_END()
+HISSTOOLS_LIBRARY_NAMESPACE_END()
 
-#endif /* HISSTOOLS_SPECTRAL_FUNCTIONS_HPP */
+#endif /* HISSTOOLS_LIBRARY_SPECTRAL_FUNCTIONS_HPP */

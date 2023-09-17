@@ -1,6 +1,6 @@
 
-#ifndef HISSTOOLS_TABLE_READER_HPP
-#define HISSTOOLS_TABLE_READER_HPP
+#ifndef HISSTOOLS_LIBRARY_TABLE_READER_HPP
+#define HISSTOOLS_LIBRARY_TABLE_READER_HPP
 
 #include <algorithm>
 
@@ -8,7 +8,7 @@
 #include "interpolation.hpp"
 #include "namespace.hpp"
 
-HISSTOOLS_NAMESPACE_START()
+HISSTOOLS_LIBRARY_NAMESPACE_START()
 
 // Enumeration of edge types
 
@@ -436,6 +436,6 @@ void table_read_edges(Table fetcher, T* out, const U* positions, intptr_t n_samp
     }
 }
 
-HISSTOOLS_NAMESPACE_END()
+HISSTOOLS_LIBRARY_NAMESPACE_END()
 
-#endif /* HISSTOOLS_TABLE_READER_HPP */
+#endif /* HISSTOOLS_LIBRARY_TABLE_READER_HPP */

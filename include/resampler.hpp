@@ -1,6 +1,6 @@
 
-#ifndef HISSTOOLS_RESAMPLER_HPP
-#define HISSTOOLS_RESAMPLER_HPP
+#ifndef HISSTOOLS_LIBRARY_RESAMPLER_HPP
+#define HISSTOOLS_LIBRARY_RESAMPLER_HPP
 
 #include <algorithm>
 #include <cassert>
@@ -14,7 +14,7 @@
 
 // N.B. - clean up for other usage (different phases / consider other windows etc.)
 
-HISSTOOLS_NAMESPACE_START()
+HISSTOOLS_LIBRARY_NAMESPACE_START()
 
 template <class T = double, class IO = float, bool Approx = true>
 class resampler
@@ -344,6 +344,6 @@ private:
     uint32_t m_num_points;
 };
 
-HISSTOOLS_NAMESPACE_END()
+HISSTOOLS_LIBRARY_NAMESPACE_END()
 
-#endif /* HISSTOOLS_RESAMPLER_HPP */
+#endif /* HISSTOOLS_LIBRARY_RESAMPLER_HPP */

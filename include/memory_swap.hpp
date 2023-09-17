@@ -1,6 +1,6 @@
 
-#ifndef HISSTOOLS_MEMORY_SWAP_HPP
-#define HISSTOOLS_MEMORY_SWAP_HPP
+#ifndef HISSTOOLS_LIBRARY_MEMORY_SWAP_HPP
+#define HISSTOOLS_LIBRARY_MEMORY_SWAP_HPP
 
 #include <cstdint>
 #include <cstdlib>
@@ -19,7 +19,7 @@
 // Use separate freeing locks so the memory is always freed in the assignment thread
 // All memory assignments are aligned in order that the memory is suitable for vector ops etc.
 
-HISSTOOLS_NAMESPACE_START()
+HISSTOOLS_LIBRARY_NAMESPACE_START()
 
 template <class T>
 class memory_swap
@@ -296,6 +296,6 @@ private:
     free_func m_free_function;
 };
 
-HISSTOOLS_NAMESPACE_END()
+HISSTOOLS_LIBRARY_NAMESPACE_END()
 
-#endif /* HISSTOOLS_MEMORY_SWAP_HPP */
+#endif /* HISSTOOLS_LIBRARY_MEMORY_SWAP_HPP */

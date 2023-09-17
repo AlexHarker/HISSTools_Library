@@ -1,6 +1,6 @@
 
-#ifndef HISSTOOLS_SPECTRAL_PROCESSOR_HPP
-#define HISSTOOLS_SPECTRAL_PROCESSOR_HPP
+#ifndef HISSTOOLS_LIBRARY_SPECTRAL_PROCESSOR_HPP
+#define HISSTOOLS_LIBRARY_SPECTRAL_PROCESSOR_HPP
 
 #include <algorithm>
 #include <type_traits>
@@ -10,7 +10,7 @@
 #include "namespace.hpp"
 #include "fft/fft.hpp"
 
-HISSTOOLS_NAMESPACE_START()
+HISSTOOLS_LIBRARY_NAMESPACE_START()
 
 template <typename T, typename Allocator = aligned_allocator>
 class spectral_processor
@@ -685,6 +685,6 @@ protected:
     uintptr_t m_max_fft_size_log2;
 };
 
-HISSTOOLS_NAMESPACE_END()
+HISSTOOLS_LIBRARY_NAMESPACE_END()
 
-#endif /* HISSTOOLS_SPECTRAL_PROCESSOR_HPP */
+#endif /* HISSTOOLS_LIBRARY_SPECTRAL_PROCESSOR_HPP */

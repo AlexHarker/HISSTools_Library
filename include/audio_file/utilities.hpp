@@ -1,11 +1,11 @@
 
-#ifndef HISSTOOLS_AUDIO_FILE_UTILITIES_HPP
-#define HISSTOOLS_AUDIO_FILE_UTILITIES_HPP
+#ifndef HISSTOOLS_LIBRARY_AUDIO_FILE_UTILITIES_HPP
+#define HISSTOOLS_LIBRARY_AUDIO_FILE_UTILITIES_HPP
 
 #include "../namespace.hpp"
 #include "format.hpp"
 
-HISSTOOLS_NAMESPACE_START()
+HISSTOOLS_LIBRARY_NAMESPACE_START()
 
 // Byte Shift
 
@@ -80,6 +80,6 @@ void set_bytes(T value, audio_file_format::endianness endianness, unsigned char*
         return byte_setter<T, N, 0, audio_file_format::endianness::little>()(value, bytes);
 }
 
-HISSTOOLS_NAMESPACE_END()
+HISSTOOLS_LIBRARY_NAMESPACE_END()
 
-#endif /* HISSTOOLS_AUDIO_FILE_UTILITIES_HPP */
+#endif /* HISSTOOLS_LIBRARY_AUDIO_FILE_UTILITIES_HPP */

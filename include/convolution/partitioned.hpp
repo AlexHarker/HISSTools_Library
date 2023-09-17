@@ -1,6 +1,6 @@
 
-#ifndef HISSTOOLS_CONVOLUTION_PARTITIONED_HPP
-#define HISSTOOLS_CONVOLUTION_PARTITIONED_HPP
+#ifndef HISSTOOLS_LIBRARY_CONVOLUTION_PARTITIONED_HPP
+#define HISSTOOLS_LIBRARY_CONVOLUTION_PARTITIONED_HPP
 
 #include <algorithm>
 #include <cstdint>
@@ -11,7 +11,7 @@
 #include "utilities.hpp"
 #include "../fft/fft.hpp"
 
-HISSTOOLS_NAMESPACE_START()
+HISSTOOLS_LIBRARY_NAMESPACE_START()
 
 template <class T, class IO = T>
 class convolve_partitioned
@@ -502,6 +502,6 @@ private:
     std::uniform_int_distribution<uintptr_t> m_rand_dist;
 };
 
-HISSTOOLS_NAMESPACE_END()
+HISSTOOLS_LIBRARY_NAMESPACE_END()
 
-#endif /* HISSTOOLS_CONVOLUTION_PARTITIONED_HPP */
+#endif /* HISSTOOLS_LIBRARY_CONVOLUTION_PARTITIONED_HPP */

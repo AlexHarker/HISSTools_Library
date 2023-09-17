@@ -1,6 +1,6 @@
 
-#ifndef HISSTOOLS_WINDOW_HPP
-#define HISSTOOLS_WINDOW_HPP
+#ifndef HISSTOOLS_LIBRARY_WINDOW_HPP
+#define HISSTOOLS_LIBRARY_WINDOW_HPP
 
 #include <algorithm>
 #include <cmath>
@@ -10,7 +10,7 @@
 
 #include "namespace.hpp"
 
-HISSTOOLS_NAMESPACE_START()
+HISSTOOLS_LIBRARY_NAMESPACE_START()
 
 // Coefficients (and the basis for naming) can largely be found in:
 //
@@ -672,6 +672,6 @@ private:
     }
 };
 
-HISSTOOLS_NAMESPACE_END()
+HISSTOOLS_LIBRARY_NAMESPACE_END()
 
-#endif /* HISSTOOLS_WINDOW_HPP */
+#endif /* HISSTOOLS_LIBRARY_WINDOW_HPP */

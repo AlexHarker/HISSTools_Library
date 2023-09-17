@@ -1,6 +1,6 @@
 
-#ifndef HISSTOOLS_SIMD_SUPPORT_HPP
-#define HISSTOOLS_SIMD_SUPPORT_HPP
+#ifndef HISSTOOLS_LIBRARY_SIMD_SUPPORT_HPP
+#define HISSTOOLS_LIBRARY_SIMD_SUPPORT_HPP
 
 #include <algorithm>
 #include <bitset>
@@ -42,7 +42,7 @@
 #define SIMD_COMPILER_SUPPORT_VEC256 2
 #define SIMD_COMPILER_SUPPORT_VEC512 3
 
-HISSTOOLS_NAMESPACE_START()
+HISSTOOLS_LIBRARY_NAMESPACE_START()
 
 template <class T>
 struct simd_limits
@@ -1365,6 +1365,6 @@ simd_type<float, N> abs(const simd_type<float, N> a)
     return a & simd_type<float, N>(bit_mask_32f);
 }
 
-HISSTOOLS_NAMESPACE_END()
+HISSTOOLS_LIBRARY_NAMESPACE_END()
 
-#endif /* HISSTOOLS_SIMD_SUPPORT_HPP */
+#endif /* HISSTOOLS_LIBRARY_SIMD_SUPPORT_HPP */

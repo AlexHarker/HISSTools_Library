@@ -1,13 +1,13 @@
 
-#ifndef HISSTOOLS_ALLOCATOR_HPP
-#define HISSTOOLS_ALLOCATOR_HPP
+#ifndef HISSTOOLS_LIBRARY_ALLOCATOR_HPP
+#define HISSTOOLS_LIBRARY_ALLOCATOR_HPP
 
 #include <cstdlib>
 
 #include "simd_support.hpp"
 #include "namespace.hpp"
 
-HISSTOOLS_NAMESPACE_START()
+HISSTOOLS_LIBRARY_NAMESPACE_START()
 
 namespace impl
 {
@@ -40,6 +40,6 @@ struct aligned_allocator
     void deallocate(T* ptr) { deallocate_aligned(ptr); }
 };
 
-HISSTOOLS_NAMESPACE_END()
+HISSTOOLS_LIBRARY_NAMESPACE_END()
 
-#endif /* HISSTOOLS_ALLOCATOR_HPP */
+#endif /* HISSTOOLS_LIBRARY_ALLOCATOR_HPP */

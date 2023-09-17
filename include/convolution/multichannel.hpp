@@ -1,6 +1,6 @@
 
-#ifndef HISSTOOLS_CONVOLUTION_MULTICHANNEL_HPP
-#define HISSTOOLS_CONVOLUTION_MULTICHANNEL_HPP
+#ifndef HISSTOOLS_LIBRARY_CONVOLUTION_MULTICHANNEL_HPP
+#define HISSTOOLS_LIBRARY_CONVOLUTION_MULTICHANNEL_HPP
 
 #include <cstdint>
 #include <vector>
@@ -10,7 +10,7 @@
 #include "utilities.hpp"
 #include "n_to_mono.hpp"
 
-HISSTOOLS_NAMESPACE_START()
+HISSTOOLS_LIBRARY_NAMESPACE_START()
 
 template <class T, class IO = T>
 class convolve_multichannel
@@ -146,6 +146,6 @@ private:
     std::vector<cn> m_convolvers;
 };
 
-HISSTOOLS_NAMESPACE_END()
+HISSTOOLS_LIBRARY_NAMESPACE_END()
 
-#endif /* HISSTOOLS_CONVOLUTION_MULTICHANNEL_HPP */
+#endif /* HISSTOOLS_LIBRARY_CONVOLUTION_MULTICHANNEL_HPP */

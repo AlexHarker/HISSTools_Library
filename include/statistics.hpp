@@ -1,6 +1,6 @@
 
-#ifndef HISSTOOLS_STATISTICS_HPP
-#define HISSTOOLS_STATISTICS_HPP
+#ifndef HISSTOOLS_LIBRARY_STATISTICS_HPP
+#define HISSTOOLS_LIBRARY_STATISTICS_HPP
 
 #include <algorithm>
 #include <limits>
@@ -9,7 +9,7 @@
 
 #include "namespace.hpp"
 
-HISSTOOLS_NAMESPACE_START()
+HISSTOOLS_LIBRARY_NAMESPACE_START()
 
 namespace impl
 {
@@ -393,6 +393,6 @@ double stat_crest(const T input, size_t size)
     return stat_max(input, size) / stat_rms(input, size);
 }
 
-HISSTOOLS_NAMESPACE_END()
+HISSTOOLS_LIBRARY_NAMESPACE_END()
 
-#endif /* HISSTOOLS_STATISTICS_HPP */
+#endif /* HISSTOOLS_LIBRARY_STATISTICS_HPP */

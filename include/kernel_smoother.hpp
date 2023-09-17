@@ -1,6 +1,6 @@
 
-#ifndef HISSTOOLS_KERNEL_SMOOTHER_HPP
-#define HISSTOOLS_KERNEL_SMOOTHER_HPP
+#ifndef HISSTOOLS_LIBRARY_KERNEL_SMOOTHER_HPP
+#define HISSTOOLS_LIBRARY_KERNEL_SMOOTHER_HPP
 
 #include <algorithm>
 #include <cmath>
@@ -16,7 +16,7 @@
 #include "table_reader.hpp"
 #include "namespace.hpp"
 
-HISSTOOLS_NAMESPACE_START()
+HISSTOOLS_LIBRARY_NAMESPACE_START()
 
 template <typename T, typename Allocator = aligned_allocator, bool auto_resize_fft = false>
 class kernel_smoother : private spectral_processor<T, Allocator>
@@ -342,6 +342,6 @@ private:
     }
 };
 
-HISSTOOLS_NAMESPACE_END()
+HISSTOOLS_LIBRARY_NAMESPACE_END()
 
-#endif /* HISSTOOLS_KERNEL_SMOOTHER_HPP */
+#endif /* HISSTOOLS_LIBRARY_KERNEL_SMOOTHER_HPP */

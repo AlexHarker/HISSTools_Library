@@ -1,6 +1,6 @@
 
-#ifndef HISSTOOLS_PARTIAL_TRACKER_HPP
-#define HISSTOOLS_PARTIAL_TRACKER_HPP
+#ifndef HISSTOOLS_LIBRARY_PARTIAL_TRACKER_HPP
+#define HISSTOOLS_LIBRARY_PARTIAL_TRACKER_HPP
 
 #include <algorithm>
 #include <cmath>
@@ -10,7 +10,7 @@
 #include "allocator.hpp"
 #include "namespace.hpp"
 
-HISSTOOLS_NAMESPACE_START()
+HISSTOOLS_LIBRARY_NAMESPACE_START()
 
 template <typename T>
 class peak
@@ -444,6 +444,6 @@ private:
     change_tracker<T, Changes> m_changes;
 };
 
-HISSTOOLS_NAMESPACE_END()
+HISSTOOLS_LIBRARY_NAMESPACE_END()
 
-#endif /* HISSTOOLS_PARTIAL_TRACKER_HPP */
+#endif /* HISSTOOLS_LIBRARY_PARTIAL_TRACKER_HPP */

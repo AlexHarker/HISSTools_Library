@@ -1,6 +1,6 @@
 
-#ifndef HISSTOOLS_CONVOLUTION_N_TO_MONO_HPP
-#define HISSTOOLS_CONVOLUTION_N_TO_MONO_HPP
+#ifndef HISSTOOLS_LIBRARY_CONVOLUTION_N_TO_MONO_HPP
+#define HISSTOOLS_LIBRARY_CONVOLUTION_N_TO_MONO_HPP
 
 #include <algorithm>
 #include <cstdint>
@@ -10,7 +10,7 @@
 #include "utilities.hpp"
 #include "mono.hpp"
 
-HISSTOOLS_NAMESPACE_START()
+HISSTOOLS_LIBRARY_NAMESPACE_START()
 
 template <class T, class IO = T>
 class convolve_n_to_mono
@@ -105,6 +105,6 @@ private:
     std::vector<convolve_mono<T, IO>> m_convolvers;
 };
 
-HISSTOOLS_NAMESPACE_END()
+HISSTOOLS_LIBRARY_NAMESPACE_END()
 
-#endif /* HISSTOOLS_CONVOLUTION_N_TO_MONO_HPP */
+#endif /* HISSTOOLS_LIBRARY_CONVOLUTION_N_TO_MONO_HPP */

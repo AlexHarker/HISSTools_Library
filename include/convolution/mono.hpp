@@ -1,6 +1,6 @@
 
-#ifndef HISSTOOLS_CONVOLUTION_MONO_HPP
-#define HISSTOOLS_CONVOLUTION_MONO_HPP
+#ifndef HISSTOOLS_LIBRARY_CONVOLUTION_MONO_HPP
+#define HISSTOOLS_LIBRARY_CONVOLUTION_MONO_HPP
 
 #include <algorithm>
 #include <cassert>
@@ -16,7 +16,7 @@
 #include "time_domain.hpp"
 #include "partitioned.hpp"
 
-HISSTOOLS_NAMESPACE_START()
+HISSTOOLS_LIBRARY_NAMESPACE_START()
 
 enum class latency_mode
 {
@@ -297,6 +297,6 @@ private:
     std::uniform_int_distribution<uintptr_t> m_rand_dist;
 };
 
-HISSTOOLS_NAMESPACE_END()
+HISSTOOLS_LIBRARY_NAMESPACE_END()
 
-#endif /* HISSTOOLS_CONVOLUTION_MONO_HPP */
+#endif /* HISSTOOLS_LIBRARY_CONVOLUTION_MONO_HPP */

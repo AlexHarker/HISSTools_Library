@@ -1,6 +1,6 @@
 
-#ifndef HISSTOOLS_AUDIO_FILE_OUT_FILE_HPP
-#define HISSTOOLS_AUDIO_FILE_OUT_FILE_HPP
+#ifndef HISSTOOLS_LIBRARY_AUDIO_FILE_OUT_FILE_HPP
+#define HISSTOOLS_LIBRARY_AUDIO_FILE_OUT_FILE_HPP
 
 #include <algorithm>
 #include <cmath>
@@ -11,7 +11,7 @@
 #include "extended_double.hpp"
 #include "base.hpp"
 
-HISSTOOLS_NAMESPACE_START()
+HISSTOOLS_LIBRARY_NAMESPACE_START()
 
 class out_audio_file : public base_audio_file
 {
@@ -538,6 +538,6 @@ private:
     }
 };
 
-HISSTOOLS_NAMESPACE_END()
+HISSTOOLS_LIBRARY_NAMESPACE_END()
 
-#endif /* HISSTOOLS_AUDIO_FILE_OUT_FILE_HPP */
+#endif /* HISSTOOLS_LIBRARY_AUDIO_FILE_OUT_FILE_HPP */

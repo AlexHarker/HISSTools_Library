@@ -1,6 +1,6 @@
 
-#ifndef HISSTOOLS_AUDIO_FILE_IN_FILE_HPP
-#define HISSTOOLS_AUDIO_FILE_IN_FILE_HPP
+#ifndef HISSTOOLS_LIBRARY_AUDIO_FILE_IN_FILE_HPP
+#define HISSTOOLS_LIBRARY_AUDIO_FILE_IN_FILE_HPP
 
 #include <algorithm>
 #include <cstring>
@@ -14,7 +14,7 @@
 
 // FIX - check types, errors and returns
 
-HISSTOOLS_NAMESPACE_START()
+HISSTOOLS_LIBRARY_NAMESPACE_START()
 
 class in_audio_file : public base_audio_file
 {
@@ -574,6 +574,6 @@ private:
     }
 };
 
-HISSTOOLS_NAMESPACE_END()
+HISSTOOLS_LIBRARY_NAMESPACE_END()
 
-#endif /* HISSTOOLS_AUDIO_FILE_IN_FILE_HPP */
+#endif /* HISSTOOLS_LIBRARY_AUDIO_FILE_IN_FILE_HPP */

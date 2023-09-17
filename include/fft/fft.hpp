@@ -1,6 +1,6 @@
 
-#ifndef HISSTOOLS_FFT_HPP
-#define HISSTOOLS_FFT_HPP
+#ifndef HISSTOOLS_LIBRARY_FFT_HPP
+#define HISSTOOLS_LIBRARY_FFT_HPP
 
 #include <cstdint>
 
@@ -22,7 +22,7 @@
 #define USE_APPLE_FFT
 #endif
 
-HISSTOOLS_NAMESPACE_START()
+HISSTOOLS_LIBRARY_NAMESPACE_START()
 
 /**
     split_type is a split of complex data (of a given type) for an FFT stored against two pointers (real and imaginary parts).
@@ -50,11 +50,11 @@ struct setup_type;
 
 // N.B. Include once basic types are defined
 
-HISSTOOLS_NAMESPACE_END()
+HISSTOOLS_LIBRARY_NAMESPACE_END()
 
 #include "fft_core.hpp"
 
-HISSTOOLS_NAMESPACE_START()
+HISSTOOLS_LIBRARY_NAMESPACE_START()
 
 /**
     create_fft_setup() creates an FFT setup suitable for FFTs and iFFTs up to a maximum specified size.
@@ -238,6 +238,6 @@ void rifft(setup_type<T> setup, split_type<T>* input, T* output, uintptr_t log2n
     zip(input, output, log2n);
 }
 
-HISSTOOLS_NAMESPACE_END()
+HISSTOOLS_LIBRARY_NAMESPACE_END()
 
-#endif /* HISSTOOLS_FFT_HPP */
+#endif /* HISSTOOLS_LIBRARY_FFT_HPP */
