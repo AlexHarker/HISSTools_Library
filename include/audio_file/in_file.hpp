@@ -199,14 +199,14 @@ private:
     
     // Getters
     
-    uint32_t get_u32(const char* bytes, endianness endianity)
+    uint32_t get_u32(const char* bytes, endian_type endianness)
     {
-        return get_bytes<uint32_t, 4>(bytes, endianity);
+        return get_bytes<uint32_t, 4>(bytes, endianness);
     }
     
-    uint16_t get_u16(const char* bytes, endianness endianity)
+    uint16_t get_u16(const char* bytes, endian_type endianness)
     {
-        return get_bytes<uint16_t, 2>(bytes, endianity);
+        return get_bytes<uint16_t, 2>(bytes, endianness);
     }
     
     // Chunk Reading
@@ -357,8 +357,7 @@ private:
                             return error_type::aifc_fmt_unsupported;
                     }
                     else
-                        m_format = audio_file_format(file_type::aiff, numeric_type::integer, bit_depth, 
-                                                                                             endianness::big);
+                        m_format = audio_file_format(file_type::aiff, numeric_type::integer, bit_depth, big_endian());
                     
                     if (!m_format.is_valid())
                         return error_type::pcm_fmt_unsupported;
@@ -426,7 +425,7 @@ private:
         
         // Check endianness
         
-        endianness endianity = match_tag(file_type, "RIFX") ? endianness::big : endianness::little;
+        const auto endianness = match_tag(file_type, "RIFX") ? big_endian() : little_endian();
         
         // Search for the format chunk and read the format chunk as needed, checking for a valid size
         
@@ -471,7 +470,7 @@ private:
         
         // Set Format
         
-        m_format = audio_file_format(file_type::wave, type, bit_depth, endianity);
+        m_format = audio_file_format(file_type::wave, type, bit_depth, endianness);
         
         if (!m_format.is_valid())
             return error_type::pcm_fmt_unsupported;
@@ -509,7 +508,7 @@ private:
     template <class T, class U, int N, int Shift, class V>
     void read_loop(V* output, uintptr_t j, uintptr_t loop_samples, uintptr_t byte_step)
     {
-        const endianness endianness = audio_endianness();
+        const auto endianness = audio_endianness();
         
         for (uintptr_t i = 0; i < loop_samples; i++, j += byte_step)
             output[i] = convert(get_bytes<U, N>(m_buffer.data() + j, endianness) << Shift, T(0), V(0));

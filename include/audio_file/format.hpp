@@ -16,33 +16,33 @@ public:
     enum class file_type    { none, aiff, aifc, wave };
     enum class pcm_format   { int8, int16, int24, int32, float32, float64 };
     enum class numeric_type { integer, floating };
-    enum class endianness   { little, big };
+    enum class endian_type  { little, big };
     
     audio_file_format()
     : m_file_type(file_type::none)
     , m_pcm_format(pcm_format::int16)
-    , m_endianness(endianness::little)
+    , m_endianness(endian_type::little)
     , m_valid(false)
     {}
     
     audio_file_format(file_type type)
     : m_file_type(type)
     , m_pcm_format(pcm_format::int16)
-    , m_endianness(type == file_type::wave ? endianness::little : endianness::big)
+    , m_endianness(type == file_type::wave ? endian_type::little : endian_type::big)
     , m_valid(false)
     {}
     
-    audio_file_format(file_type type, pcm_format format, endianness endianity)
+    audio_file_format(file_type type, pcm_format format, endian_type endianness)
     : m_file_type(type)
     , m_pcm_format(format)
-    , m_endianness(endianity)
+    , m_endianness(endianness)
     , m_valid(get_validity())
     {}
     
-    audio_file_format(file_type type, numeric_type num_type, uint16_t bit_depth, endianness endianity)
+    audio_file_format(file_type type, numeric_type num_type, uint16_t bit_depth, endian_type endianness)
     : m_file_type(type)
     , m_pcm_format(pcm_format::int16)
-    , m_endianness(endianity)
+    , m_endianness(endianness)
     , m_valid(false)
     {
         struct valid_format
@@ -83,12 +83,12 @@ public:
     uint16_t bit_depth() const              { return find_bit_depth(get_pcm_format()); }
     uint16_t byte_depth() const             { return bit_depth() / 8; }
     
-    endianness header_endianness() const
+    endian_type header_endianness() const
     {
-        return m_file_type == file_type::wave ? m_endianness : endianness::big;
+        return m_file_type == file_type::wave ? m_endianness : endian_type::big;
     }
     
-    endianness audio_endianness() const
+    endian_type audio_endianness() const
     {
         return m_endianness;
     }
@@ -141,12 +141,12 @@ private:
         if (m_file_type == file_type::aiff && find_numeric_type(m_pcm_format) == numeric_type::floating)
             return false;
         
-        if (m_file_type == file_type::aiff && m_endianness != endianness::big)
+        if (m_file_type == file_type::aiff && m_endianness != endian_type::big)
             return false;
         
         // AIFC only supports little=endianness for 16 bit integers
         
-        if (m_file_type == file_type::aifc && m_endianness != endianness::big && m_pcm_format != pcm_format::int16)
+        if (m_file_type == file_type::aifc && m_endianness != endian_type::big && m_pcm_format != pcm_format::int16)
             return false;
         
         return true;
@@ -154,7 +154,7 @@ private:
     
     file_type m_file_type;
     pcm_format m_pcm_format;
-    endianness m_endianness;
+    endian_type m_endianness;
     bool m_valid;
 };
 

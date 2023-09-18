@@ -9,10 +9,10 @@ HISSTOOLS_LIBRARY_NAMESPACE_START()
 
 // Byte Shift
 
-template <int N, int M, audio_file_format::endianness E>
+template <int N, int M, audio_file_format::endian_type E>
 static constexpr int byte_shift()
 {
-    if (E == audio_file_format::endianness::big)
+    if (E == audio_file_format::endian_type::big)
         return (N - (M + 1)) * 8;
     else
         return M * 8;
@@ -20,7 +20,7 @@ static constexpr int byte_shift()
 
 // Byte Getter
 
-template <class T, int N, int M, audio_file_format::endianness E>
+template <class T, int N, int M, audio_file_format::endian_type E>
 struct byte_getter
 {
     T operator()(const unsigned char* bytes)
@@ -29,7 +29,7 @@ struct byte_getter
     }
 };
 
-template <class T, int N, audio_file_format::endianness E>
+template <class T, int N, audio_file_format::endian_type E>
 struct byte_getter<T, N, N, E>
 {
     T operator()(const unsigned char* bytes)
@@ -39,23 +39,23 @@ struct byte_getter<T, N, N, E>
 };
 
 template <class T, int N>
-T get_bytes(const unsigned char* bytes, audio_file_format::endianness endianness)
+T get_bytes(const unsigned char* bytes, audio_file_format::endian_type endianness)
 {
-    if (endianness == audio_file_format::endianness::big)
-        return byte_getter<T, N, 1, audio_file_format::endianness::big>()(bytes);
+    if (endianness == audio_file_format::endian_type::big)
+        return byte_getter<T, N, 1, audio_file_format::endian_type::big>()(bytes);
     else
-        return byte_getter<T, N, 1, audio_file_format::endianness::little>()(bytes);
+        return byte_getter<T, N, 1, audio_file_format::endian_type::little>()(bytes);
 }
 
 template <class T, int N>
-T get_bytes(const char* bytes, audio_file_format::endianness endianness)
+T get_bytes(const char* bytes, audio_file_format::endian_type endianness)
 {
     return get_bytes<T, N>(reinterpret_cast<const unsigned char*>(bytes), endianness);
 }
 
 // Byte Setter
 
-template <class T, int N, int M, audio_file_format::endianness E>
+template <class T, int N, int M, audio_file_format::endian_type E>
 struct byte_setter
 {
     void operator()(T value, unsigned char* bytes)
@@ -65,19 +65,19 @@ struct byte_setter
     }
 };
 
-template <class T, int N, audio_file_format::endianness E>
+template <class T, int N, audio_file_format::endian_type E>
 struct byte_setter<T, N, N, E>
 {
     void operator()(T value, unsigned char* bytes) {}
 };
 
 template <int N, class T>
-void set_bytes(T value, audio_file_format::endianness endianness, unsigned char* bytes)
+void set_bytes(T value, audio_file_format::endian_type endianness, unsigned char* bytes)
 {
-    if (endianness == audio_file_format::endianness::big)
-        return byte_setter<T, N, 0, audio_file_format::endianness::big>()(value, bytes);
+    if (endianness == audio_file_format::endian_type::big)
+        return byte_setter<T, N, 0, audio_file_format::endian_type::big>()(value, bytes);
     else
-        return byte_setter<T, N, 0, audio_file_format::endianness::little>()(value, bytes);
+        return byte_setter<T, N, 0, audio_file_format::endian_type::little>()(value, bytes);
 }
 
 HISSTOOLS_LIBRARY_NAMESPACE_END()

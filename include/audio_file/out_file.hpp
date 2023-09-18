@@ -26,10 +26,9 @@ public:
         open(file, type, format, channels, sr);
     }
     
-    out_audio_file(const std::string& file, file_type type, pcm_format format, uint16_t channels, double sr, 
-                                                                                                  endianness endianity)
+    out_audio_file(const std::string& file, file_type type, pcm_format format, uint16_t channels, double sr, endian_type endianness)
     {
-        open(file, type, format, channels, sr, endianity);
+        open(file, type, format, channels, sr, endianness);
     }
     
     ~out_audio_file()
@@ -44,8 +43,7 @@ public:
         open(file, type, format, channels, sr, type == file_type::wave ? endianness::little : endianness::big);
     }
     
-    void open(const std::string& file, file_type type, pcm_format format, uint16_t channels, double sr, 
-                                                                                             endianness endianity)
+    void open(const std::string& file, file_type type, pcm_format format, uint16_t channels, double sr, endian_type endianness)
     {
         close();
         m_file.open(file.c_str(), ios_base::binary | ios_base::in | ios_base::out | ios_base::trunc);
@@ -56,7 +54,7 @@ public:
         {
             type = type == file_type::aiff ? file_type::aifc : type;
             
-            m_format = audio_file_format(type, format, endianity);
+            m_format = audio_file_format(type, format, endianness);
             m_sampling_rate = sr;
             m_num_channels  = channels;
             m_num_frames = 0;
@@ -156,23 +154,23 @@ private:
     // Putters
     
     template <class T, int N>
-    bool put_bytes(T value, endianness endianity)
+    bool put_bytes(T value, endian_type endianness)
     {
         unsigned char bytes[N];
         
-        set_bytes<N>(value, endianity, bytes);
+        set_bytes<N>(value, endianness, bytes);
         
         return write_internal(reinterpret_cast<const char*>(bytes), N);
     }
     
-    bool put_u32(uint32_t value, endianness endianity)
+    bool put_u32(uint32_t value, endian_type endianness)
     {
-        return put_bytes<uint32_t, 4>(value, endianity);
+        return put_bytes<uint32_t, 4>(value, endianness);
     }
     
-    bool put_u16(uint16_t value, endianness endianity)
+    bool put_u16(uint16_t value, endian_type endianness)
     {
-        return put_bytes<uint16_t, 2>(value, endianity);
+        return put_bytes<uint16_t, 2>(value, endianness);
     }
     
     bool put_tag(const char* tag)
@@ -438,10 +436,10 @@ private:
     template <class T, class U, int N, class V>
     void write_loop(const V* input, uintptr_t j, uintptr_t loop_samples, uintptr_t byte_step)
     {
-        const endianness endianity = audio_endianness();
+        const auto endianness = audio_endianness();
         
         for (uintptr_t i = 0; i < loop_samples; i++, j += byte_step)
-            set_bytes<N>(convert<N>(input[i], T(0), U(0)), endianity, m_buffer.data() + j);
+            set_bytes<N>(convert<N>(input[i], T(0), U(0)), endianness, m_buffer.data() + j);
     }
     
     template <class T>

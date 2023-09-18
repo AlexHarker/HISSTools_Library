@@ -18,6 +18,7 @@ HISSTOOLS_LIBRARY_NAMESPACE_START()
 class base_audio_file
 {
 protected:
+    
     using ios_base = std::ios_base;
     
 public:
@@ -25,7 +26,7 @@ public:
     using file_type = audio_file_format::file_type;
     using pcm_format = audio_file_format::pcm_format;
     using numeric_type = audio_file_format::numeric_type;
-    using endianness = audio_file_format::endianness;
+    using endian_type = audio_file_format::endian_type;
     
     enum class error_type
     {
@@ -76,8 +77,8 @@ public:
     pcm_format get_pcm_format() const       { return m_format.get_pcm_format(); }
     numeric_type get_numeric_type() const   { return m_format.get_numeric_type(); }
     
-    endianness header_endianness() const    { return m_format.header_endianness(); }
-    endianness audio_endianness() const     { return m_format.audio_endianness(); }
+    endian_type header_endianness() const   { return m_format.header_endianness(); }
+    endian_type audio_endianness() const    { return m_format.audio_endianness(); }
     
     double sampling_rate() const            { return m_sampling_rate; }
     uint16_t channels() const               { return m_num_channels; }
@@ -141,6 +142,9 @@ protected:
         return length + (length & 0x1);
     }
     
+    constexpr endian_type little_endian()   { return endian_type::little; }
+    constexpr endian_type big_endian()      { return endian_type::big; }
+
     audio_file_format m_format;
     
     double m_sampling_rate;

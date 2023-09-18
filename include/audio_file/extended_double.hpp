@@ -13,29 +13,31 @@ HISSTOOLS_LIBRARY_NAMESPACE_START()
 
 struct extended_double_convertor
 {
-    using endianness = base_audio_file::endianness;
+    using endian_type = base_audio_file::endian_type;
     
-    double infinity() { return std::numeric_limits<double>::infinity(); }
-    double quiet_nan() { return std::numeric_limits<double>::quiet_NaN(); }
+    constexpr endian_type big_endian() { return endian_type::big; }
     
-    uint32_t get_u32(const char* bytes, endianness endianity)
+    constexpr double infinity() { return std::numeric_limits<double>::infinity(); }
+    constexpr double quiet_nan() { return std::numeric_limits<double>::quiet_NaN(); }
+    
+    uint32_t get_u32(const char* bytes, endian_type endianness)
     {
-        return get_bytes<uint32_t, 4>(bytes, endianity);
+        return get_bytes<uint32_t, 4>(bytes, endianness);
     }
     
-    uint16_t get_u16(const char* bytes, endianness endianity)
+    uint16_t get_u16(const char* bytes, endian_type endianness)
     {
-        return get_bytes<uint16_t, 2>(bytes, endianity);
+        return get_bytes<uint16_t, 2>(bytes, endianness);
     }
     
     double operator()(const char* bytes)
     {
         // Get double from big-endian IEEE 80-bit extended floating point format
         
-        bool     sign        = get_u16(bytes + 0, endianness::big) & 0x8000;
-        int32_t  exponent    = get_u16(bytes + 0, endianness::big) & 0x7FFF;
-        uint32_t hi_mantissa = get_u32(bytes + 2, endianness::big);
-        uint32_t lo_mantissa = get_u32(bytes + 6, endianness::big);
+        bool     sign        = get_u16(bytes + 0, big_endian()) & 0x8000;
+        int32_t  exponent    = get_u16(bytes + 0, big_endian()) & 0x7FFF;
+        uint32_t hi_mantissa = get_u32(bytes + 2, big_endian());
+        uint32_t lo_mantissa = get_u32(bytes + 6, big_endian());
         
         // Special handlers for zeros
         
@@ -108,9 +110,9 @@ struct extended_double_convertor
             }
         }
         
-        set_bytes<2>(exponent, endianness::big, bytes + 0);
-        set_bytes<4>(hi_mantissa, endianness::big, bytes + 2);
-        set_bytes<4>(lo_mantissa, endianness::big, bytes + 6);
+        set_bytes<2>(exponent, big_endian(), bytes + 0);
+        set_bytes<4>(hi_mantissa, big_endian(), bytes + 2);
+        set_bytes<4>(lo_mantissa, big_endian(), bytes + 6);
     }
 };
 
