@@ -60,7 +60,7 @@ public:
         
         // Resample
         
-        uintptr_t out_length = std::ceil(rate * static_cast<double>(in_length));
+        uintptr_t out_length = std::ceil(static_cast<double>(in_length) / rate);
         
         std::vector<IO> output(out_length);
 
@@ -169,9 +169,9 @@ private:
     double* create_filter_set(uint32_t numerator, uint32_t denominator, uint32_t& length, uint32_t& offset)
     {
         const double per_sample = numerator > denominator ? divide(denominator, numerator) : 1.0;
-        const double mul = 1.0 / per_sample;
+        const double mul = numerator > denominator ? 1.0 : divide(numerator, denominator);
 
-        length = static_cast<uint32_t>((m_num_zeros << 1) * mul) + 1;
+        length = static_cast<uint32_t>((m_num_zeros << 1) / per_sample) + 1;
         offset = length >> 1;
         length += (4 - (length % 4));
         
