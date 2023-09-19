@@ -87,7 +87,7 @@ public:
         m_num_zeros = num_zeros;
         m_num_points = num_points;
         
-        alpha = alpha <= 0.0? 1.0 : 0.0;
+        alpha = alpha <= 0.0 ? 1.0 : 0.0;
         
         uint32_t half_filter_length = num_zeros * num_points;
         m_filter.resize(half_filter_length + 2);
@@ -125,7 +125,7 @@ private:
         uint32_t filter_offset;
         uint32_t filter_length;
         
-        // Create relevant tempories for resampling
+        // Create relevant temporaries for resampling
         
         double* filter_set = create_filter_set(num, denom, filter_length, filter_offset);
         auto padded_input = copy_input_padded(input, in_length, filter_offset, filter_length - filter_offset);
@@ -181,7 +181,8 @@ private:
         {
             double* filter = filter_set + i * length;
 
-            while (n >= denominator) n -= denominator;
+            while (n >= denominator)
+                n -= denominator;
             
             for (uint32_t j = 0; j < length; j++)
             {
@@ -194,7 +195,7 @@ private:
     }
     
     template <bool B = Approx, typename std::enable_if<B, int>::type = 0>
-    static inline double apply_filter(const T* a, IO* b, uintptr_t N)
+    static inline double apply_filter(const T* a, const IO* b, uintptr_t N)
     {
         constexpr int vec_size_o = (simd_limits<T>::max_size > 4) ? 4 : simd_limits<T>::max_size;
         constexpr int vec_size_i = (simd_limits<IO>::max_size >= 4) ? 4 : 1;
@@ -220,13 +221,13 @@ private:
     }
     
     /*
-        N.B. - The code above is equivalent to the following scalar code
+        // N.B. - The code above is equivalent to the following scalar code
      
-        double apply_filter(T* a, IO* b, uintptr_t N)
+        double apply_filter(const T* a, const IO* b, uintptr_t N)
         {
             T sum = 0.0;
      
-            for (uintptr_t i ; i < N; i++)
+            for (uintptr_t i = 0; i < N; i++)
                 sum += a[i] * static_cast<T>(b[i]);
      
             return sum;
@@ -319,7 +320,7 @@ private:
     static inline double sinc_filter(double position, double cf)
     {
         const double sinc_arg = M_PI * position;
-        return (std::sin(2.0 * cf * sinc_arg) / sinc_arg);
+        return std::sin(2.0 * cf * sinc_arg) / sinc_arg;
     }
     
     template <class U, class V>
@@ -332,9 +333,9 @@ private:
     {
         std::vector<IO> padded_input(in_length + pad_start + pad_end);
         
-        std::fill_n(padded_input.data() + 0, pad_start, 0.f);
+        std::fill_n(padded_input.data() + 0, pad_start, IO(0));
         std::copy_n(input, in_length, padded_input.data() + pad_start);
-        std::fill_n(padded_input.data() + pad_start + in_length, pad_end, 0.f);
+        std::fill_n(padded_input.data() + pad_start + in_length, pad_end, IO(0));
         
         return padded_input;
     }
