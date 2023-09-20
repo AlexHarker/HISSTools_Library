@@ -87,7 +87,7 @@ public:
         m_num_zeros = num_zeros;
         m_num_points = num_points;
         
-        alpha = alpha <= 0.0 ? 1.0 : 0.0;
+        alpha = alpha <= 0.0 ? 1.0 : alpha;
         
         uint32_t half_filter_length = num_zeros * num_points;
         m_filter.resize(half_filter_length + 2);
