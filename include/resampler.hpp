@@ -154,15 +154,14 @@ private:
         const double per_sample_recip = rate > 1.0 ? m_num_zeros * rate : m_num_zeros;
         const double mul = rate < 1.0 ? rate : 1.0;
         
-        const uint32_t length = static_cast<uint32_t>((m_num_zeros << 1) * mul) + 1;
-        const uint32_t offset = length >> 1;
+        const uint32_t pad_length = static_cast<uint32_t>(std::ceil(per_sample_recip)) + 1;
 
-        auto padded_input = copy_input_padded(input, in_length, offset, length - offset);
+        auto padded_input = copy_input_padded(input, in_length, pad_length, pad_length);
 
         // Resample
         
         for (uintptr_t i = 0; i < nsamps; i++)
-            output[i] = mul * calculate_sample(padded_input.data(), (i * rate) + offset, per_sample_recip);
+            output[i] = mul * calculate_sample(padded_input.data(), (i * rate) + pad_length, per_sample_recip);
     }
     
     template <bool B = Approx, typename std::enable_if<B, int>::type = 0>
