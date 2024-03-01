@@ -73,7 +73,7 @@ public:
     
     // File Position
     
-    void seek(uintptr_t position)
+    void seek(uintptr_t position = 0)
     {
         if (get_pcm_offset() != 0)
             seek_internal(get_pcm_offset() + frame_byte_count() * position);
