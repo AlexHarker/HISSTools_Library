@@ -40,7 +40,7 @@ public:
     
     void open(const std::string& file, file_type type, pcm_format format, uint16_t channels, double sr)
     {
-        open(file, type, format, channels, sr, type == file_type::wave ? endianness::little : endianness::big);
+        open(file, type, format, channels, sr, type == file_type::wave ? endian_type::little : endian_type::big);
     }
     
     void open(const std::string& file, file_type type, pcm_format format, uint16_t channels, double sr, endian_type endianness)
@@ -227,7 +227,7 @@ private:
         
         // File Header
         
-        if (header_endianness() == endianness::little)
+        if (header_endianness() == endian_type::little)
             success &= put_chunk("RIFF", 36);
         else
             success &= put_chunk("RIFX", 36);
