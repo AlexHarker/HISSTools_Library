@@ -72,7 +72,7 @@ struct extended_double_convertor
         uint32_t hi_mantissa = 0;
         uint32_t lo_mantissa = 0;
         
-        if (signbit(x))
+        if (std::signbit(x))
         {
             sign = true;
             x = copysign(x, 1.0);
