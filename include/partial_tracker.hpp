@@ -268,7 +268,7 @@ public:
         
         for (size_t i = 0, j = 0; i < n_peaks && j < max_tracks(); i++)
         {
-            if (!m_peak_assigned[i] && peaks[i].amp() >= start_threshold)
+            if (!m_peak_assigned[i] && peaks[i].amp() > start_threshold)
             {
                 for (; j < max_tracks(); j++)
                 {
