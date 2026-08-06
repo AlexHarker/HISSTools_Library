@@ -11,7 +11,7 @@
 
 HISSTOOLS_LIBRARY_NAMESPACE_START()
 
-#ifdef __linux__
+#if defined(__linux__) || defined(__EMSCRIPTEN__)
 
 // Linux specific definitions
 

@@ -124,7 +124,8 @@ void deallocate_aligned(T* ptr)
     free(ptr);
 }
 
-#elif defined(__linux__)
+#elif defined(__linux__) || defined(__EMSCRIPTEN__)
+
 
 template <class T>
 T* allocate_aligned(size_t size)
